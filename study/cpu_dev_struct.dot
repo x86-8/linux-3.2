@@ -1,0 +1,30 @@
+digraph G {
+rankdir="LR"
+
+cdev[shape=box,label="cdev =\n0xffffffff81702370"];
+x86_cpu [label="<f0>0xffffffff81533930|<f1>0xffffffff81533b90|<f2>0xffffffff81533df0",shape=record];
+intel_cpu_dev [label="<f0>0xffffffff814b64cb|<f1>0xffffffff814b64c4|<f2>...",shape=record];
+amd_cpu_dev [label="<f0>0xffffffff814b652c|<f1>0xffffffff814b6523|<f2>...",shape=record];
+centaur_cpu_dev [label="<f0>0xffffffff814b6569|<f1>0xffffffff814b6571|<f2>...",shape=record];
+
+intel_struct [label="<f0>\"Genuine\"|<f1>\"Intel\"",shape=record];
+amd_struct [label="<f0>\"Authentic\"|<f1>\"AMD\"",shape=record];
+centaur_struct [label="<f0>\"Centaur\"|<f1>\"CentaurHauls\"",shape=record];
+
+cdev->x86_cpu:f0 [label=".x86_cpu_dev.init"];
+
+x86_cpu:f0->intel_cpu_dev:f0 [label="intel_cpu_dev"];
+x86_cpu:f1->amd_cpu_dev:f0 [label="amd_cpu_dev"];
+x86_cpu:f2->centaur_cpu_dev:f0 [label="centaur_cpu_dev"];
+
+intel_cpu_dev:f0->intel_struct:f1 [label="intel_cpu_dev.c_vendor"];
+intel_cpu_dev:f1->intel_struct:f0 [label="intel_cpu_dev.c_ident[0]"];
+
+amd_cpu_dev:f0->amd_struct:f1 [label="amd_cpu_dev.c_vendor"];
+amd_cpu_dev:f1->amd_struct:f0 [label="amd_cpu_dev.c_ident[0]"];
+
+centaur_cpu_dev:f0->centaur_struct:f0 [label="centaur_cpu_dev.c_vendor"];
+centaur_cpu_dev:f1->centaur_struct:f1 [label="centaur_cpu_dev.c_ident[0]"];
+
+
+}

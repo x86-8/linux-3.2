@@ -1,0 +1,182 @@
+% Linux 3.1 rc5 부팅과정 분석
+\documentclass[a4paper,11pt]{report}
+
+\usepackage[T1]{CJK,hyperref,amsmath,graphicx,multirow,listings,color,xcolor,caption,fontenc}
+
+% \DeclareCaptionFont{white}{\color{white}}
+% \DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+% \captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white  ,breaklines=true}
+\lstset{language=C,captionpos=b,tabsize=3,frame=lines,keywordstyle=\color{blue},commentstyle=\color{darkgreen},stringstyle=\color{red},numbers=left,numberstyle=\tiny,numbersep=5pt,breaklines=true,showstringspaces=false,basicstyle=\footnotesize,emph={label}}
+
+% 쪽번호, index 생성, figure-float, item, hyperref
+
+% 그림 첨부는 includegraphics 사용, 다만 스케일 조정이 필요. eps사용이 좋음
+%\includegraphics{head64.eps}
+%\includegraphics{init.eps}
+
+
+\begin{document}
+\begin{CJK}{UTF8}{}
+
+% version 3.1-rc5
+
+\title{Linux x86\_64 부팅과정 분석\\
+Version: 3.1-rc5\\}
+\author{
+\and{\email{simplenfast@gmail.com} 천승환}
+}
+\date{}
+
+
+\CJKfamily{mj}
+\maketitle
+
+\chapter{Boot loader}
+PC의 전원을 켜면 BIOS가 POST(Power-on self-test)과정을 완료하고 부팅할 디바이스의 MBR(Master boot record)을 메모리의 0x7C00번지로 읽어들인다.
+%CPU 초기화 f000:fff0 확인요망
+\footnote{EFI는 GPT로 부팅하며 MBR를 사용하는 전통적인 BIOS와 다르다.}
+
+\section{Boot protocol}
+부트로더는 커널로 제어권을 넘길때 boot protocol을 통해서 리눅스 커널로 정보를 전달한다.\footnote{Documentation/x86/boot.txt}\\
+header 정보는 header.S\footnote{arch/x86/boot/header.S}에 있으며 커널 이미지(vmlinuz)의 첫 2섹터(BOOTSECT, SETUP)에 걸쳐있다. \footnote{setup.ld와 header.S의 .header 섹션 참조}\\
+부트 프로토콜은 setup의 섹터수, 커널이미지 위치, command line, initrd 주소등 중요한 정보를 가지고 있다.
+
+\section{EBDA}
+EBDA(extended BIOS data area)는 0x4xx의 BDA(BIOS data area)영역에서 확장된 BIOS 정보를 가지고 있다. 기본메모리(conventional memory:640KB)의 경계인 0xA0000 아래에 위치한다.
+protocol 버전 2.02부터 가변적인 크기의 EBDA를 지원하기 때문에 lilo는 EBDA가 일정크기를 초과하면\footnote{int 12h의 크기로 확인한다.} 0x90000 아래에 setup코드를 위치시킨다.
+
+\section{bzImage}
+커널을 make하면 압축된 커널이 나오는데 bzImage는 최종적인 결과물이다.
+% bzImage에 관한 추가 정보 필요!
+lilo는 압축된 커널이 bzImage일때 두 부분으로 나눠서 읽어들인다.\\
+보통 bzImage는 다음과 같이 구성되어 있다.\footnote{사실은 더 복잡하다. arch/x86/boot/compressed/Makefile 참조}\\\\
+% table 표그리기
+\begin{tabular}{|c|c|c|c|}
+\hline
+& 내용 & 섹터크기 & 메모리 주소\\ \hline
+BOOTSECT & floppy 부팅\footnotemark[7] + header & 1 & 0x90000 \\ \hline
+SETUP & header + 초기화 보호모드 진입 & 4\sim63 & 0x90200 \\ \hline % 4~63이 맞는지 확인요망
+startup\_32 & 압축 해제 & & 0x100000 \\ \hline
+piggy.o & 압축된 커널 본체 & & 0x1000000\footnotemark[8] \\ \hline
+\end{tabular}
+\footnotetext[7]{2.6이상에서 BOOTSECT를 통한 floppy booting은 지원되지 않는다}
+\footnotetext[8]{압축된 상태에서는 .rodata..compressed 섹션에 위치한다. 압축이 풀리면 0x1000000 16M에 위치한다.}
+
+\\
+이미지 생성은 setup는 arch/x86/boot/setup.ld에서 setup를 만들고 compressed와 boot 두 디렉토리의 vmlinux.lds.S에서 나온 setup.bin과 vmlinux.bin을 arch/x86/boot/tools/build.c가 하나의 이미지로 합친다.
+
+\chapter{SETUP}
+커널의 첫 섹터인 bootsect는 2.6이전에 플로피디스크로 부팅하는 코드다. 이제 이 기능은 지원하지 않기 때문에 bootsect로 진입하면 에러메세지를 출력한다. 
+bootsect의 일부와 setup의 첫부분에는 커널의 옵션들이 담긴 header가 있어서 부트로더과 커널은 이 부분의 정보를 참조한다.\\\\
+ 부트로더는 커널을 로드하는 작업을 마치면 setup으로 제어권을 넘긴다. MBR로 부팅하면 16비트(real mode)로 시작되기 때문에 확장된 기능들을 사용하려면 순차적으로 32비트(protected mode)와 64비트(long mode)로 넘어가야 한다. setup은 본 커널로 들어가기 전에 일부 초기화를 하고 보호모드로 전환한다.
+
+\section{header} %arch/x86/boot/header.S
+header 정보는 첫번째 섹터와 두번째 섹터에 걸쳐있다. \footnote{arch/x86/boot/header.S}\\
+\begin{lstlisting}[label=lst:header1,caption=arch/x86/boot/header.S]
+	.section ".header", "a"
+	.globl	hdr
+hdr:
+setup_sects:	.byte 0			/* Filled in by build.c */
+root_flags:	.word ROOT_RDONLY
+syssize:	.long 0			/* Filled in by build.c */
+ram_size:	.word 0			/* Obsolete */
+\end{lstlisting}
+
+\autoref{lst:header1}은 header의 시작부분이다. \autoref{lst:setup.ld}로 497부터 header가 위치하는걸 알 수 있다.
+
+\begin{lstlisting}[label=lst:setup.ld,caption=arch/x86/boot/setup.ld]
+	. = 0;
+	.bstext		: { *(.bstext) }
+	.bsdata		: { *(.bsdata) }
+
+	. = 497;
+	.header		: { *(.header) }
+\end{lstlisting}
+
+
+두번째 섹터(setup)에는 start\_of\_setup로의 점프코드가 있고 그 뒤에 나머지 header가 있다.\\
+start\_of\_setup에서는 ds와 ss가 다르면 스택재계산을 하고 bss를 초기화하고 main을 호출한다.\footnote{돌아오지 않는 call이다. ret하면 ``No setup signature found..''를 출력하고 멈춘다.}
+
+\section{arch/x86/boot/main.c}
+아래는 main.c에 있는 함수들 목록과 기능 목록들이다.\\
+
+\begin{tabular}{|c|c|} \hline
+함수명 & 기능 \\\hline
+copy\_boot\_params() & boot\_params.hdr로 header 복사 \\\hline
+console\_init() & earlyprintk 옵션이 확인 \& 시리얼 포트 초기화 \\\hline
+init\_heap() & header 참조해서 heap\_end 설정\\\hline
+validate\_cpu()	 & CPU 레벨(386,486,...,64비트) 체크\\\hline
+set\_bios\_mode() & BIOS에 64비트 사용을 알린다. \\\hline
+detect\_memory() & e820, e801, 88 메모리 정보 수집\\\hline
+keyboard\_set\_repeat() & 키입력 대기/반복 주기를 최대로 설정 \\\hline
+query\_mca() & BIOS를 통해 MCA 정보 수집 \\\hline
+query\_ist() & Intel speed step 정보 수집 \\\hline
+query\_apm\_bios() & APM 정보 수집 (요즘은 ACPI 사용)\\\hline
+query\_edd() & EDD 옵션 확인 및 EDD 정보 수집 \\\hline
+set\_video() & 기본 비디오 모드 탐색과 설정\\\hline
+go\_to\_protected\_mode() & a20, co-processor, idt, gdt 초기화\\
+& 인터럽트 금지, 보호모드 진입\\
+\hline
+
+\end{tabular}
+
+\section{arch/x86/boot/pm.c, arch/x86/boot/pmjump.S}
+pm.c은 간단한 초기화 후에 pretected\_mode\_jump함수를 호출한다. 이 때 커널이 점프할 주소\footnote{boot\_params.hdr.code32\_start : 보통 1M에 위치한다.}를 인자로 넘겨준다. 1M이상의 메모리는 16비트 모드에서 다룰수 없기 때문에 32비트로 전환한뒤 커널 본체가 있는 코드로 점프하게 될 것이다.
+
+PE비트를 켜서 보호모드로 들어가면 LDT와 TR을 더미 값으로 초기화한다.\footnote{intel vt이 테이블이 완전히 초기화 된 상황을 좋아하기 때문이다.}
+이제 setup는 끝나고 본격적인 커널로 들어간다.
+
+\chapter{COMPRESSED}
+커널은 보통 압축되어 있다. 먼저 압축을 풀어서 원하는 위치(보통 16M)에 위치시키는 코드가 필요하다.
+이 부분의 코드는 compress 디렉토리에 있다.
+\section{arch/x86/boot/compressed/head\_64.S}
+먼저 64비트 코드를 실행할 수 있는지 cpu 확인 후 커널을 위치시킬 곳을 계산한다. RELOCATABLE 옵션이 켜있으면 동적으로 계산하고 아니면 위치를 고정한다. 보통 압축푼 커널은 16M에 위치한다.\\
+head\_64는 startup\_32와 startup\_64가 있다.
+
+\subsection{startup\_32}
+\begin{enumerate}
+\item 임시로 gdt를 설정한다.
+\item PAE를 켠다. long mode로 가려면 PAE와 paging을 켜야 한다.
+\item 페이지 6개(24KB)를 0으로 초기화
+\item LV4 1, LV3 1, LV2 4페이지를 할당해 4GB의 가상메모리의 공간을 물리주소에 1:1로 2M단위 페이징한다.
+\item MSR의 EFER비트를 켜서 64비트(long mode)로 진입한다.
+\item 스택에 주소를 넣고 long return하는 방법으로 startup\_64로 점프한다.
+\end{enumerate}
+
+\subsection{startup\_64}
+\begin{enumerate}
+\item 세그먼트, ldt, tss 재설정
+\item 64비트로 압축풀 위치를 재계산한다.\\
+여기서 사용되는 z\_extract\_offset 값은 mkpiggy.c로 생성된 piggy.S로 구해지는데 압축풀린크기-압축된크기에 약간의 공간을 더해준 것이다.
+\item 1M에 위치한 현재 코드를 16M부터 압축풀릴 길이만큼 뒤에 복사한다.
+\item 복사한 코드로 점프
+\item BSS 초기화
+\item 압축해제
+\item 섹션을 LMA로 재배치
+\item 압축푼 커널위치로 점프
+\end{enumerate}
+
+\chapter{KERNEL}
+드디어 진짜 커널로 들어왔다.
+어셈블리 코드로 몇가지 초기화 작업을 해준 뒤에 c 코드로 넘어간다.
+\section{arch/x86/kernel/head\_64.S}
+작업 순서는 다음과 같다.
+\begin{enumerate}
+\item 실행중인 코드시작위치와 컴파일 위치의 차이를 구해 페이징 계산에 더해준다.
+\item 전체적인 임시 paging map을 만든다.
+\item secondary\_startup\_64로 점프한다. 나중에 trampoline에서 이쪽을 사용한다.
+\item PAE와 PGE를 켜고 cr3에 페이징 맵을 재설정한다.
+\item SYSCALL과 No Execute 관련 비트를 EFER에서 설정
+\item early\_gdt\_descr로 gdt 설정 & 세그먼트 초기화
+\item x86\_64\_start\_kernel로 점프
+\end{enumerate}
+\section{arch/x86/kernel/head64.c}
+x86\_64\_start\_kernel는 head64.c에 있다.
+\section{init/main.c}
+
+
+%\includegraphics{cpu_dev_struct.jpg}
+
+\end{CJK}
+\end{document}
+
