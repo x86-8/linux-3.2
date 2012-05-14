@@ -35,11 +35,11 @@
 	.section ".x86_trampoline","a"
 	.balign PAGE_SIZE
 	.code16
-
+		/* 다른 코어들을 깨웠을때 리얼모드에서 64비트 모드로 진입하게 하는 코드로 추측 */
 ENTRY(trampoline_data)
 r_base = .
 	cli			# We should be safe anyway
-	wbinvd
+	wbinvd						/* 안전제일 캐시기록 */
 	mov	%cs, %ax	# Code and data in the same place
 	mov	%ax, %ds
 	mov	%ax, %es

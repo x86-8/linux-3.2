@@ -37,6 +37,7 @@ typedef struct raw_spinlock {
 
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
 # define SPIN_DEP_MAP_INIT(lockname)	.dep_map = { .name = #lockname }
+/* 구조체 안의 구조체 */
 #else
 # define SPIN_DEP_MAP_INIT(lockname)
 #endif
@@ -55,7 +56,7 @@ typedef struct raw_spinlock {
 	.raw_lock = __ARCH_SPIN_LOCK_UNLOCKED,	\
 	SPIN_DEBUG_INIT(lockname)		\
 	SPIN_DEP_MAP_INIT(lockname) }
-
+/* raw_spinlock_t 구조체 멤버들을 초기화한다. */
 #define __RAW_SPIN_LOCK_UNLOCKED(lockname)	\
 	(raw_spinlock_t) __RAW_SPIN_LOCK_INITIALIZER(lockname)
 

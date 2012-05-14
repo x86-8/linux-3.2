@@ -6,6 +6,7 @@
 
 #define OLPC_OFW_SIG 0x2057464F	/* aka "OFW " */
 
+/* CONFIG_OLPC면 관련 함수를 extern 하고 아니면 빈 함수들이다. */
 #ifdef CONFIG_OLPC
 
 extern bool olpc_ofw_is_installed(void);

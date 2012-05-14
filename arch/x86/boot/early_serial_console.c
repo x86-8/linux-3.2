@@ -20,15 +20,22 @@
 
 #define DEFAULT_BAUD 9600
 
-static void early_serial_init(int port, int baud)
+/**
+ @brief		Serial 통신을 위한 초기화를 행한다.
+ */
+static void
+early_serial_init(
+		int port, 	///< Base Port
+		int baud	///< Baud rate
+		)
 {
 	unsigned char c;
 	unsigned divisor;
 
 	outb(0x3, port + LCR);	/* 8n1 */
-	outb(0, port + IER);	/* no interrupt */
-	outb(0, port + FCR);	/* no fifo */
-	outb(0x3, port + MCR);	/* DTR + RTS */
+	outb(0, port + IER);	/* no interrupt */ // 인터럽트 금지
+	outb(0, port + FCR);	/* no fifo */ // fifo 초기화
+	outb(0x3, port + MCR);	/* DTR + RTS */ // data to request, request to send
 
 	divisor	= 115200 / baud;
 	c = inb(port + LCR);
@@ -40,14 +47,18 @@ static void early_serial_init(int port, int baud)
 	early_serial_base = port;
 }
 
+/**
+ @brief	command line 에 설정된 옵션 중, earlyprintk 옵션의 설정 여부를 확인하고,
+	 설정되어 있다면 설정값으로 serial Port를 초기화한다.
+ */
 static void parse_earlyprintk(void)
 {
-	int baud = DEFAULT_BAUD;
+	int baud = DEFAULT_BAUD; // 9600
 	char arg[32];
 	int pos = 0;
 	int port = 0;
 
-	if (cmdline_find_option("earlyprintk", arg, sizeof arg) > 0) {
+	if (cmdline_find_option("earlyprintk", arg, sizeof arg) > 0) { // earlyprintk= 뒤에 오는 값이 arg에 들어간다.
 		char *e;
 
 		if (!strncmp(arg, "serial", 6)) {
@@ -66,12 +77,12 @@ static void parse_earlyprintk(void)
 		 */
 		if (pos == 7 && !strncmp(arg + pos, "0x", 2)) {
 			port = simple_strtoull(arg + pos, &e, 16);
-			if (port == 0 || arg + pos == e)
+			if (port == 0 || arg + pos == e) // 값이 없거나 port가 0이면 Default 포트 세팅
 				port = DEFAULT_SERIAL_PORT;
 			else
-				pos = e - arg;
+				pos = e - arg; // 다음 검사할 문자 arg+pos
 		} else if (!strncmp(arg + pos, "ttyS", 4)) {
-			static const int bases[] = { 0x3f8, 0x2f8 };
+			static const int bases[] = { 0x3f8, 0x2f8 }; // ttyS0 ttyS1
 			int idx = 0;
 
 			if (!strncmp(arg + pos, "ttyS", 4))
@@ -86,7 +97,7 @@ static void parse_earlyprintk(void)
 		if (arg[pos] == ',')
 			pos++;
 
-		baud = simple_strtoull(arg + pos, &e, 0);
+		baud = simple_strtoull(arg + pos, &e, 0); // baud rate를 long long으로 변환
 		if (baud == 0 || arg + pos == e)
 			baud = DEFAULT_BAUD;
 	}
@@ -111,7 +122,13 @@ static unsigned int probe_baud(int port)
 	return BASE_BAUD / quot;
 }
 
-static void parse_console_uart8250(void)
+
+/**
+ @brief	command line option 중, console 옵션의 설정 여부를 확인하고\n
+	 설정되어 있다면 설정 값으로 Serial port 를 초기화 한다.
+ */
+static void
+parse_console_uart8250(void)
 {
 	char optstr[64], *options;
 	int baud = DEFAULT_BAUD;
@@ -142,6 +159,10 @@ static void parse_console_uart8250(void)
 		early_serial_init(port, baud);
 }
 
+/**
+ @brief	Console 메시지 출력을 위한 Serial Port 초기화.
+	 earlyprintk 옵션과 console 옵션의 설정 여부를 확인하여 설정한다.
+ */
 void console_init(void)
 {
 	parse_earlyprintk();

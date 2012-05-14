@@ -137,7 +137,7 @@ static __always_inline void *kmalloc(size_t size, gfp_t flags)
 
 		if (!size)
 			return ZERO_SIZE_PTR;
-
+ // 할당할 크기가 캐시 크기보다 작으면 goto found
 #define CACHE(x) \
 		if (size <= x) \
 			goto found; \

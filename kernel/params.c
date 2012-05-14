@@ -104,7 +104,7 @@ static int parse_one(char *param,
 		if (parameq(param, params[i].name)) {
 			/* No one handled NULL, so do it here. */
 			if (!val && params[i].ops->set != param_set_bool)
-				return -EINVAL;
+				return -EINVAL;	/* invalid argument */
 			DEBUGP("They are equal!  Calling %p\n",
 			       params[i].ops->set);
 			mutex_lock(&param_lock);
@@ -136,8 +136,9 @@ static char *next_arg(char *args, char **param, char **val)
 		in_quote = 1;
 		quoted = 1;
 	}
-
+	/* args는 인자 시작 위치, i=파싱하는 위치, equals은 "=" 위치 */
 	for (i = 0; args[i]; i++) {
+	  /* 따옴표안이 아니고 공백이면 break */
 		if (isspace(args[i]) && !in_quote)
 			break;
 		if (equals == 0) {
@@ -153,9 +154,14 @@ static char *next_arg(char *args, char **param, char **val)
 		*val = NULL;
 	else {
 		args[equals] = '\0';
+		/* val 안에는 "=" 다음의 값에 대한 포인터가 들어간다. */
 		*val = args + equals + 1;
 
 		/* Don't include quotes in value. */
+		/* '"' 가 나오면 마지막 '"'를  null terminated string 으로 만들어준다.
+		 * 처음 if는 a=(val)"a+b" 에서 처음 if는 a="(val)a+b 로 만들어주고
+		 * 두번째 if는 "a=(val)a+b" 일때 끝에 '"'를 없애준다.
+		 */
 		if (**val == '"') {
 			(*val)++;
 			if (args[i-1] == '"')
@@ -172,10 +178,12 @@ static char *next_arg(char *args, char **param, char **val)
 		next = args + i;
 
 	/* Chew up trailing spaces. */
+	/* 다음에 오는 space들도 없앤다. */
 	return skip_spaces(next);
 }
 
 /* Args looks like "foo=bar,bar2 baz=fuz wiz". */
+/* parse_args("early options", cmdline, NULL, 0, do_early_param); */
 int parse_args(const char *name,
 	       char *args,
 	       const struct kernel_param *params,
@@ -187,6 +195,7 @@ int parse_args(const char *name,
 	DEBUGP("Parsing ARGS: %s\n", args);
 
 	/* Chew leading spaces */
+	/* 앞쪽에 스페이스를 다 없앤다. */
 	args = skip_spaces(args);
 
 	while (*args) {
@@ -195,6 +204,9 @@ int parse_args(const char *name,
 
 		args = next_arg(args, &param, &val);
 		irq_was_disabled = irqs_disabled();
+		/* val 에는 '=' 다음의 문자 포인터를 가르키고 
+		 * param 에는 args의 문자열 처음을 가르키는 포인터		 
+		 */
 		ret = parse_one(param, val, params, num, unknown);
 		if (irq_was_disabled && !irqs_disabled()) {
 			printk(KERN_WARNING "parse_args(): option '%s' enabled "

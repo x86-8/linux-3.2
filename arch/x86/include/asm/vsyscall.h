@@ -6,9 +6,12 @@ enum vsyscall_num {
 	__NR_vtime,
 	__NR_vgetcpu,
 };
-
+/* 끝에서 -10M  */
+/* start=0xFFFFFFFFFF600000  */
 #define VSYSCALL_START (-10UL << 20)
 #define VSYSCALL_SIZE 1024
+/* 끝에서 -2M  */
+/* end=0xFFFFFFFFFFE00000  */
 #define VSYSCALL_END (-2UL << 20)
 #define VSYSCALL_MAPPED_PAGES 1
 #define VSYSCALL_ADDR(vsyscall_nr) (VSYSCALL_START+VSYSCALL_SIZE*(vsyscall_nr))

@@ -386,17 +386,21 @@ static noinline void __init_refok rest_init(void)
 	cpu_idle();
 }
 
-/* Check for early params. */
+/* Check for early params. 
+ * init = ... init_setup
+ * console = ... 이면 console_setup 안에 있는 함수를 찾아본다.
+ */
 static int __init do_early_param(char *param, char *val)
 {
 	const struct obs_kernel_param *p;
 
 	for (p = __setup_start; p < __setup_end; p++) {
+	  /* early가 1이면 early 함수다 */
 		if ((p->early && parameq(param, p->str)) ||
 		    (strcmp(param, "console") == 0 &&
 		     strcmp(p->str, "earlycon") == 0)
 		) {
-			if (p->setup_func(val) != 0)
+			if (p->setup_func(val) != 0) /* 파라미터 처리 함수를 호출하고 실패하면 경고 */
 				printk(KERN_WARNING
 				       "Malformed early option '%s'\n", param);
 		}
@@ -433,6 +437,7 @@ static void __init boot_cpu_init(void)
 {
 	int cpu = smp_processor_id();
 	/* Mark the boot cpu "present", "online" etc for SMP and UP case */
+	/* 해당 cpu 비트에 해당하는 상태를(online,active,present,possible) 모두 true로 셋 */
 	set_cpu_online(cpu, true);
 	set_cpu_active(cpu, true);
 	set_cpu_present(cpu, true);
@@ -463,28 +468,42 @@ static void __init mm_init(void)
 	pgtable_cache_init();
 	vmalloc_init();
 }
-
+/* #define __init		__section(.init.text) __cold notrace
+ * __init 매크로는 함수를 .init 섹션에 몰아넣는다.
+ */
 asmlinkage void __init start_kernel(void)
 {
 	char * command_line;
 	extern const struct kernel_param __start___param[], __stop___param[];
 
-	smp_setup_processor_id();
+	smp_setup_processor_id();  /* weak으로 선언한 빈 함수 
+								* 특정 아키텍쳐에서만 함수가 존재한다.
+								*/
 
 	/*
 	 * Need to run as early as possible, to initialize the
 	 * lockdep hash:
 	 */
-	lockdep_init();
+	lockdep_init();				/* lockdep hash table list 초기화 */
 	debug_objects_early_init();
 
 	/*
 	 * Set up the the initial canary ASAP:
 	 */
-	boot_init_stack_canary();
+	boot_init_stack_canary();	/* 스택 오버플로우 방지를 위한 함수 초기화 */
 
-	cgroup_init_early();
+	cgroup_init_early();		/* cgroup을 재빨리 초기화 한다. */
+/** 
+ * local_irq_disable   
+ * arch_local_irq_disable -> native_irq_disable는 인터럽트를 금지(cli)
+ * native_irq_enable은 인터럽트 허용(sti)
+ */
 
+/* local_irq_enable/disable은 인터럽트를 허용/금지한다.
+ * local_irq_save는 플래그 상태를 인자에 저장하고 인터럽트를 금지한다.
+ * local_irq_restore는 플래그 상태를 복원한다. 때문에 인터럽트 허용/금지상태까지 복원한다.
+ * local_irq_save/restore -> raw_local_irq_save/restore -> native_save/restore_fl
+ */
 	local_irq_disable();
 	early_boot_irqs_disabled = true;
 
@@ -492,11 +511,11 @@ asmlinkage void __init start_kernel(void)
  * Interrupts are still disabled. Do necessary setups, then
  * enable them
  */
-	tick_init();
+	tick_init(); // 참조: http://blog.daum.net/english_100/69
 	boot_cpu_init();
-	page_address_init();
+	page_address_init();	   
 	printk(KERN_NOTICE "%s", linux_banner);
-	setup_arch(&command_line);
+	setup_arch(&command_line);	/* 아키텍쳐 의존된 초기화부분 */
 	mm_init_owner(&init_mm, &init_task);
 	mm_init_cpumask(&init_mm);
 	setup_command_line(command_line);
@@ -632,7 +651,7 @@ asmlinkage void __init start_kernel(void)
 	taskstats_init_early();
 	delayacct_init();
 
-	check_bugs();
+	check_bugs();		/* alternative 코드도 검사/치환 */
 
 	acpi_early_init(); /* before LAPIC and SMP init */
 	sfi_init_late();

@@ -195,7 +195,7 @@ static inline int flag_is_changeable_p(u32 flag)
 		      "pushfl		\n\t"
 		      "popl %0		\n\t"
 		      "movl %0, %1	\n\t"
-		      "xorl %2, %0	\n\t"
+		      "xorl %2, %0	\n\t" /* 다르게 만든다. */
 		      "pushl %0		\n\t"
 		      "popfl		\n\t"
 		      "pushfl		\n\t"
@@ -205,13 +205,17 @@ static inline int flag_is_changeable_p(u32 flag)
 		      : "=&r" (f1), "=&r" (f2)
 		      : "ir" (flag));
 
+	/* flag를 변화시킬수 있다면 xor하면 특정비트(flag)는 1이 된다.
+	 * 결국 플래그를 변화시킬수 있다면 TRUE를 리턴한다.
+     */
 	return ((f1^f2) & flag) != 0;
 }
 
 /* Probe for the CPUID instruction */
 static int __cpuinit have_cpuid_p(void)
 {
-	return flag_is_changeable_p(X86_EFLAGS_ID);
+	return flag_is_changeable_p(X86_EFLAGS_ID); /* CPUID를 지원하는지 체크 */
+	/* 32비트면 플래그를 바꿔보고 체크하고 64비면 무조건 참 */
 }
 
 static void __cpuinit squash_the_stupid_serial_number(struct cpuinfo_x86 *c)
@@ -270,7 +274,7 @@ static __cpuinit void setup_smep(struct cpuinfo_x86 *c)
 			setup_clear_cpu_cap(X86_FEATURE_SMEP);
 			clear_in_cr4(X86_CR4_SMEP);
 		} else
-			set_in_cr4(X86_CR4_SMEP);
+			set_in_cr4(X86_CR4_SMEP); /* 보통은 켜준다. */
 	}
 }
 
@@ -298,7 +302,7 @@ static void __cpuinit filter_cpuid_features(struct cpuinfo_x86 *c, bool warn)
 
 	for (df = cpuid_dependent_features; df->feature; df++) {
 
-		if (!cpu_has(c, df->feature))
+		if (!cpu_has(c, df->feature)) /* CPU에 특정 비트가 있는지 체크 */
 			continue;
 		/*
 		 * Note: cpuid_level is set to -1 if unavailable, but
@@ -307,13 +311,17 @@ static void __cpuinit filter_cpuid_features(struct cpuinfo_x86 *c, bool warn)
 		 * when signed; hence the weird messing around with
 		 * signs here...
 		 */
+		/* df->level이 음수면 extended cpuid level, 아니면 cpuid level
+		 * cpu level이 위의 df level의 feature를 지원하지 않으면 루프 continue
+		 * cpu level이 위의 feature를 지원하는 레벨이면 해당 feature를 clear한다.
+		 */
 		if (!((s32)df->level < 0 ?
 		     (u32)df->level > (u32)c->extended_cpuid_level :
 		     (s32)df->level > (s32)c->cpuid_level))
 			continue;
 
-		clear_cpu_cap(c, df->feature);
-		if (!warn)
+		clear_cpu_cap(c, df->feature); /* 해당 기능을 clear하고 clear한 비트를 표시한다. */
+		if (!warn)				/* false면 프린트하지 않는다. */
 			continue;
 
 		printk(KERN_WARNING
@@ -379,6 +387,8 @@ void switch_to_new_gdt(int cpu)
 
 	load_percpu_segment(cpu);
 }
+
+/* __cpuinitdata은 .cpuinit.data 섹션 매크로 */
 
 static const struct cpu_dev *__cpuinitdata cpu_devs[X86_VENDOR_NUM] = {};
 
@@ -506,15 +516,15 @@ static void __cpuinit get_cpu_vendor(struct cpuinfo_x86 *c)
 	char *v = c->x86_vendor_id;
 	int i;
 
-	for (i = 0; i < X86_VENDOR_NUM; i++) {
+	for (i = 0; i < X86_VENDOR_NUM; i++) { /* x86 cpu 벤더 수 */
 		if (!cpu_devs[i])
 			break;
-
-		if (!strcmp(v, cpu_devs[i]->c_ident[0]) ||
-		    (cpu_devs[i]->c_ident[1] &&
+		/* cpu_dev의 c_ident는 AuthenticAMD, GenuineIntel등 문자열과 현재 CPU(CPUID)의 문자열을 비교한다. */
+		if (!strcmp(v, cpu_devs[i]->c_ident[0]) || /* 둘중에 하나만 같으면 OK */
+		    (cpu_devs[i]->c_ident[1] && /* 두번째 ident도 있으면 비교 */
 		     !strcmp(v, cpu_devs[i]->c_ident[1]))) {
 
-			this_cpu = cpu_devs[i];
+			this_cpu = cpu_devs[i]; /* 바로 이 cpu */
 			c->x86_vendor = this_cpu->c_x86_vendor;
 			return;
 		}
@@ -525,27 +535,28 @@ static void __cpuinit get_cpu_vendor(struct cpuinfo_x86 *c)
 			"CPU: Your system may be unstable.\n", v);
 
 	c->x86_vendor = X86_VENDOR_UNKNOWN;
-	this_cpu = &default_cpu;
+	this_cpu = &default_cpu;	/* 없으면 UNKNOWN */
 }
 
 void __cpuinit cpu_detect(struct cpuinfo_x86 *c)
 {
 	/* Get vendor name */
+  /* eax는 CPUID level이며 기능의 최대 번호. Maximum Input Value for Basic CPUID Information */
 	cpuid(0x00000000, (unsigned int *)&c->cpuid_level,
 	      (unsigned int *)&c->x86_vendor_id[0],
 	      (unsigned int *)&c->x86_vendor_id[8],
 	      (unsigned int *)&c->x86_vendor_id[4]);
-
+		/* 테스트해본 결과 level이 qemu 64비트에서는 4, core2 duo에서는 10이었다 */
 	c->x86 = 4;
 	/* Intel-defined flags: level 0x00000001 */
 	if (c->cpuid_level >= 0x00000001) {
 		u32 junk, tfms, cap0, misc;
-
-		cpuid(0x00000001, &tfms, &misc, &junk, &cap0);
+		/* tfms = type, family, model, stepping */
+		cpuid(0x00000001, &tfms, &misc, &junk, &cap0); /* CPUID 명령어 1번 기능 eax,ebx,ecx,edx */
 		c->x86 = (tfms >> 8) & 0xf;
 		c->x86_model = (tfms >> 4) & 0xf;
 		c->x86_mask = tfms & 0xf;
-
+		/* cpu 정보들을 넣어준다. 자세한 설명은 생략한다. */
 		if (c->x86 == 0xf)
 			c->x86 += (tfms >> 20) & 0xff;
 		if (c->x86 >= 0x6)
@@ -580,7 +591,7 @@ void __cpuinit get_cpu_cap(struct cpuinfo_x86 *c)
 
 		c->x86_capability[9] = ebx;
 	}
-
+	/* 확장된 기능 */
 	/* AMD-defined flags: level 0x80000001 */
 	xlvl = cpuid_eax(0x80000000);
 	c->extended_cpuid_level = xlvl;
@@ -617,7 +628,8 @@ static void __cpuinit identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
 	/*
 	 * First of all, decide if this is a 486 or higher
 	 * It's a 486 if we can modify the AC flag
-	 */
+	 */							
+     /* 플래그를 변경해봐서 기종 체크 */
 	if (flag_is_changeable_p(X86_EFLAGS_AC))
 		c->x86 = 4;
 	else
@@ -655,9 +667,9 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 	c->x86_phys_bits = 32;
 	c->x86_virt_bits = 32;
 #endif
-	c->x86_cache_alignment = c->x86_clflush_size;
+	c->x86_cache_alignment = c->x86_clflush_size; /* cache line flush */
 
-	memset(&c->x86_capability, 0, sizeof c->x86_capability);
+	memset(&c->x86_capability, 0, sizeof c->x86_capability); /* 죄다 0 */
 	c->extended_cpuid_level = 0;
 
 	if (!have_cpuid_p())
@@ -667,25 +679,26 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 	if (!have_cpuid_p())
 		return;
 
-	cpu_detect(c);
+	cpu_detect(c);				/* CPUID로 cpu 확인 */
 
-	get_cpu_vendor(c);
+	get_cpu_vendor(c);			/* 벤더 확인 */
 
-	get_cpu_cap(c);
+	get_cpu_cap(c);				/* CPU의 확장된 정보를 넣어준다. */
 
 	if (this_cpu->c_early_init)
-		this_cpu->c_early_init(c);
+		this_cpu->c_early_init(c); /* 이 cpu (intel,amd,...)의 이른 초기화 */
 
 #ifdef CONFIG_SMP
 	c->cpu_index = 0;
 #endif
 	filter_cpuid_features(c, false);
 
-	setup_smep(c);
+	setup_smep(c);				/* supervisor mode execution protection인가? */
 
 	if (this_cpu->c_bsp_init)
 		this_cpu->c_bsp_init(c);
 }
+/* http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/59572c5d-05a4-492f-b52e-4823d9fa7a88 */
 
 void __init early_cpu_init(void)
 {
@@ -695,13 +708,18 @@ void __init early_cpu_init(void)
 #ifdef CONFIG_PROCESSOR_SELECT
 	printk(KERN_INFO "KERNEL supported cpus:\n");
 #endif
+	/* __x86_cpu_dev_start 는 .x86_cpu_dev.init 섹션의 시작지점이다.
+	 * arch/x86/kernel/cpu/Makefile 과 ld 스크립트 참조
+	 * 각각의 cpu 파일(intel.c ...)에서 cpu_dev_register 매크로에 의해 .x86_cpu_dev.init 섹션에 들어간다.
+	 * 
+	 */
 
 	for (cdev = __x86_cpu_dev_start; cdev < __x86_cpu_dev_end; cdev++) {
-		const struct cpu_dev *cpudev = *cdev;
+		const struct cpu_dev *cpudev = *cdev; /* 각 cpu 구조체 주소 intel_cpu_dev ... */
 
-		if (count >= X86_VENDOR_NUM)
+		if (count >= X86_VENDOR_NUM) /* x86의 벤더수  */
 			break;
-		cpu_devs[count] = cpudev;
+		cpu_devs[count] = cpudev; /* cpu 구조체들 배열에 하나씩 넣는다. */
 		count++;
 
 #ifdef CONFIG_PROCESSOR_SELECT
@@ -712,7 +730,7 @@ void __init early_cpu_init(void)
 				if (!cpudev->c_ident[j])
 					continue;
 				printk(KERN_INFO "  %s %s\n", cpudev->c_vendor,
-					cpudev->c_ident[j]);
+					cpudev->c_ident[j]); /* vendor와 ID "Intel" "GenuineIntel" 등의 CPU 정보 출력 */
 			}
 		}
 #endif
@@ -742,12 +760,12 @@ static void __cpuinit generic_identify(struct cpuinfo_x86 *c)
 {
 	c->extended_cpuid_level = 0;
 
-	if (!have_cpuid_p())
+	if (!have_cpuid_p())		/* cpuid 명령어를 지원안하면 다른방법으로 탐색 */
 		identify_cpu_without_cpuid(c);
 
 	/* cyrix could have cpuid enabled via c_identify()*/
 	if (!have_cpuid_p())
-		return;
+		return;					/* 함수 끝 */
 
 	cpu_detect(c);
 

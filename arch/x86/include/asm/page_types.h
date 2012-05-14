@@ -7,6 +7,8 @@
 /* PAGE_SHIFT determines the page size */
 #define PAGE_SHIFT	12
 #define PAGE_SIZE	(_AC(1,UL) << PAGE_SHIFT)
+/* PAGE 번호를 구하려면 PAGE_MASK와 and 하면 된다 */
+/* PAGE_MASK 는 0x11111...00000 */
 #define PAGE_MASK	(~(PAGE_SIZE-1))
 
 #define __PHYSICAL_MASK		((phys_addr_t)((1ULL << __PHYSICAL_MASK_SHIFT) - 1))
@@ -17,6 +19,7 @@
    (ie, 32-bit PAE). */
 #define PHYSICAL_PAGE_MASK	(((signed long)PAGE_MASK) & __PHYSICAL_MASK)
 
+ /* 2M = PMD 하나의 크기 */
 #define PMD_PAGE_SIZE		(_AC(1, UL) << PMD_SHIFT)
 #define PMD_PAGE_MASK		(~(PMD_PAGE_SIZE-1))
 

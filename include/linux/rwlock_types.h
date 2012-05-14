@@ -38,6 +38,7 @@ typedef struct {
 				.owner_cpu = -1,			\
 				RW_DEP_MAP_INIT(lockname) }
 #else
+/* 바이어스 값으로 초기화 */
 #define __RW_LOCK_UNLOCKED(lockname) \
 	(rwlock_t)	{	.raw_lock = __ARCH_RW_LOCK_UNLOCKED,	\
 				RW_DEP_MAP_INIT(lockname) }

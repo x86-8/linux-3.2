@@ -67,16 +67,16 @@ unsigned int atou(const char *s)
 
 /* Works only for digits and letters, but small and fast */
 #define TOLOWER(x) ((x) | 0x20)
-
+/* 앞쪽에 붙는수 보고 n진수 리턴 */
 static unsigned int simple_guess_base(const char *cp)
 {
 	if (cp[0] == '0') {
 		if (TOLOWER(cp[1]) == 'x' && isxdigit(cp[2]))
-			return 16;
+			return 16; // 0x(hexa) 값이면 16진수
 		else
-			return 8;
+			return 8; // 0 이면 8진수
 	} else {
-		return 10;
+		return 10; // 없으면 10진수
 	}
 }
 
@@ -86,28 +86,28 @@ static unsigned int simple_guess_base(const char *cp)
  * @endp: A pointer to the end of the parsed string will be placed here
  * @base: The number base to use
  */
-
+/* 숫자로된 아스키 문자열을 long long 형태의 숫자로 바꾼다. */
 unsigned long long simple_strtoull(const char *cp, char **endp, unsigned int base)
 {
-	unsigned long long result = 0;
+	unsigned long long result = 0; // 부호없는 64비트 정수
 
 	if (!base)
-		base = simple_guess_base(cp);
+		base = simple_guess_base(cp);  // 요청없을때
 
-	if (base == 16 && cp[0] == '0' && TOLOWER(cp[1]) == 'x')
+	if (base == 16 && cp[0] == '0' && TOLOWER(cp[1]) == 'x') // 16진수 확인
 		cp += 2;
 
 	while (isxdigit(*cp)) {
 		unsigned int value;
 
-		value = isdigit(*cp) ? *cp - '0' : TOLOWER(*cp) - 'a' + 10;
-		if (value >= base)
+		value = isdigit(*cp) ? *cp - '0' : TOLOWER(*cp) - 'a' + 10; // 0-9면 -'0' a-f면 -'a'
+		if (value >= base) // 진수보다 값이 크면 중단
 			break;
-		result = result * base + value;
+		result = result * base + value; // 기수로 한자리 올린다.
 		cp++;
 	}
-	if (endp)
-		*endp = (char *)cp;
+	if (endp) // null인지? 
+		*endp = (char *)cp; // 끝난지점
 
 	return result;
 }

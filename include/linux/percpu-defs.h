@@ -84,9 +84,10 @@
  * Variant on the per-CPU variable declaration/definition theme used for
  * ordinary per-CPU variables.
  */
+  /* 변수를 export 한다. */
 #define DECLARE_PER_CPU(type, name)					\
 	DECLARE_PER_CPU_SECTION(type, name, "")
-
+ /* 변수를 선언한다. */
 #define DEFINE_PER_CPU(type, name)					\
 	DEFINE_PER_CPU_SECTION(type, name, "")
 

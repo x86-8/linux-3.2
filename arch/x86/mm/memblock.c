@@ -242,9 +242,9 @@ u64 __init memblock_x86_memory_in_range(u64 addr, u64 limit)
 
 void __init memblock_x86_reserve_range(u64 start, u64 end, char *name)
 {
-	if (start == end)
+	if (start == end)	/* 크기가 0이면 리턴 */
 		return;
-
+	/* 워닝! 워닝! */
 	if (WARN_ONCE(start > end, "memblock_x86_reserve_range: wrong range [%#llx, %#llx)\n", start, end))
 		return;
 

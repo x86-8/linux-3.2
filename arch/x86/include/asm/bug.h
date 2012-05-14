@@ -12,6 +12,12 @@
 # define __BUG_C0	"2:\t.long 1b - 2b, %c0 - 2b\n"
 #endif
 
+/* UD2는 undefined instruction */
+/* http://sourceware.org/binutils/docs/as/PushSection.html */
+/* 정의되지 않은 인스트럭션은 6번 invalid opcode exception - IRQ를 발생시킨다. */
+/* 아마도 디버깅을 위해 파일과 라인 정보를 __bug_table에 남기는것 같다. */
+/* __FILE__과 __LINE__은 현재 파일과 라인 */
+/* unreachable은 실행되지 않는다는걸 컴파일러에게 알려준다. 리턴값이 없어도 에러를 내지 않는다.  http://stackoverflow.com/questions/6031819/emulating-gccs-builtin-unreachable */
 #define BUG()							\
 do {								\
 	asm volatile("1:\tud2\n"				\

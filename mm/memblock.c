@@ -118,25 +118,27 @@ static phys_addr_t __init_memblock memblock_find_base(phys_addr_t size,
 
 	/* Pump up max_addr */
 	if (end == MEMBLOCK_ALLOC_ACCESSIBLE)
-		end = memblock.current_limit;
+		end = memblock.current_limit; /* 한계는 64비트 끝 */
 
 	/* We do a top-down search, this tends to limit memory
 	 * fragmentation by keeping early boot allocs near the
 	 * top of memory
 	 */
+	/* 뒤쪽부터 할당가능한 memblock을 검색 */
 	for (i = memblock.memory.cnt - 1; i >= 0; i--) {
 		phys_addr_t memblockbase = memblock.memory.regions[i].base;
 		phys_addr_t memblocksize = memblock.memory.regions[i].size;
 		phys_addr_t bottom, top, found;
 
-		if (memblocksize < size)
+		if (memblocksize < size) /* 할당할 크기보다 큰 메모리 블럭을 찾는다 */
 			continue;
-		if ((memblockbase + memblocksize) <= start)
+		if ((memblockbase + memblocksize) <= start) /* start보다 작으면 안된다 */
 			break;
-		bottom = max(memblockbase, start);
-		top = min(memblockbase + memblocksize, end);
+		bottom = max(memblockbase, start); /* 둘중에 큰 start값 */
+		top = min(memblockbase + memblocksize, end); /* 둘중 작은 end 값 (한계값 이하) */
 		if (bottom >= top)
 			continue;
+		/* botoom과 top은 memblock의 보통 start end값이 온다. */
 		found = memblock_find_region(bottom, top, size, align);
 		if (found != MEMBLOCK_ERROR)
 			return found;
@@ -175,7 +177,10 @@ int __init_memblock memblock_reserve_reserved_regions(void)
 	return memblock_reserve(__pa(memblock.reserved.regions),
 		 sizeof(struct memblock_region) * memblock.reserved.max);
 }
-
+/* r값을 삭제하고 뒤에있는걸 하나씩 앞당긴다
+ * 카운트 감소
+ * 0이면 초기화한다.
+ */
 static void __init_memblock memblock_remove_region(struct memblock_type *type, unsigned long r)
 {
 	unsigned long i;
@@ -197,6 +202,7 @@ static void __init_memblock memblock_remove_region(struct memblock_type *type, u
 /* Defined below but needed now */
 static long memblock_add_region(struct memblock_type *type, phys_addr_t base, phys_addr_t size);
 
+/* memblock을 더할때 max를 초과하면 두배로 확장한다 */
 static int __init_memblock memblock_double_array(struct memblock_type *type)
 {
 	struct memblock_region *new_array, *old_array;
@@ -206,12 +212,13 @@ static int __init_memblock memblock_double_array(struct memblock_type *type)
 	/* We don't allow resizing until we know about the reserved regions
 	 * of memory that aren't suitable for allocation
 	 */
+	/* 특정 시점 이전에는 못한다. */
 	if (!memblock_can_resize)
 		return -1;
 
 	/* Calculate new doubled size */
-	old_size = type->max * sizeof(struct memblock_region);
-	new_size = old_size << 1;
+	old_size = type->max * sizeof(struct memblock_region); /* 기존의 최대값 * 구조체 크기 */
+	new_size = old_size << 1;			       /* 기존의 두배면 기쁨도 두배 사랑도 두배 */
 
 	/* Try to find some space for it.
 	 *
@@ -225,10 +232,12 @@ static int __init_memblock memblock_double_array(struct memblock_type *type)
 	 * active for memory hotplug operations
 	 */
 	if (use_slab) {
+		/* 슬랩을 사용가능하면 메모리 할당 */
 		new_array = kmalloc(new_size, GFP_KERNEL);
 		addr = new_array == NULL ? MEMBLOCK_ERROR : __pa(new_array);
 	} else
 		addr = memblock_find_base(new_size, sizeof(phys_addr_t), 0, MEMBLOCK_ALLOC_ACCESSIBLE);
+	/* 에러체크 (!= 0) */
 	if (addr == MEMBLOCK_ERROR) {
 		pr_err("memblock: Failed to double %s array from %ld to %ld entries !\n",
 		       memblock_type_name(type), type->max, type->max * 2);
@@ -243,8 +252,8 @@ static int __init_memblock memblock_double_array(struct memblock_type *type)
 	 * we add the reserved region since it may be our reserved
 	 * array itself that is full.
 	 */
-	memcpy(new_array, type->regions, old_size);
-	memset(new_array + type->max, 0, old_size);
+	memcpy(new_array, type->regions, old_size); /* 복사! */
+	memset(new_array + type->max, 0, old_size); /* 늘린 공간을 set */
 	old_array = type->regions;
 	type->regions = new_array;
 	type->max <<= 1;
@@ -281,25 +290,38 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 	int i, slot = -1;
 
 	/* First try and coalesce this MEMBLOCK with others */
+	/* 아래의 for문 안의 if들은 앞뒤의 겹치는 블럭들을 merge 한다.
+	 * 서로 다른 비교/처리를 하는 것은 그 때문이다.
+	 * base가 rgn의 앞으로 겹치면 rgn 블럭을 늘리고
+	 * base가 rgn의 뒷부분으로 겹치면 rgn 블럭을 삭제한다.
+	 */
 	for (i = 0; i < type->cnt; i++) {
 		struct memblock_region *rgn = &type->regions[i];
 		phys_addr_t rend = rgn->base + rgn->size;
 
 		/* Exit if there's no possible hits */
+		/* 있을수 없는 예외처리 */
 		if (rgn->base > end || rgn->size == 0)
 			break;
 
 		/* Check if we are fully enclosed within an existing
 		 * block
 		 */
+		/* 예전 memblock(rgn->base ~ rend) 안에 현재 (base ~ end)영역이 포함되면 에ror
+		 * 둘다 적은 번지로 가던지, 둘다 큰 번지로 가야한다
+		 */
 		if (rgn->base <= base && rend >= end)
 			return 0;
-
 		/* Check if we overlap or are adjacent with the bottom
 		 * of a block.
 		 */
+		/* 인자로 들어온 현재 영역이 rgn의 앞쪽부터 겹치는 상황이면 */
 		if (base < rgn->base && end >= rgn->base) {
 			/* If we can't coalesce, create a new block */
+			/* weak으로 선언되어 x86에서는 무조건 1이다.
+			 * 상호 배타적으로 합체가 불가능하면 prepared 해야한다
+			 * 아래 if는 실행되지 않는다. (new_block을 생성하지 않음)
+			 */
 			if (!memblock_memory_can_coalesce(base, size,
 							  rgn->base,
 							  rgn->size)) {
@@ -313,17 +335,24 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 			/* We extend the bottom of the block down to our
 			 * base
 			 */
+			/* 두 영역을 합친다 */
 			rgn->base = base;
 			rgn->size = rend - base;
 
 			/* Return if we have nothing else to allocate
 			 * (fully coalesced)
 			 */
+			/* rend가 더 크면 rgn을 늘렸으니 리턴
+			 * 새 블럭을 생성할 필요가 없다
+			 */
 			if (rend >= end)
 				return 0;
 
 			/* We continue processing from the end of the
 			 * coalesced block.
+			 */
+			/* end가 rend보다 크면 rend부터 블럭 하나를
+			 * 더 생성하기 위해 아래로 간다
 			 */
 			base = rend;
 			size = end - base;
@@ -332,6 +361,7 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 		/* Now check if we overlap or are adjacent with the
 		 * top of a block
 		 */
+		/* 이 부분은 현재 값이 rgn의 뒷부분에 겹치는 상황 */
 		if (base <= rend && end >= rend) {
 			/* If we can't coalesce, create a new block */
 			if (!memblock_memory_can_coalesce(rgn->base,
@@ -351,6 +381,10 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 			 * to allocate one later, so we won't risk
 			 * losing the original block allocation.
 			 */
+			/* 늘릴만큼 size 증가
+			 * 예전 블럭을 생성하고 합친 크기로 생성한다.
+			 * i는 배열 번호, type은 배열 포인터
+			 */
 			size += (base - rgn->base);
 			base = rgn->base;
 			memblock_remove_region(type, i--);
@@ -359,6 +393,10 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 
 	/* If the array is empty, special case, replace the fake
 	 * filler region and return
+	 */
+	/* memblock_init후 처음이면 인자로 넘어온
+	 * base와 size 입력
+	 * 앞쪽에 예외처리가 앞쪽에 있다면 if 비교를 들어올때마다 실행하게 된다
 	 */
 	if ((type->cnt == 1) && (type->regions[0].size == 0)) {
 		type->regions[0].base = base;
@@ -370,10 +408,11 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 	/* If we are out of space, we fail. It's too late to resize the array
 	 * but then this shouldn't have happened in the first place.
 	 */
-	if (WARN_ON(type->cnt >= type->max))
+	if (WARN_ON(type->cnt >= type->max)) /* 최대값보다 크면 에러에러에러 */
 		return -1;
 
 	/* Couldn't coalesce the MEMBLOCK, so add it to the sorted table. */
+	/* 뒤에서부터 for문을 돌면서 해당 위치가 있을때까지 뒤로 밀어낸다. */
 	for (i = type->cnt - 1; i >= 0; i--) {
 		if (base < type->regions[i].base) {
 			type->regions[i+1].base = type->regions[i].base;
@@ -385,12 +424,13 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 			break;
 		}
 	}
+	/* 0보다 작으면 나는 0이다! */
 	if (base < type->regions[0].base) {
 		type->regions[0].base = base;
 		type->regions[0].size = size;
 		slot = 0;
 	}
-	type->cnt++;
+	type->cnt++;		/* 갯수 증가 */
 
 	/* The array is full ? Try to resize it. If that fails, we undo
 	 * our allocation and return an error
@@ -473,10 +513,10 @@ long __init_memblock memblock_free(phys_addr_t base, phys_addr_t size)
 
 long __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
 {
-	struct memblock_type *_rgn = &memblock.reserved;
+	struct memblock_type *_rgn = &memblock.reserved; /* 전역변수의 reserved 할당 */
 
 	BUG_ON(0 == size);
-
+/* base부터 size만큼 사용한다고 reserved 배열에 표시한다. */
 	return memblock_add_region(_rgn, base, size);
 }
 
@@ -787,15 +827,16 @@ void __init memblock_init(void)
 	init_done = 1;
 
 	/* Hookup the initial arrays */
-	memblock.memory.regions	= memblock_memory_init_regions;
+	memblock.memory.regions	= memblock_memory_init_regions; /* 129개의 배열 */
 	memblock.memory.max		= INIT_MEMBLOCK_REGIONS;
-	memblock.reserved.regions	= memblock_reserved_init_regions;
+	memblock.reserved.regions	= memblock_reserved_init_regions; /* 역시 129개 */
 	memblock.reserved.max	= INIT_MEMBLOCK_REGIONS;
-
+	/* 마지막 배열 세팅 */
 	/* Write a marker in the unused last array entry */
-	memblock.memory.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE;
+	memblock.memory.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE; /* MEMBLOCK_REGIONS=128 */
+	/* MEMBLOCK_INACTIVE[44]          #define MEMBLOCK_INACTIVE 0x3a84fb0144c9e71bULL */
 	memblock.reserved.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE;
-
+	/* 첫 배열 세팅(0) */
 	/* Create a dummy zero size MEMBLOCK which will get coalesced away later.
 	 * This simplifies the memblock_add() code below...
 	 */
@@ -803,12 +844,12 @@ void __init memblock_init(void)
 	memblock.memory.regions[0].size = 0;
 	memblock.memory.cnt = 1;
 
-	/* Ditto. */
+	/* Ditto. = 상동 */
 	memblock.reserved.regions[0].base = 0;
 	memblock.reserved.regions[0].size = 0;
 	memblock.reserved.cnt = 1;
 
-	memblock.current_limit = MEMBLOCK_ALLOC_ANYWHERE;
+	memblock.current_limit = MEMBLOCK_ALLOC_ANYWHERE; /* 한계는 64비트 끝이다. */
 }
 
 static int __init early_memblock(char *p)

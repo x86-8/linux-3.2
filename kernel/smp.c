@@ -655,12 +655,13 @@ static int __init maxcpus(char *str)
 early_param("maxcpus", maxcpus);
 
 /* Setup number of possible processor ids */
-int nr_cpu_ids __read_mostly = NR_CPUS;
+int nr_cpu_ids __read_mostly = NR_CPUS; /* 최대 cpu 갯수다. */
 EXPORT_SYMBOL(nr_cpu_ids);
 
 /* An arch may set nr_cpu_ids earlier if needed, so this would be redundant */
 void __init setup_nr_cpu_ids(void)
 {
+  /* cpumask_bits는 인자로 온 구조체의 bits 멤버를 반환한다. */
 	nr_cpu_ids = find_last_bit(cpumask_bits(cpu_possible_mask),NR_CPUS) + 1;
 }
 

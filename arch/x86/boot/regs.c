@@ -18,7 +18,13 @@
 
 #include "boot.h"
 
-void initregs(struct biosregs *reg)
+/**
+ @brief	현재의 CPU 레지스터 상태로 reg 를 초기화한다.\n
+ reg->eflags 는 예외로 X86_EFLAGS_CF 를 무조건 Set 해준다.
+ */
+void initregs(
+		struct biosregs *reg	///< BIOS Resgister
+		)
 {
 	memset(reg, 0, sizeof *reg);
 	reg->eflags |= X86_EFLAGS_CF;

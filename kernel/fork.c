@@ -1012,6 +1012,7 @@ static void rt_mutex_init_task(struct task_struct *p)
 }
 
 #ifdef CONFIG_MM_OWNER
+/* mm_struct는 mm_types.h, sched.h에 있다. */
 void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
 {
 	mm->owner = p;

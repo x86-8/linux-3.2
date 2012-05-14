@@ -3708,7 +3708,7 @@ static void init_cgroup_css(struct cgroup_subsys_state *css,
 	css->id = NULL;
 	if (cgrp == dummytop)
 		set_bit(CSS_ROOT, &css->flags);
-	BUG_ON(cgrp->subsys[ss->subsys_id]);
+	BUG_ON(cgrp->subsys[ss->subsys_id]); /* 세팅이 안되있으면 BUG 발생 */
 	cgrp->subsys[ss->subsys_id] = css;
 }
 
@@ -4278,9 +4278,9 @@ EXPORT_SYMBOL_GPL(cgroup_unload_subsys);
  */
 int __init cgroup_init_early(void)
 {
-	int i;
-	atomic_set(&init_css_set.refcount, 1);
-	INIT_LIST_HEAD(&init_css_set.cg_links);
+ 	int i; 
+ 	atomic_set(&init_css_set.refcount, 1); /* FIX_: 나중에 쓸 atomic operation의 구조체인 init_css_set의 reference 값을 1로 셋팅해준다. */
+ 	INIT_LIST_HEAD(&init_css_set.cg_links);
 	INIT_LIST_HEAD(&init_css_set.tasks);
 	INIT_HLIST_NODE(&init_css_set.hlist);
 	css_set_count = 1;
@@ -4299,7 +4299,7 @@ int __init cgroup_init_early(void)
 		INIT_HLIST_HEAD(&css_set_table[i]);
 
 	/* at bootup time, we don't worry about modular subsystems */
-	for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) {
+	for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) { /* CGROUP 개수 */
 		struct cgroup_subsys *ss = subsys[i];
 
 		BUG_ON(!ss->name);
@@ -4313,7 +4313,7 @@ int __init cgroup_init_early(void)
 		}
 
 		if (ss->early_init)
-			cgroup_init_subsys(ss);
+			cgroup_init_subsys(ss); /* 부팅시 Initializing cgroup... 메세지 출력 */
 	}
 	return 0;
 }

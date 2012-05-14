@@ -36,7 +36,9 @@ typedef union {
  * PMD_SHIFT determines the size of the area a middle-level
  * page table can map
  */
+/* PMD를 얻기 위해 shift 할 숫자 */
 #define PMD_SHIFT	21
+/* PMD의 숫자 */
 #define PTRS_PER_PMD	512
 
 /*

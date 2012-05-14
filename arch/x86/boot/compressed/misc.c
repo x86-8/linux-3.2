@@ -1,3 +1,4 @@
+/* 압축 푸는 코드와 elf파싱등 압축된 커널 본체를 위한 코드들이 들어있다. */
 /*
  * misc.c
  *
@@ -262,7 +263,7 @@ void *memcpy(void *dest, const void *src, size_t n)
 	return dest;
 }
 #endif
-
+// 에러나면 끝
 static void error(char *x)
 {
 	__putstr(1, "\n\n");
@@ -290,33 +291,33 @@ static void parse_elf(void *output)
 	   ehdr.e_ident[EI_MAG1] != ELFMAG1 ||
 	   ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
 	   ehdr.e_ident[EI_MAG3] != ELFMAG3) {
-		error("Kernel is not a valid ELF file");
-		return;
+	  error("Kernel is not a valid ELF file"); // 끝
+		return; // elf 매직넘버 확인
 	}
 
 	if (!quiet)
 		putstr("Parsing ELF... ");
 
-	phdrs = malloc(sizeof(*phdrs) * ehdr.e_phnum);
+	phdrs = malloc(sizeof(*phdrs) * ehdr.e_phnum); /* 프로그램 헤더 갯수만큼 할당 */
 	if (!phdrs)
 		error("Failed to allocate space for phdrs");
 
-	memcpy(phdrs, output + ehdr.e_phoff, sizeof(*phdrs) * ehdr.e_phnum);
+	memcpy(phdrs, output + ehdr.e_phoff, sizeof(*phdrs) * ehdr.e_phnum); /* 프로그램 헤더 갯수만큼 복사 */
 
 	for (i = 0; i < ehdr.e_phnum; i++) {
 		phdr = &phdrs[i];
 
 		switch (phdr->p_type) {
-		case PT_LOAD:
+		case PT_LOAD:			/* 읽어들여야 하는것만 수행 */
 #ifdef CONFIG_RELOCATABLE
 			dest = output;
-			dest += (phdr->p_paddr - LOAD_PHYSICAL_ADDR);
+			dest += (phdr->p_paddr - LOAD_PHYSICAL_ADDR); /* 압축푼곳 + LMA로 재배치 */
 #else
 			dest = (void *)(phdr->p_paddr);
 #endif
 			memcpy(dest,
 			       output + phdr->p_offset,
-			       phdr->p_filesz);
+			       phdr->p_filesz); /* 해당 섹션을 LMA로 로드한다. */
 			break;
 		default: /* Ignore other PT_* */ break;
 		}
@@ -356,7 +357,7 @@ asmlinkage void decompress_kernel(void *rmode, memptr heap,
 	if ((unsigned long)output & (MIN_KERNEL_ALIGN - 1))
 		error("Destination address inappropriately aligned");
 #ifdef CONFIG_X86_64
-	if (heap > 0x3fffffffffffUL)
+	if (heap > 0x3fffffffffffUL) // MAXMEM?
 		error("Destination address too large");
 #else
 	if (heap > ((-__PAGE_OFFSET-(128<<20)-1) & 0x7fffffff))

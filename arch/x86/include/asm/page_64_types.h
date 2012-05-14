@@ -31,7 +31,7 @@
  * what Xen requires.
  */
 #define __PAGE_OFFSET           _AC(0xffff880000000000, UL)
-
+/* 64비트 기본에서 PHYSICAL_START와 PHYSICAL_ALIGN은 16M이다. */
 #define __PHYSICAL_START	((CONFIG_PHYSICAL_START +	 	\
 				  (CONFIG_PHYSICAL_ALIGN - 1)) &	\
 				 ~(CONFIG_PHYSICAL_ALIGN - 1))

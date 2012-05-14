@@ -140,7 +140,7 @@ EXPORT_SYMBOL(_raw_spin_lock);
 #endif
 
 #ifndef CONFIG_INLINE_SPIN_LOCK_IRQSAVE
-unsigned long __lockfunc _raw_spin_lock_irqsave(raw_spinlock_t *lock)
+unsigned long __lockfunc _raw_spin_lock_irqsave(raw_spinlock_t *lock) /* __lockfunc는 .spinlock 섹션에 몰아넣는다. */
 {
 	return __raw_spin_lock_irqsave(lock);
 }

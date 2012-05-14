@@ -3922,7 +3922,7 @@ void lockdep_reset_lock(struct lockdep_map *lock)
 out_restore:
 	raw_local_irq_restore(flags);
 }
-
+/* 디버깅을 위한 lockdep의 hash table을 초기화한다 */
 void lockdep_init(void)
 {
 	int i;

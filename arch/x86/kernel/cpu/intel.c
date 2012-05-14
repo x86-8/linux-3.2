@@ -34,7 +34,9 @@ static void __cpuinit early_init_intel(struct cpuinfo_x86 *c)
 	/* Unmask CPUID levels if masked: */
 	if (c->x86 > 6 || (c->x86 == 6 && c->x86_model >= 0xd)) {
 		rdmsrl(MSR_IA32_MISC_ENABLE, misc_enable);
-
+	   /* LIMIT_CPUID 비트가 켜있으면 cpuid level의 최대값은 3이다.
+		* 때문에 이 비트를 꺼서 unmask 한다.
+		**/
 		if (misc_enable & MSR_IA32_MISC_ENABLE_LIMIT_CPUID) {
 			misc_enable &= ~MSR_IA32_MISC_ENABLE_LIMIT_CPUID;
 			wrmsrl(MSR_IA32_MISC_ENABLE, misc_enable);
@@ -42,7 +44,7 @@ static void __cpuinit early_init_intel(struct cpuinfo_x86 *c)
 			get_cpu_cap(c);
 		}
 	}
-
+	/* 특정모델에서 상수 TSC?을 set한다 */
 	if ((c->x86 == 0xf && c->x86_model >= 0x03) ||
 		(c->x86 == 0x6 && c->x86_model >= 0x0e))
 		set_cpu_cap(c, X86_FEATURE_CONSTANT_TSC);

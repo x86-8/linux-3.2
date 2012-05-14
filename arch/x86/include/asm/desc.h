@@ -112,7 +112,7 @@ static inline void paravirt_free_ldt(struct desc_struct *ldt, unsigned entries)
 #endif	/* CONFIG_PARAVIRT */
 
 #define store_ldt(ldt) asm("sldt %0" : "=m"(ldt))
-
+/* 인터럽트 게이트 등록 */
 static inline void native_write_idt_entry(gate_desc *idt, int entry, const gate_desc *gate)
 {
 	memcpy(&idt[entry], gate, sizeof(*gate));
@@ -312,7 +312,7 @@ static inline void _set_gate(int gate, unsigned type, void *addr,
 {
 	gate_desc s;
 
-	pack_gate(&s, type, (unsigned long)addr, dpl, ist, seg);
+	pack_gate(&s, type, (unsigned long)addr, dpl, ist, seg); /* 받아온 인자들을 게이트 디스크립터 형식으로 구조체에 쓴다.  */
 	/*
 	 * does not need to be atomic because it is only done once at
 	 * setup time
@@ -383,9 +383,9 @@ static inline void set_task_gate(unsigned int n, unsigned int gdt_entry)
 static inline void set_intr_gate_ist(int n, void *addr, unsigned ist)
 {
 	BUG_ON((unsigned)n > 0xFF);
-	_set_gate(n, GATE_INTERRUPT, addr, 0, ist, __KERNEL_CS);
+	_set_gate(n, GATE_INTERRUPT, addr, 0, ist, __KERNEL_CS); /* GATE_INTERRUPT는 0xE */
 }
-
+/* 03번 break point */
 static inline void set_system_intr_gate_ist(int n, void *addr, unsigned ist)
 {
 	BUG_ON((unsigned)n > 0xFF);

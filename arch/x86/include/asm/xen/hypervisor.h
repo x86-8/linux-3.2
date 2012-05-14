@@ -50,7 +50,7 @@ static inline uint32_t xen_cpuid_base(void)
 		*(uint32_t *)(signature + 4) = ecx;
 		*(uint32_t *)(signature + 8) = edx;
 		signature[12] = 0;
-
+	/* cpuid로 Xen 시그네쳐를 반환한다. */
 		if (!strcmp("XenVMMXenVMM", signature) && ((eax - base) >= 2))
 			return base;
 	}

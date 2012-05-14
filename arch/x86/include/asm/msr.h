@@ -64,7 +64,7 @@ static inline unsigned long long native_read_tscp(unsigned int *aux)
 #define EAX_EDX_ARGS(val, low, high)	"A" (val)
 #define EAX_EDX_RET(val, low, high)	"=A" (val)
 #endif
-
+/* rdmsr의 동작은 같으나 gcc에서 A의 동작은 32비트와 64비트가 다르기 때문에 서로 다른 매크로로 동작한다.  */
 static inline unsigned long long native_read_msr(unsigned int msr)
 {
 	DECLARE_ARGS(val, low, high);

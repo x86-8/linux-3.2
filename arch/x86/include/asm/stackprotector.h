@@ -71,7 +71,7 @@ static __always_inline void boot_init_stack_canary(void)
 	 * on during the bootup the random pool has true entropy too.
 	 */
 	get_random_bytes(&canary, sizeof(canary));
-	tsc = __native_read_tsc();
+	tsc = __native_read_tsc();	/* time stamp counter를 구한다. */
 	canary += tsc + (tsc << 32UL);
 
 	current->stack_canary = canary;

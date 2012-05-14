@@ -22,7 +22,7 @@
 #include <asm/irq_regs.h>
 
 #include "tick-internal.h"
-
+// 참조 :  http://studyfoss.egloos.com/5268468
 /*
  * Tick devices
  */
@@ -405,7 +405,7 @@ static int tick_notify(struct notifier_block *nb, unsigned long reason,
 }
 
 static struct notifier_block tick_notifier = {
-	.notifier_call = tick_notify,
+	.notifier_call = tick_notify, /* tick_notify 함수 */
 };
 
 /**

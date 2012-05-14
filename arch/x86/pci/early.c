@@ -10,8 +10,9 @@
 u32 read_pci_config(u8 bus, u8 slot, u8 func, u8 offset)
 {
 	u32 v;
+	/* 인덱스에 특정 pci 장치를 읽어오겠다고 전달한다. */
 	outl(0x80000000 | (bus<<16) | (slot<<11) | (func<<8) | offset, 0xcf8);
-	v = inl(0xcfc);
+	v = inl(0xcfc); 	/* 매우 읽는다. */
 	return v;
 }
 
@@ -95,7 +96,7 @@ void early_dump_pci_devices(void)
 							PCI_CLASS_REVISION);
 				if (class == 0xffffffff)
 					continue;
-
+ /* pci 장치를들 출력 해주는걸로 보임 */
 				early_dump_pci_device(bus, slot, func);
 
 				if (func == 0) {

@@ -17,11 +17,11 @@
 # define add_preempt_count(val)	do { preempt_count() += (val); } while (0)
 # define sub_preempt_count(val)	do { preempt_count() -= (val); } while (0)
 #endif
-
+/* 선점 카운트 증감 */
 #define inc_preempt_count() add_preempt_count(1)
 #define dec_preempt_count() sub_preempt_count(1)
 
-#define preempt_count()	(current_thread_info()->preempt_count)
+#define preempt_count()	(current_thread_info()->preempt_count) /* 현재 스택(esp의 prempt_count)  */
 
 #ifdef CONFIG_PREEMPT
 

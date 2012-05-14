@@ -251,6 +251,10 @@ struct cgroup {
  * object and speeds up fork()/exit(), since a single inc/dec and a
  * list_add()/del() can bump the reference count on the entire cgroup
  * set for a task.
+ * css set은 cgroup_subsys_state객체들을 가르키는 포인터의 구조체이다. 
+ * 이것들은 task struct object의 공간을 절약하고 fork()/exit()의 속도를 높일 수 있다.
+ * 왜냐하면, inc/dec 과 list_add/del은 전체 task 의 전체 cgroup set에서 reference count 를 충돌시킬 수 있기 때문이다.
+ * 참조 : http://studyfoss.egloos.com/5506102
  */
 
 struct css_set {
@@ -274,6 +278,8 @@ struct css_set {
 	 * List of cg_cgroup_link objects on link chains from
 	 * cgroups referenced from this css_set. Protected by
 	 * css_set_lock
+	 * cg_group_link 객체들의 리스트는( cgroup으로부터의 link chain의) 이 css_set으로부터 참조된다. 
+	 * css_set_lock 으로부터 보호된다.
 	 */
 	struct list_head cg_links;
 

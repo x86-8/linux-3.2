@@ -2,9 +2,11 @@
 #define _ASM_X86_PERCPU_H
 
 #ifdef CONFIG_X86_64
+	/* 64비트면 gs */
 #define __percpu_seg		gs
 #define __percpu_mov_op		movq
 #else
+	/* 32비트면 fs */
 #define __percpu_seg		fs
 #define __percpu_mov_op		movl
 #endif
@@ -65,6 +67,7 @@
 #define __percpu_prefix		""
 #endif
 
+ /* x가 0이면 %0 오퍼랜드를 뜻한다. %%gs: %P0 */
 #define __percpu_arg(x)		__percpu_prefix "%P" #x
 
 /*
@@ -86,7 +89,8 @@
 /* For arch-specific code, we can use direct single-insn ops (they
  * don't give an lvalue though). */
 extern void __bad_percpu_size(void);
-
+/* percpu_xxxx_op의 인자는 (op, dest, src) 로 인텔어셈과 유사하다. */
+ /* ax,bx,cx,dx, 즉치값 */
 #define percpu_to_op(op, var, val)			\
 do {							\
 	typedef typeof(var) pto_T__;			\
@@ -178,7 +182,8 @@ do {									\
 	default: __bad_percpu_size();					\
 	}								\
 } while (0)
-
+ /* percpu_arg는 percpu구조체가 있는 영역(gs)을 prefix로 가지킨다. 이 값을 var인자로 온 값을 리턴값으로 넘긴다.(pfo_ret__) */
+ /* 가능하면 ax,bx,cx,dx 레지스터 */
 #define percpu_from_op(op, var, constraint)		\
 ({							\
 	typeof(var) pfo_ret__;				\
@@ -350,17 +355,23 @@ do {									\
 	pco_ret__;							\
 })
 
-/*
+/*퍼씨피유는 쥐씨씨가 퍼씨피유 변수(변수가 access될때마다)를 로드하도록 만들어준다. 
  * percpu_read() makes gcc load the percpu variable every time it is
  * accessed while percpu_read_stable() allows the value to be cached.
+ *
  * percpu_read_stable() is more efficient and can be used if its value
  * is guaranteed to be valid across cpus.  The current users include
+ *
  * get_current() and get_thread_info() both of which are actually
  * per-thread variables implemented as per-cpu variables and thus
  * stable for the duration of the respective task.
  */
+
+ /* 첫번째 인자는 명령어 두번째는 읽을 값, 세번째는 gcc inline asm의 input type  */
 #define percpu_read(var)		percpu_from_op("mov", var, "m" (var))
+ /* stable은 포인터를 통해 값을 읽어온다. %p =  An operand that is a valid memory address is allowed*/
 #define percpu_read_stable(var)		percpu_from_op("mov", var, "p" (&(var)))
+ /* op var <- val */
 #define percpu_write(var, val)		percpu_to_op("mov", var, val)
 #define percpu_add(var, val)		percpu_add_op(var, val)
 #define percpu_sub(var, val)		percpu_add_op(var, -(val))

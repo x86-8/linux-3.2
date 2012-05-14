@@ -71,6 +71,9 @@ static inline unsigned long __copy_from_user_nocache(void *to,
  * We don't include enough header files to be able to do the set_fs().  We
  * require that the probe_kernel_address() caller will do that.
  */
+/* addr에서 retval 크기만큼 읽어서 retval에 넣는다.
+ * ret값이 복사가 성공이면 0아니면 복사못한 바이트를 반환
+ */
 #define probe_kernel_address(addr, retval)		\
 	({						\
 		long ret;				\

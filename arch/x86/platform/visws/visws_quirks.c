@@ -215,20 +215,24 @@ static void __init visws_find_smp_config(void)
 
 static void visws_trap_init(void);
 
+/* Silicon Graphics Visual Workstation 초기화 함수 */
 void __init visws_early_detect(void)
 {
 	int raw;
-
+	/* PIIX : PCI IDE ISA Xcelerator (PIIX), also known as Intel 82371
+	 * 위키 참조 : http://en.wikipedia.org/wiki/PIIX
+	 */
+	/* SGI workstation 관련 포트의 내용을 읽어온다. */
 	visws_board_type = (char)(inb_p(PIIX_GPI_BD_REG) & PIIX_GPI_BD_REG)
 							 >> PIIX_GPI_BD_SHIFT;
 
-	if (visws_board_type < 0)
+	if (visws_board_type < 0)	/* 아마도 VISW 보드가 아니면 리턴? */
 		return;
 
 	/*
 	 * Override the default platform setup functions
 	 */
-	x86_init.resources.memory_setup = visws_memory_setup;
+	x86_init.resources.memory_setup = visws_memory_setup; /* 함수 포인터를 쭉 넣어준다. */
 	x86_init.mpparse.get_smp_config = visws_get_smp_config;
 	x86_init.mpparse.find_smp_config = visws_find_smp_config;
 	x86_init.irqs.pre_vector_init = visws_pre_intr_init;
@@ -261,7 +265,7 @@ void __init visws_early_detect(void)
 	 * to the GPIO registers.  Let's map them at 0x0fc0 which is right
 	 * after the PIIX4 PM section.
 	 */
-	outb_p(SIO_DEV_SEL, SIO_INDEX);
+	outb_p(SIO_DEV_SEL, SIO_INDEX); /* Super IO? */
 	outb_p(SIO_GP_DEV, SIO_DATA);	/* Talk to GPIO regs. */
 
 	outb_p(SIO_DEV_MSB, SIO_INDEX);
@@ -318,7 +322,7 @@ void __init visws_early_detect(void)
 		} else {
 			visws_board_rev = raw;
 		}
-
+	/* 초기화가 끝났으면 메세지 출력 */
 	printk(KERN_INFO "Silicon Graphics Visual Workstation %s (rev %d) detected\n",
 	       (visws_board_type == VISWS_320 ? "320" :
 	       (visws_board_type == VISWS_540 ? "540" :

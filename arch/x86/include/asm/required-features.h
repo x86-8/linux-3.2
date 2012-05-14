@@ -71,6 +71,12 @@
 #define NEED_LM		0
 #endif
 
+/**
+ @brief	FPU, PSE, MSR, PAE, CX8, PGE, FXSR, CMOV, XMM, XMM2
+ * FPU = 보조 프로세서 
+ * PSE = paging 관련
+ * MSR = Machine specific register. 
+ */
 #define REQUIRED_MASK0	(NEED_FPU|NEED_PSE|NEED_MSR|NEED_PAE|\
 			 NEED_CX8|NEED_PGE|NEED_FXSR|NEED_CMOV|\
 			 NEED_XMM|NEED_XMM2)

@@ -105,7 +105,7 @@ static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 {
 	unsigned long flags;
 
-	local_irq_save(flags);
+	local_irq_save(flags);		/* 플래그를 저장하고 인터럽트를 금지한다. */
 	preempt_disable();
 	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
 	/*
@@ -114,7 +114,7 @@ static inline unsigned long __raw_spin_lock_irqsave(raw_spinlock_t *lock)
 	 * that interrupts are not re-enabled during lock-acquire:
 	 */
 #ifdef CONFIG_LOCKDEP
-	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
+	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock); /* do_raw_spin_lock(lock)을 호출하는 매크로 */
 #else
 	do_raw_spin_lock_flags(lock, &flags);
 #endif

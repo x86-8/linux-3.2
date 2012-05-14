@@ -19,7 +19,7 @@
 #if defined(CONFIG_EDD) || defined(CONFIG_EDD_MODULE)
 
 /*
- * Read the MBR (first sector) from a specific device.
+ * Read the MBR (first sector) from a specific device. MBR을 읽어온다. 에러나면 -1
  */
 static int read_mbr(u8 devno, void *buf)
 {
@@ -35,7 +35,7 @@ static int read_mbr(u8 devno, void *buf)
 
 	return -(oreg.eflags & X86_EFLAGS_CF); /* 0 or -1 */
 }
-
+// disk signature를 반환하고 magic number(0xaa55)를 체크해서 맞으면 0을 리턴한다. (-1이면 에러)
 static u32 read_mbr_sig(u8 devno, struct edd_info *ei, u32 *mbrsig)
 {
 	int sector_size;
@@ -71,6 +71,8 @@ static u32 read_mbr_sig(u8 devno, struct edd_info *ei, u32 *mbrsig)
 	return mbr_magic == 0xAA55 ? 0 : -1;
 }
 
+
+// EDD를 지원하는지 체크하고 디스크 정보를 읽어온다.
 static int get_edd_info(u8 devno, struct edd_info *ei)
 {
 	struct biosregs ireg, oreg;
@@ -81,7 +83,7 @@ static int get_edd_info(u8 devno, struct edd_info *ei)
 
 	initregs(&ireg);
 	ireg.ah = 0x41;
-	ireg.bx = EDDMAGIC1;
+	ireg.bx = EDDMAGIC1; 
 	ireg.dl = devno;
 	intcall(0x13, &ireg, &oreg);
 
@@ -118,6 +120,10 @@ static int get_edd_info(u8 devno, struct edd_info *ei)
 	return 0;
 }
 
+/**
+ @brief 
+  edd= 파라미터를 파싱하고 디스크의 정보(CHS,EDD)를 얻어와서 eddbuf에 넣고 디스크마다 MBR의 volumID(signature)를 얻고 magic number를 체크한다.
+ */
 void query_edd(void)
 {
 	char eddarg[8];
@@ -133,12 +139,21 @@ void query_edd(void)
 	u32 *mbrptr;
 
 	if (cmdline_find_option("edd", eddarg, sizeof eddarg) > 0) {
+		// check options
+		// edd=skipmbr
+		// edd=skip
 		if (!strcmp(eddarg, "skipmbr") || !strcmp(eddarg, "skip")) {
 			do_edd = 1;
 			do_mbr = 0;
 		}
+
+		// check options
+		// edd=off
 		else if (!strcmp(eddarg, "off"))
 			do_edd = 0;
+
+		// check options
+		// edd=on
 		else if (!strcmp(eddarg, "on"))
 			do_edd = 1;
 	}
@@ -158,7 +173,8 @@ void query_edd(void)
 	if (!be_quiet)
 		printf("Probing EDD (edd=off to disable)... ");
 
-	for (devno = 0x80; devno < 0x80+EDD_MBR_SIG_MAX; devno++) {
+	
+	for (devno = 0x80; devno < 0x80+EDD_MBR_SIG_MAX; devno++) { // 16
 		/*
 		 * Scan the BIOS-supported hard disks and query EDD
 		 * information...
@@ -170,8 +186,8 @@ void query_edd(void)
 			boot_params.eddbuf_entries++;
 		}
 
-		if (do_mbr && !read_mbr_sig(devno, &ei, mbrptr++))
-			boot_params.edd_mbr_sig_buf_entries = devno-0x80+1;
+		if (do_mbr && !read_mbr_sig(devno, &ei, mbrptr++)) // mbr을 스킵하지 않고 magic number가 맞으면 실행
+		  boot_params.edd_mbr_sig_buf_entries = devno-0x80+1; // 마지막부팅가능한 하드 (1부터시작)
 	}
 
 	if (!be_quiet)

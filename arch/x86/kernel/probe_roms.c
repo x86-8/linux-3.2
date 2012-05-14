@@ -180,19 +180,21 @@ static int __init romsignature(const unsigned char *rom)
 {
 	const unsigned short * const ptr = (const unsigned short *)rom;
 	unsigned short sig;
-
+	/* 복사가 성공하고 signature가 맞으면 TRUE */
 	return probe_kernel_address(ptr, sig) == 0 && sig == ROMSIGNATURE;
 }
 
 static int __init romchecksum(const unsigned char *rom, unsigned long length)
 {
 	unsigned char sum, c;
-
+	/* rom을 length만큼 모두 sum에 더해준다. */
 	for (sum = 0; length && probe_kernel_address(rom++, c) == 0; length--)
 		sum += c;
+	/* 끝까지 탐색했고 checksum이 0이 맞으면 ok */
 	return !length && !sum;
 }
 
+// ref ->  http://lks.springnote.com/pages/631915
 void __init probe_roms(void)
 {
 	const unsigned char *rom;
@@ -201,14 +203,15 @@ void __init probe_roms(void)
 	int i;
 
 	/* video rom */
-	upper = adapter_rom_resources[0].start;
+	upper = adapter_rom_resources[0].start; /* 0xC8000 */
+	/* start는 0xc0000 */
 	for (start = video_rom_resource.start; start < upper; start += 2048) {
-		rom = isa_bus_to_virt(start);
+		rom = isa_bus_to_virt(start); /* 해당하는 물리주소를 가상주소로 변환 */
 		if (!romsignature(rom))
 			continue;
-
+		/* signature 값이 0xaa55 여야 한다. */
 		video_rom_resource.start = start;
-
+		/* romsignature 다음 값(길이*512)이 0이 아니면 continue해서 뒤쪽을 읽는다. */
 		if (probe_kernel_address(rom + 2, c) != 0)
 			continue;
 
@@ -217,27 +220,28 @@ void __init probe_roms(void)
 
 		/* if checksum okay, trust length byte */
 		if (length && romchecksum(rom, length))
-			video_rom_resource.end = start + length - 1;
+			video_rom_resource.end = start + length - 1; /* end값을 넣어준다. */
 
-		request_resource(&iomem_resource, &video_rom_resource);
-		break;
+		request_resource(&iomem_resource, &video_rom_resource); /* 그냥 자원 등록 */
+		break;		/* 찾았으면 등록하고 break */
 	}
-
+	/* 2048 더하고 정렬한것보다 적으면 start=upper */
 	start = (video_rom_resource.end + 1 + 2047) & ~2047UL;
 	if (start < upper)
 		start = upper;
 
 	/* system rom */
+	/* 이건 그냥 등록 */
 	request_resource(&iomem_resource, &system_rom_resource);
 	upper = system_rom_resource.start;
 
 	/* check for extension rom (ignore length byte!) */
-	rom = isa_bus_to_virt(extension_rom_resource.start);
-	if (romsignature(rom)) {
+	rom = isa_bus_to_virt(extension_rom_resource.start); /* 물리메모리를 가상주소로 변환 */
+	if (romsignature(rom)) {			     /* 롬이 있는가? */
 		length = resource_size(&extension_rom_resource);
 		if (romchecksum(rom, length)) {
 			request_resource(&iomem_resource, &extension_rom_resource);
-			upper = extension_rom_resource.start;
+			upper = extension_rom_resource.start; /* 체크섬까지 맞으면 자원 등록후  */
 		}
 	}
 
@@ -260,7 +264,7 @@ void __init probe_roms(void)
 		adapter_rom_resources[i].start = start;
 		adapter_rom_resources[i].end = start + length - 1;
 		request_resource(&iomem_resource, &adapter_rom_resources[i]);
-
+		/* c8000도 등록 */
 		start = adapter_rom_resources[i++].end & ~2047UL;
 	}
 }

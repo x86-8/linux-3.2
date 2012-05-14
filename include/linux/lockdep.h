@@ -412,7 +412,7 @@ do {								\
 
 #define lock_contended(lockdep_map, ip) do {} while (0)
 #define lock_acquired(lockdep_map, ip) do {} while (0)
-
+ /* 세번째 인자로 들어온 lock 함수를 호출 */
 #define LOCK_CONTENDED(_lock, try, lock) \
 	lock(_lock)
 

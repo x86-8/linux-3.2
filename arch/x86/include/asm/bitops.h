@@ -38,8 +38,8 @@
  * a mask operation on a byte.
  */
 #define IS_IMMEDIATE(nr)		(__builtin_constant_p(nr))
-#define CONST_MASK_ADDR(nr, addr)	BITOP_ADDR((void *)(addr) + ((nr)>>3))
-#define CONST_MASK(nr)			(1 << ((nr) & 7))
+#define CONST_MASK_ADDR(nr, addr)	BITOP_ADDR((void *)(addr) + ((nr)>>3)) /* 나누기 8로 바이트 주소를 구함 */
+#define CONST_MASK(nr)			(1 << ((nr) & 7)) /* 나머지 8로 비트의 위치를 구함 */
 
 /**
  * set_bit - Atomically set a bit in memory
@@ -94,13 +94,14 @@ static inline void __set_bit(int nr, volatile unsigned long *addr)
  * you should call smp_mb__before_clear_bit() and/or smp_mb__after_clear_bit()
  * in order to ensure changes are visible on other processors.
  */
+/* nr은 비트 번호, addr은 비트 배열의  포인터 */
 static __always_inline void
 clear_bit(int nr, volatile unsigned long *addr)
 {
 	if (IS_IMMEDIATE(nr)) {
 		asm volatile(LOCK_PREFIX "andb %1,%0"
-			: CONST_MASK_ADDR(nr, addr)
-			: "iq" ((u8)~CONST_MASK(nr)));
+			: CONST_MASK_ADDR(nr, addr) /* 해당 비트에 해당하는 어드레스에  */
+			: "iq" ((u8)~CONST_MASK(nr))); /* 클리어할 비트를 제외하고 mask 결국 clear(0)한다. */
 	} else {
 		asm volatile(LOCK_PREFIX "btr %1,%0"
 			: BITOP_ADDR(addr)
@@ -344,6 +345,7 @@ static int test_bit(int nr, const volatile unsigned long *addr);
  *
  * Undefined if no bit exists, so code should check against 0 first.
  */
+/* 비트 스캔. bsf는 최하위(우측)부터 검색 */
 static inline unsigned long __ffs(unsigned long word)
 {
 	asm("bsf %1,%0"
@@ -358,6 +360,7 @@ static inline unsigned long __ffs(unsigned long word)
  *
  * Undefined if no zero exists, so code should check against ~0UL first.
  */
+
 static inline unsigned long ffz(unsigned long word)
 {
 	asm("bsf %1,%0"
@@ -372,6 +375,7 @@ static inline unsigned long ffz(unsigned long word)
  *
  * Undefined if no set bit exists, so code should check against 0 first.
  */
+/* 비트 스캔한다. bsr은 최상위(좌측)부터 검색한다. */
 static inline unsigned long __fls(unsigned long word)
 {
 	asm("bsr %1,%0"

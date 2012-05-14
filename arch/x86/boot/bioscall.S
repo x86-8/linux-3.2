@@ -13,24 +13,34 @@
  * touching registers they shouldn't be.
  */
 
+ /**
+ @brief	void intcall(u8 int_no, const struct biosregs *ireg, struct biosregs *oreg);
+ 	ireg 값들을 레지스터에 Set 하고,
+ 	oreg
+ */
+
 	.code16gcc
 	.text
 	.globl	intcall
-	.type	intcall, @function
+	.type	intcall, @function	/* @function : fastcall */
 intcall:
 	/* Self-modify the INT instruction.  Ugly, but works. */
-	cmpb	%al, 3f
-	je	1f
-	movb	%al, 3f
-	jmp	1f		/* Synchronize pipeline */
+	/* 첫번째 인자 : ax, 두번째 인자:dx, 세번째 인자:cx */
+	/* 컴파일러 마다 사용하는 레지스터가 다름... 주의 */
+	cmpb	%al, 3f		/* al: INT 번호. Compare with 3f and al. al:Register(8bit) */
+	je	1f				/* */
+	movb	%al, 3f		/* 3f에 al 값을 넣어준다. */
+	jmp	1f				/* Synchronize pipeline */
 1:
 	/* Save state */
-	pushfl
-	pushw	%fs
-	pushw	%gs
-	pushal
+	pushfl			/* pushfl : push flags: 4byte */
+	pushw	%fs		/* push word : fs(세그먼트 레지스터): 2byte */
+	pushw	%gs		/* gs: 세그먼트 레지스터: 2byte */
+	pushal			/* push All 범용 레지스터(ax. bx. cx, dx, si, di, bp, sp): 각각 4byte */
 
 	/* Copy input state to stack frame */
+	/* 인자 값 저장을 위한 공간(최대 파라미터 크기:44Byte) 확보 후, */
+	/* 확보된 공간에 함수호출 때 넘겨진 인자값들을 복사한다. */
 	subw	$44, %sp
 	movw	%dx, %si
 	movw	%sp, %di
@@ -58,7 +68,7 @@ intcall:
 	pushal
 
 	/* Re-establish C environment invariants */
-	cld
+	cld					/* Clear Direction flag */
 	movzwl	%sp, %esp
 	movw	%cs, %ax
 	movw	%ax, %ds
@@ -66,8 +76,8 @@ intcall:
 
 	/* Copy output state from stack frame */
 	movw	68(%esp), %di	/* Original %cx == 3rd argument */
-	andw	%di, %di
-	jz	4f
+	andw	%di, %di		/* CX(3번째 인자)의 유무를 확인한다. */
+	jz	4f					/* CX(3번째 인자)가 없으면 4: 로 점프 */
 	movw	%sp, %si
 	movw	$11, %cx
 	rep; movsd

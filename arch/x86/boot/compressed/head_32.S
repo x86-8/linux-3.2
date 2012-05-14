@@ -70,7 +70,7 @@ ENTRY(startup_32)
 
 #ifdef CONFIG_RELOCATABLE
 	movl	%ebp, %ebx
-	movl	BP_kernel_alignment(%esi), %eax
+	movl	BP_kernel_alignment(%esi), %eax /* default = 16M */
 	decl	%eax
 	addl    %eax, %ebx
 	notl	%eax

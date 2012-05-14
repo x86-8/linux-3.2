@@ -167,7 +167,7 @@ smp_call_function_any(const struct cpumask *mask, smp_call_func_t func,
   extern unsigned int debug_smp_processor_id(void);
 # define smp_processor_id() debug_smp_processor_id()
 #else
-# define smp_processor_id() raw_smp_processor_id()
+# define smp_processor_id() raw_smp_processor_id() /* percpu의 cpu_number값을 가져온다. */
 #endif
 
 #define get_cpu()		({ preempt_disable(); smp_processor_id(); })

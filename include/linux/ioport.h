@@ -2,7 +2,7 @@
  * ioport.h	Definitions of routines for detecting, reserving and
  *		allocating system resources.
  *
- * Authors:	Linus Torvalds
+ * Authors:	Linus Torvalds 토형이 작성
  */
 
 #ifndef _LINUX_IOPORT_H

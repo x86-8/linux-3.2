@@ -104,15 +104,15 @@ static int kbd_pending(void)
 	ireg.ah = 0x01;
 	intcall(0x16, &ireg, &oreg);
 
-	return !(oreg.eflags & X86_EFLAGS_ZF);
+	return !(oreg.eflags & X86_EFLAGS_ZF); // 키가 눌렸으면 1을 리턴한다.
 }
 
 void kbd_flush(void)
 {
 	for (;;) {
-		if (!kbd_pending())
+	  if (!kbd_pending()) // 키가 안눌렸으면 break
 			break;
-		getchar();
+	  getchar(); // 키보드 버퍼에 값이 있으면 계속 돌면서 받아온다.
 	}
 }
 
@@ -130,7 +130,7 @@ int getchar_timeout(void)
 		t1 = gettime();
 		if (t0 != t1) {
 			cnt--;
-			t0 = t1;
+			t0 = t1; /* 마지막 gettime에서 변했다면 카운트를 감소 */
 		}
 	}
 

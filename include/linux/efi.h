@@ -203,6 +203,7 @@ typedef efi_status_t efi_query_capsule_caps_t(efi_capsule_header_t **capsules,
 /*
  *  EFI Configuration Table and GUID definitions
  */
+/* EFI 고유의 GUID 번호 */
 #define NULL_GUID \
     EFI_GUID(  0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 )
 

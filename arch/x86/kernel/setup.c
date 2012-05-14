@@ -206,6 +206,7 @@ struct ist_info ist_info;
 #endif
 
 #else
+/* boot_cpu_data 초기값 */
 struct cpuinfo_x86 boot_cpu_data __read_mostly = {
 	.x86_phys_bits = MAX_PHYSMEM_BITS,
 };
@@ -253,6 +254,7 @@ EXPORT_SYMBOL(edd);
  *              from boot_params into a safe place.
  *
  */
+/* EDD 정보를 복사한다. */
 static inline void __init copy_edd(void)
 {
      memcpy(edd.mbr_signature, boot_params.edd_mbr_sig_buffer,
@@ -266,22 +268,22 @@ static inline void __init copy_edd(void)
 {
 }
 #endif
-
+/* align으로 메모리 할당 */
 void * __init extend_brk(size_t size, size_t align)
 {
 	size_t mask = align - 1;
 	void *ret;
 
 	BUG_ON(_brk_start == 0);
-	BUG_ON(align & mask);
+	BUG_ON(align & mask);	/* 단위가 겹치면 안됨 */
 
-	_brk_end = (_brk_end + mask) & ~mask;
-	BUG_ON((char *)(_brk_end + size) > __brk_limit);
+	_brk_end = (_brk_end + mask) & ~mask; /* 단위올림 정렬 */
+	BUG_ON((char *)(_brk_end + size) > __brk_limit); /* 한계범위를 초과하면 메세지 출력후 멈춘다. */
 
-	ret = (void *)_brk_end;
-	_brk_end += size;
+	ret = (void *)_brk_end;	/* 할당된 시작위치 */
+	_brk_end += size;	/* break를 증가 = size만큼 메모리 할당 */
 
-	memset(ret, 0, size);
+	memset(ret, 0, size);	/* 할당한 영역의 섬세한 초기화 */
 
 	return ret;
 }
@@ -424,19 +426,33 @@ static void __init reserve_initrd(void)
 }
 #endif /* CONFIG_BLK_DEV_INITRD */
 
+/* 여분의 setup_data를 파싱한다. */
 static void __init parse_setup_data(void)
 {
+	/* struct setup_data { */
+	/* 	__u64 next; */
+	/* 	__u32 type; */
+	/* 	__u32 len; */
+	/* 	__u8 data[0]; */
+	/* }; */
 	struct setup_data *data;
 	u64 pa_data;
 
+	/* BOOT PROTOCOL 2.09 부터 지원 */
+	/* Protocol 2.09:	(Kernel 2.6.26) Added a field of 64-bit physical */
+	/* pointer to single linked list of struct	setup_data. */
 	if (boot_params.hdr.version < 0x0209)
 		return;
+	/* 헤더의 setup_data심볼 */
+	/* setup_data:		.quad 0			# 64-bit physical pointer to */
+	/* 						# single linked list of */
+	/* 						# struct setup_data */
 	pa_data = boot_params.hdr.setup_data;
 	while (pa_data) {
 		u32 data_len, map_len;
 
 		map_len = max(PAGE_SIZE - (pa_data & ~PAGE_MASK),
-			      (u64)sizeof(struct setup_data));
+			      (u64)sizeof(struct setup_data)); /*  페이지 나머지 or  setup_data 구조체 크기중 최대값 */
 		data = early_memremap(pa_data, map_len);
 		data_len = data->len + sizeof(struct setup_data);
 		if (data_len > map_len) {
@@ -485,14 +501,14 @@ static void __init e820_reserve_setup_data(void)
 	printk(KERN_INFO "extended physical RAM map:\n");
 	e820_print_map("reserve setup_data");
 }
-
+/* 확장 데이터들을 reserve 블럭에 등록한다. (sorted) */
 static void __init memblock_x86_reserve_range_setup_data(void)
 {
 	struct setup_data *data;
 	u64 pa_data;
 	char buf[32];
 
-	if (boot_params.hdr.version < 0x0209)
+	if (boot_params.hdr.version < 0x0209) /* setup_data가 추가된 버전 kernel 2.6.26 2008 8월 13일 */
 		return;
 	pa_data = boot_params.hdr.setup_data;
 	while (pa_data) {
@@ -682,6 +698,7 @@ early_param("reservelow", parse_reservelow);
  * for initialization.  Note, the efi init code path is determined by the
  * global efi_enabled. This allows the same kernel image to be used on existing
  * systems (with a traditional BIOS) as well as on EFI systems.
+ * EFI : http://ko.wikipedia.org/wiki/%ED%99%95%EC%9E%A5_%ED%8E%8C%EC%9B%A8%EC%96%B4_%EC%9D%B8%ED%84%B0%ED%8E%98%EC%9D%B4%EC%8A%A4
  */
 /*
  * setup_arch - architecture-specific boot-time initializations
@@ -693,7 +710,7 @@ void __init setup_arch(char **cmdline_p)
 {
 #ifdef CONFIG_X86_32
 	memcpy(&boot_cpu_data, &new_cpu_data, sizeof(new_cpu_data));
-	visws_early_detect();
+	visws_early_detect();		/* SGI workstation 초기화 */
 
 	/*
 	 * copy kernel address range established so far and switch
@@ -703,27 +720,31 @@ void __init setup_arch(char **cmdline_p)
 			initial_page_table + KERNEL_PGD_BOUNDARY,
 			KERNEL_PGD_PTRS);
 
-	load_cr3(swapper_pg_dir);
-	__flush_tlb_all();
+	load_cr3(swapper_pg_dir);	/* cr3를 swapper_pg_dir로 세팅(물리주소로 변환)
+					 * 커널의 페이징 위치는 swapper_pg_dir이다. */
+	__flush_tlb_all();			/* 페이징 변경후엔 tlb를 초기화 */
 #else
 	printk(KERN_INFO "Command line: %s\n", boot_command_line);
 #endif
 
-	/*
+	/* 
 	 * If we have OLPC OFW, we might end up relocating the fixmap due to
 	 * reserve_top(), so do this before touching the ioremap area.
 	 */
-	olpc_ofw_detect();
 
-	early_trap_init();
+	// http://blog.naver.com/PostView.nhn?blogId=idthek&logNo=90120709677&redirect=Dlog&widgetTypeCall=true
+	// http://gnudevel.tistory.com/31
+	olpc_ofw_detect();			/* 어린이의, 어린이를 위한 OLPC open firmware */
+
+	early_trap_init();			/* breakpoint(3), debug(1), page fault(14) 인터럽트 게이트를 등록하고 lidt 명령어로 idtr에 등록한다. */
 	early_cpu_init();
-	early_ioremap_init();
+	early_ioremap_init(); // pmd를 fixmap으로 설정해준다.
 
-	setup_olpc_ofw_pgd();
+	setup_olpc_ofw_pgd();  // not kernel , so pass i'am cool
 
-	ROOT_DEV = old_decode_dev(boot_params.hdr.root_dev);
-	screen_info = boot_params.screen_info;
-	edid_info = boot_params.edid_info;
+	ROOT_DEV = old_decode_dev(boot_params.hdr.root_dev); /* 옛 장치의 major/minor 번호를 8/8에서 12/20으로 확장 dev_t형 (__kernel_dev_t) */
+	screen_info = boot_params.screen_info; // screen 초기화변수 넣기. 
+	edid_info = boot_params.edid_info;	   /* 모니터에 대한 자세한 정보 - 제조사 이름, 제품 유형, edid 버전 등등 */
 #ifdef CONFIG_X86_32
 	apm_info.bios = boot_params.apm_bios_info;
 	ist_info = boot_params.ist_info;
@@ -735,19 +756,37 @@ void __init setup_arch(char **cmdline_p)
 	}
 #endif
 	saved_video_mode = boot_params.hdr.vid_mode;
-	bootloader_type = boot_params.hdr.type_of_loader;
-	if ((bootloader_type >> 4) == 0xe) {
+	bootloader_type = boot_params.hdr.type_of_loader; /* type_of_loader에 타입과 버전 정보가 있다 */
+	if ((bootloader_type >> 4) == 0xe) {			  /* type이 0xe면 extended 정보가 활성화 */
 		bootloader_type &= 0xf;
 		bootloader_type |= (boot_params.hdr.ext_loader_type+0x10) << 4;
 	}
 	bootloader_version  = bootloader_type & 0xf;
 	bootloader_version |= boot_params.hdr.ext_loader_ver << 4;
 
+/* 
+ * #define RAMDISK_IMAGE_START_MASK	0x07FF
+ * #define RAMDISK_PROMPT_FLAG		0x8000
+ * #define RAMDISK_LOAD_FLAG		0x4000
+ */
 #ifdef CONFIG_BLK_DEV_RAM
+/* 커널은 initrd 를 보통의 램디스크로 변환하고  initrd 에 의하여 사용된 메모리를 풀어놓는다. 
+ * ram_size 옵션은 현재 사용하지 않는다. 옛날에 bootsect.S에서 사용되었다.
+ */
 	rd_image_start = boot_params.hdr.ram_size & RAMDISK_IMAGE_START_MASK;
 	rd_prompt = ((boot_params.hdr.ram_size & RAMDISK_PROMPT_FLAG) != 0);
 	rd_doload = ((boot_params.hdr.ram_size & RAMDISK_LOAD_FLAG) != 0);
 #endif
+/* 
+ * How differ Bios between efi ? 
+ * The Basic Input/Output System (BIOS) served as the OS-firmware interface for the original PC-XT and PC-AT computers.
+ * This interface has been expanded over the years as the "PC clone" market has grown, but was never fully modernized as the market grew.
+ * UEFI defines a similar OS-firmware interface, known as "boot services" and "runtime services", but is not specific to any processor architecture.
+ * BIOS is specific to the Intel x86 processor architecture, as it relies on the 16-bit "real mode" interface supported by x86 processors.
+ * UEFI is an interface. It can be implemented on top of a traditional BIOS (in which case it supplants the traditional "INT" entry points into BIOS) or on top of non-BIOS implementations.
+ */
+
+/* EFI를 지원하면 OS 비트 확인후 관련 세팅 */
 #ifdef CONFIG_EFI
 	if (!strncmp((char *)&boot_params.efi_info.efi_loader_signature,
 #ifdef CONFIG_X86_32
@@ -755,15 +794,16 @@ void __init setup_arch(char **cmdline_p)
 #else
 		     "EL64",
 #endif
-	 4)) {
-		efi_enabled = 1;
+		     4)) {
+		efi_enabled = 1; /* efi가 켜있으면 1 */
 		efi_memblock_x86_reserve_range();
+		
 	}
 #endif
 
-	x86_init.oem.arch_setup();
+	x86_init.oem.arch_setup();	/* 없다 */
 
-	iomem_resource.end = (1ULL << boot_cpu_data.x86_phys_bits) - 1;
+	iomem_resource.end = (1ULL << boot_cpu_data.x86_phys_bits) - 1; /* 물리 메모리 상한선 early_cpu_init에서 호출. */
 	setup_memory_map();
 	parse_setup_data();
 	/* update the e820_saved too */
@@ -771,13 +811,16 @@ void __init setup_arch(char **cmdline_p)
 
 	copy_edd();
 
+	/* root_flags가 1이면 read only == 옵션 ro와 같다. */
 	if (!boot_params.hdr.root_flags)
 		root_mountflags &= ~MS_RDONLY;
+	/* 코드, 데이터 영역 설정 */
 	init_mm.start_code = (unsigned long) _text;
 	init_mm.end_code = (unsigned long) _etext;
 	init_mm.end_data = (unsigned long) _edata;
-	init_mm.brk = _brk_end;
+	init_mm.brk = _brk_end;		/* heap은 bss 위쪽에 있다. */
 
+	/* 물리주소 영역들도 세팅 */
 	code_resource.start = virt_to_phys(_text);
 	code_resource.end = virt_to_phys(_etext)-1;
 	data_resource.start = virt_to_phys(_etext);
@@ -797,7 +840,7 @@ void __init setup_arch(char **cmdline_p)
 	}
 #endif
 #endif
-
+	/* 커맨드라인 복사 */
 	strlcpy(command_line, boot_command_line, COMMAND_LINE_SIZE);
 	*cmdline_p = command_line;
 
@@ -808,8 +851,9 @@ void __init setup_arch(char **cmdline_p)
 	 * again from within noexec_setup() during parsing early parameters
 	 * to honor the respective command line option.
 	 */
+	/* NX비트 관련 체크를 하고 NX비트가 사용가능하면 pte_mask에 세팅한다. */
 	x86_configure_nx();
-
+	/* early 파라미터들을 호출한다. */
 	parse_early_param();
 
 	x86_report_nx();
@@ -817,13 +861,16 @@ void __init setup_arch(char **cmdline_p)
 	/* after early param, so could get panic from serial */
 	memblock_x86_reserve_range_setup_data();
 
+	/* Advanced Configuration and Power Interface */
+	/* 보통은 acpi를 지원하기 때문에 이쪽은 실행되지 않는다. */
 	if (acpi_mps_check()) {
 #ifdef CONFIG_X86_LOCAL_APIC
-		disable_apic = 1;
+		disable_apic = 1; /* apic 를 사용하지 않는다. */
 #endif
+		/* cpu 수집 정보에서 APIC를 꺼주고 표시한다. */
 		setup_clear_cpu_cap(X86_FEATURE_APIC);
 	}
-
+	/* command line에 early_dump 옵션이 켜있으면 장치 출력 */
 #ifdef CONFIG_PCI
 	if (pci_early_dump_regs)
 		early_dump_pci_devices();
@@ -831,8 +878,8 @@ void __init setup_arch(char **cmdline_p)
 
 	finish_e820_parsing();
 
-	if (efi_enabled)
-		efi_init();
+	if (efi_enabled)    /* CONFIG_EFI가 켜있으면 export되어 1이다. */
+		efi_init();	/* EFI runtime 서비스를 사용가능하게 한다. */
 
 	dmi_scan_machine();
 
@@ -840,9 +887,9 @@ void __init setup_arch(char **cmdline_p)
 	 * VMware detection requires dmi to be available, so this
 	 * needs to be done after dmi_scan_machine, for the BP.
 	 */
-	init_hypervisor_platform();
+	init_hypervisor_platform(); /* 하이퍼바이저 체크 및 초기화 */
 
-	x86_init.resources.probe_roms();
+	x86_init.resources.probe_roms(); /* 롬 영역을 스캔하고 자원을 등록한다. */
 
 	/* after parse_early_param, so could debug it */
 	insert_resource(&iomem_resource, &code_resource);

@@ -6,7 +6,7 @@ static inline int isdigit(int ch)
 {
 	return (ch >= '0') && (ch <= '9');
 }
-
+/* hexa 값 체크 */
 static inline int isxdigit(int ch)
 {
 	if (isdigit(ch))

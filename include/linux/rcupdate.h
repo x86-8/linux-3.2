@@ -431,6 +431,10 @@ extern int rcu_my_thread_group_empty(void);
 		smp_read_barrier_depends(); \
 		(_________p1); \
 	})
+
+/* rcu_assign_pointer(): The updater uses this function to assign a new value to an RCU-protected pointer, in order to safely communicate the change in value from the updater to the reader. This function returns the new value, and also executes any memory barrier instructions required for a given CPU architecture. Perhaps more importantly, it serves to document which pointers are protected by RCU.
+  * 변수거나 값이 NULL이 아니면 CPU에 쓰기 메모리 배리어를 실행한다
+  */
 #define __rcu_assign_pointer(p, v, space) \
 	({ \
 		smp_wmb(); \
@@ -757,6 +761,7 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * impossible-to-diagnose memory corruption.  So please be careful.
  * See the RCU_INIT_POINTER() comment header for details.
  */
+/* p = *nl, v = n nl 은 체인헤더 n은 체인헤더에 집어넣을 것.  */
 #define rcu_assign_pointer(p, v) \
 	__rcu_assign_pointer((p), (v), __rcu)
 

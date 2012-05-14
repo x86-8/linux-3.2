@@ -40,7 +40,7 @@ void
 __mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)
 {
 	atomic_set(&lock->count, 1);
-	spin_lock_init(&lock->wait_lock);
+	spin_lock_init(&lock->wait_lock); // lockdep 관련 : http://studyfoss.egloos.com/5342153
 	INIT_LIST_HEAD(&lock->wait_list);
 	mutex_clear_owner(lock);
 

@@ -15,6 +15,7 @@
 #define SETUP_DTB			2
 
 /* extensible setup data list node */
+/* linked list로 된 확장 setup 데이터. 타입은 바로 위에 있음 */
 struct setup_data {
 	__u64 next;
 	__u32 type;
@@ -22,6 +23,7 @@ struct setup_data {
 	__u8 data[0];
 };
 
+/* bootsect의 0x1f1부터 setup 코드(0x200)의 boot protocol도 포함한다. */
 struct setup_header {
 	__u8	setup_sects;
 	__u16	root_flags;

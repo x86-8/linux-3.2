@@ -192,7 +192,7 @@ extern unsigned disabled_cpus __cpuinitdata;
 extern int safe_smp_processor_id(void);
 
 #elif defined(CONFIG_X86_64_SMP)
-#define raw_smp_processor_id() (percpu_read(cpu_number))
+#define raw_smp_processor_id() (percpu_read(cpu_number)) /* 현재 percpu영역(gs)에서 cpu_number 값을 읽는다. */
 
 #define stack_smp_processor_id()					\
 ({								\

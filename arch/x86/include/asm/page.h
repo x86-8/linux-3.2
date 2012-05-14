@@ -32,7 +32,7 @@ static inline void copy_user_page(void *to, void *from, unsigned long vaddr,
 #define __alloc_zeroed_user_highpage(movableflags, vma, vaddr) \
 	alloc_page_vma(GFP_HIGHUSER | __GFP_ZERO | movableflags, vma, vaddr)
 #define __HAVE_ARCH_ALLOC_ZEROED_USER_HIGHPAGE
-
+/* 가상주소를 물리주소로(+direct mapping) 바꾼다. */
 #define __pa(x)		__phys_addr((unsigned long)(x))
 #define __pa_nodebug(x)	__phys_addr_nodebug((unsigned long)(x))
 /* __pa_symbol should be used for C visible symbols.
@@ -45,7 +45,7 @@ static inline void copy_user_page(void *to, void *from, unsigned long vaddr,
  * remove this Voodoo magic stuff. (i.e. once gcc3.x is deprecated)
  */
 #define __pa_symbol(x)	__pa(__phys_reloc_hide((unsigned long)(x)))
-
+ /* 물리주소를 가상주소로 바꾼다 */
 #define __va(x)			((void *)((unsigned long)(x)+PAGE_OFFSET))
 
 #define __boot_va(x)		__va(x)

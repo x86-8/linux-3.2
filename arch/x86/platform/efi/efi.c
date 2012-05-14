@@ -86,7 +86,7 @@ static int __init setup_add_efi_memmap(char *arg)
 	return 0;
 }
 early_param("add_efi_memmap", setup_add_efi_memmap);
-
+/* add_efi_memmap옵션이 오면 efi memmap을 e820에 추가한다. */
 
 static efi_status_t virt_efi_get_time(efi_time_t *tm, efi_time_cap_t *tc)
 {
@@ -292,7 +292,7 @@ unsigned long efi_get_time(void)
  * more than the max 128 entries that can fit in the e820 legacy
  * (zeropage) memory map.
  */
-
+/* efi 영역을 e820에 타입에 맞춰서 추가한다 */
 static void __init do_add_efi_memmap(void)
 {
 	void *p;
@@ -309,6 +309,7 @@ static void __init do_add_efi_memmap(void)
 		case EFI_BOOT_SERVICES_CODE:
 		case EFI_BOOT_SERVICES_DATA:
 		case EFI_CONVENTIONAL_MEMORY:
+ /* 속성에서 writeback이면 사용가능 아니면 예약 (나중에 기록?) */
 			if (md->attribute & EFI_MEMORY_WB)
 				e820_type = E820_RAM;
 			else
@@ -347,6 +348,7 @@ void __init efi_memblock_x86_reserve_range(void)
 	pmap = (boot_params.efi_info.efi_memmap |
 		((__u64)boot_params.efi_info.efi_memmap_hi<<32));
 #endif
+	/* 부트 파라미터에서 efi memmap 물리주소 대입 */
 	memmap.phys_map = (void *)pmap;
 	memmap.nr_map = boot_params.efi_info.efi_memmap_size /
 		boot_params.efi_info.efi_memdesc_size;
@@ -362,7 +364,7 @@ static void __init print_efi_memmap(void)
 	efi_memory_desc_t *md;
 	void *p;
 	int i;
-
+	/* 형식에 맞춰서 efi정보들을 출력 */
 	for (p = memmap.map, i = 0;
 	     p < memmap.map_end;
 	     p += memmap.desc_size, i++) {
@@ -440,6 +442,7 @@ void __init efi_init(void)
 	int i = 0;
 	void *tmp;
 
+	/* 32비트면 systab만 64비트면 systab_hi를 위에 붙인다. */
 #ifdef CONFIG_X86_32
 	efi_phys.systab = (efi_system_table_t *)boot_params.efi_info.efi_systab;
 #else
@@ -447,21 +450,21 @@ void __init efi_init(void)
 		(boot_params.efi_info.efi_systab |
 		 ((__u64)boot_params.efi_info.efi_systab_hi<<32));
 #endif
-
+	/* efi의 물리주소를 slot 에(fixed_addresses의 끝부분)과 연결한다. */
 	efi.systab = early_ioremap((unsigned long)efi_phys.systab,
 				   sizeof(efi_system_table_t));
 	if (efi.systab == NULL)
 		printk(KERN_ERR "Couldn't map the EFI system table!\n");
 	memcpy(&efi_systab, efi.systab, sizeof(efi_system_table_t));
-	early_iounmap(efi.systab, sizeof(efi_system_table_t));
+	early_iounmap(efi.systab, sizeof(efi_system_table_t)); /* 매핑한 것을 해지한다. */
 	efi.systab = &efi_systab;
 
 	/*
 	 * Verify the EFI Table
 	 */
-	if (efi.systab->hdr.signature != EFI_SYSTEM_TABLE_SIGNATURE)
+	if (efi.systab->hdr.signature != EFI_SYSTEM_TABLE_SIGNATURE) /* 시그니쳐 검사 */
 		printk(KERN_ERR "EFI system table signature incorrect!\n");
-	if ((efi.systab->hdr.revision >> 16) == 0)
+	if ((efi.systab->hdr.revision >> 16) == 0) /* 버전 체크 최소 1.0 이상이어야 한다. */
 		printk(KERN_ERR "Warning: EFI system table version "
 		       "%d.%02d, expected 1.00 or greater!\n",
 		       efi.systab->hdr.revision >> 16,
@@ -469,6 +472,9 @@ void __init efi_init(void)
 
 	/*
 	 * Show what we know for posterity
+	 */
+	/* fw_vendor 유니코드(u16)기 때문에 최소단위는 2바이트다.
+	 * 유니코드를 ascii로 가정하고 때려박는다
 	 */
 	c16 = tmp = early_ioremap(efi.systab->fw_vendor, 2);
 	if (c16) {
@@ -486,6 +492,7 @@ void __init efi_init(void)
 	/*
 	 * Let's see what config tables the firmware passed to us.
 	 */
+	/* 테이블 갯수만큼 매핑 */
 	config_tables = early_ioremap(
 		efi.systab->tables,
 		efi.systab->nr_tables * sizeof(efi_config_table_t));
@@ -493,6 +500,7 @@ void __init efi_init(void)
 		printk(KERN_ERR "Could not map EFI Configuration Table!\n");
 
 	printk(KERN_INFO);
+	/* guid를 장치 비교후 같으면 대입 & 출력 */
 	for (i = 0; i < efi.systab->nr_tables; i++) {
 		if (!efi_guidcmp(config_tables[i].guid, MPS_TABLE_GUID)) {
 			efi.mps = config_tables[i].table;
@@ -535,6 +543,7 @@ void __init efi_init(void)
 	 * address of several of the EFI runtime functions, needed to
 	 * set the firmware into virtual mode.
 	 */
+	/* 런타임 서비스들의 테이블을 매핑한다. */
 	runtime = early_ioremap((unsigned long)efi.systab->runtime,
 				sizeof(efi_runtime_services_t));
 	if (runtime != NULL) {
@@ -558,12 +567,13 @@ void __init efi_init(void)
 	early_iounmap(runtime, sizeof(efi_runtime_services_t));
 
 	/* Map the EFI memory map */
+	/* 대입된 efi memmap 영역을 매핑한 상태로 그대로 간다. */
 	memmap.map = early_ioremap((unsigned long)memmap.phys_map,
 				   memmap.nr_map * memmap.desc_size);
 	if (memmap.map == NULL)
 		printk(KERN_ERR "Could not map the EFI memory map!\n");
 	memmap.map_end = memmap.map + (memmap.nr_map * memmap.desc_size);
-
+	/* 끝주소 지정 */
 	if (memmap.desc_size != sizeof(efi_memory_desc_t))
 		printk(KERN_WARNING
 		  "Kernel-defined memdesc doesn't match the one from EFI!\n");

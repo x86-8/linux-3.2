@@ -171,6 +171,7 @@ extern unsigned short num_cache_leaves;
 extern void detect_extended_topology(struct cpuinfo_x86 *c);
 extern void detect_ht(struct cpuinfo_x86 *c);
 
+/* 그냥 cpuid 명령을 이용해 넣어줌 */
 static inline void native_cpuid(unsigned int *eax, unsigned int *ebx,
 				unsigned int *ecx, unsigned int *edx)
 {

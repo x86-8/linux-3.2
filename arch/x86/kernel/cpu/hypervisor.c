@@ -32,6 +32,7 @@
  */
 static const __initconst struct hypervisor_x86 * const hypervisors[] =
 {
+	/* 배열에 hypervisor_x86 타입의 스트럭쳐 주소들이 들어간다. */
 #ifdef CONFIG_XEN_PVHVM
 	&x86_hyper_xen_hvm,
 #endif
@@ -49,7 +50,7 @@ detect_hypervisor_vendor(void)
 
 	for (p = hypervisors; p < hypervisors + ARRAY_SIZE(hypervisors); p++) {
 		h = *p;
-		if (h->detect()) {
+		if (h->detect()) { /* 각각의 하이퍼바이저의 detect 함수 호출후 출력 */
 			x86_hyper = h;
 			printk(KERN_INFO "Hypervisor detected: %s\n", h->name);
 			break;
@@ -66,7 +67,7 @@ void __cpuinit init_hypervisor(struct cpuinfo_x86 *c)
 void __init init_hypervisor_platform(void)
 {
 
-	detect_hypervisor_vendor();
+	detect_hypervisor_vendor(); /* 가상화에서 돌아가고 있는가? */
 
 	if (!x86_hyper)
 		return;

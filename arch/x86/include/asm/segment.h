@@ -5,6 +5,7 @@
 
 /* Constructor for a conventional segment GDT (or LDT) entry */
 /* This is a macro so it can be used in initializers */
+/* GDT 엔트리대로 배열한다. */
 #define GDT_ENTRY(flags, base, limit)			\
 	((((base)  & _AC(0xff000000,ULL)) << (56-24)) |	\
 	 (((flags) & _AC(0x0000f0ff,ULL)) << 40) |	\
@@ -144,7 +145,7 @@
 #define SEGMENT_IS_PNP_CODE(x)   (((x) & 0xf4) == GDT_ENTRY_PNPBIOS_BASE * 8)
 
 
-#else
+#else  /* 64비트 시작 */
 #include <asm/cache.h>
 
 #define GDT_ENTRY_KERNEL32_CS 1

@@ -33,9 +33,13 @@
 /* Useful macros */
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
+/**
+ @brief	배열의 크기를 리턴한다.\n
+	 배열에 속한 객체들의 갯수를 리턴한다.
+ */
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 
-extern struct setup_header hdr;
+extern struct setup_header hdr; // 부트 프로토콜 0x1f1~
 extern struct boot_params boot_params;
 
 #define cpu_relax()	asm volatile("rep; nop")
@@ -45,6 +49,10 @@ static inline void outb(u8 v, u16 port)
 {
 	asm volatile("outb %0,%1" : : "a" (v), "dN" (port));
 }
+
+/**
+ @brief
+ */
 static inline u8 inb(u16 port)
 {
 	u8 v;
@@ -74,9 +82,12 @@ static inline u32 inl(u32 port)
 	return v;
 }
 
+/**
+ @brief	Delay 를 한다. 1us.
+ */
 static inline void io_delay(void)
 {
-	const u16 DELAY_PORT = 0x80;
+	const u16 DELAY_PORT = 0x80;	//
 	asm volatile("outb %%al,%0" : : "dN" (DELAY_PORT));
 }
 
@@ -89,7 +100,13 @@ static inline u16 ds(void)
 	return seg;
 }
 
-static inline void set_fs(u16 seg)
+/**
+ @brief	seg 의 값을 fs에 설정한다.\n
+	 fs: 현재 사용하지 않는 세그먼트
+ */
+static inline void set_fs(
+		u16 seg		///< fs에 설정하고자 하는 값
+		)
 {
 	asm volatile("movw %0,%%fs" : : "rm" (seg));
 }
@@ -100,6 +117,9 @@ static inline u16 fs(void)
 	return seg;
 }
 
+/**
+ @brief	seg 의 값을 gs 에 설정한다.
+ */
 static inline void set_gs(u16 seg)
 {
 	asm volatile("movw %0,%%gs" : : "rm" (seg));
@@ -113,18 +133,36 @@ static inline u16 gs(void)
 
 typedef unsigned int addr_t;
 
-static inline u8 rdfs8(addr_t addr)
+/**
+ @brief	return fs:addr
+ @return fs:addr 에 저장된 값을 리턴한다.
+ */
+static inline u8 rdfs8(
+		addr_t addr		///< fs:addr
+		)
 {
 	u8 v;
 	asm volatile("movb %%fs:%1,%0" : "=q" (v) : "m" (*(u8 *)addr));
 	return v;
 }
-static inline u16 rdfs16(addr_t addr)
+
+/**
+ @brief	return fs:addr
+ @return fs:addr 에 저장된 값을 반환한다.
+ */
+static inline u16 rdfs16(
+		addr_t addr		///< fs:addr
+		)
 {
 	u16 v;
 	asm volatile("movw %%fs:%1,%0" : "=r" (v) : "m" (*(u16 *)addr));
 	return v;
 }
+
+/**
+ @brief	return fs:addr
+ @return fs:addr 에 저장된 값을 리턴한다.
+ */
 static inline u32 rdfs32(addr_t addr)
 {
 	u32 v;
@@ -205,15 +243,17 @@ static inline int memcmp_gs(const void *s1, addr_t s2, size_t len)
 extern char _end[];
 extern char *HEAP;
 extern char *heap_end;
+/* heap 위치 초기화 */
 #define RESET_HEAP() ((void *)( HEAP = _end ))
+// heap을 확보한다.
 static inline char *__get_heap(size_t s, size_t a, size_t n)
 {
 	char *tmp;
 
-	HEAP = (char *)(((size_t)HEAP+(a-1)) & ~(a-1));
+	HEAP = (char *)(((size_t)HEAP+(a-1)) & ~(a-1)); // alignof 크기로 올림 정렬
 	tmp = HEAP;
-	HEAP += s*n;
-	return tmp;
+	HEAP += s*n; /* type크기 * 갯수 만큼 할당 */
+	return tmp;  /* 할당한 메모리 주소를 반환 */
 }
 #define GET_HEAP(type, n) \
 	((type *)__get_heap(sizeof(type),__alignof__(type),(n)))
@@ -226,13 +266,23 @@ static inline bool heap_free(size_t n)
 /* copy.S */
 
 void copy_to_fs(addr_t dst, void *src, size_t len);
-void *copy_from_fs(void *dst, addr_t src, size_t len);
+
+/**
+ @brief	Copy Data from fs:src to fs:dst\n
+	 데이터를 복사한다. fs:src 에서 fs:dst\n
+	 크기는 len 만큼.
+ */
+void *copy_from_fs(
+		void *dst, 		///< fs:Destination
+		addr_t src, 	///< fs:Source
+		size_t len		///< Len
+		);
 void copy_to_gs(addr_t dst, void *src, size_t len);
 void *copy_from_gs(void *dst, addr_t src, size_t len);
 void *memcpy(void *dst, void *src, size_t len);
 void *memset(void *dst, int c, size_t len);
 
-#define memcpy(d,s,l) __builtin_memcpy(d,s,l)
+#define memcpy(d,s,l) __builtin_memcpy(d,s,l) /* gcc 제공 memcpy */
 #define memset(d,c,l) __builtin_memset(d,c,l)
 
 /* a20.c */
@@ -242,6 +292,10 @@ int enable_a20(void);
 int query_apm_bios(void);
 
 /* bioscall.c */
+/**
+ @brief	BIOS Registers.\n
+	 44byte 의 크기를 가진다.
+ */
 struct biosregs {
 	union {
 		struct {
@@ -282,7 +336,19 @@ struct biosregs {
 		};
 	};
 };
-void intcall(u8 int_no, const struct biosregs *ireg, struct biosregs *oreg);
+
+/**
+ @brief	int_no 의 값으로 interrupt 를 실행한다.\n
+	 ireg 값을 레지스터로 복사한뒤, Interrupt 를 발생시킨다.\n
+	 Interrupt 이후의 Register 값들을 oreg 에 복사해서 리턴한다.\n
+	 함수 호출 뒤, CPU 의 레지스터는 함수 호출 이전 값으로 복구된다.\n
+	 oreg 가 NULL 이면 리턴되는 값은 없는 것으로 간주한다.
+ */
+void intcall(
+		u8 int_no, 						///< Interrupt 번호
+		const struct biosregs *ireg, 	///< Input Register
+		struct biosregs *oreg			///< Output Register
+		);
 
 /* cmdline.c */
 int __cmdline_find_option(u32 cmdline_ptr, const char *option, char *buffer, int bufsize);

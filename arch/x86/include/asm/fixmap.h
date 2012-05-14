@@ -37,12 +37,17 @@
  * Leave one empty page between vmalloc'ed areas and
  * the start of the fixmap.
  */
+
 extern unsigned long __FIXADDR_TOP;
 #define FIXADDR_TOP	((unsigned long)__FIXADDR_TOP)
+/* 32비트는 메모리 끝에서 한 페이지 뺀 곳이 FIXADDR_TOP이다. */
 
 #define FIXADDR_USER_START     __fix_to_virt(FIX_VDSO)
 #define FIXADDR_USER_END       __fix_to_virt(FIX_VDSO - 1)
+/* FIXADDR_USER_END는 32비트 메모리의 시작 페이지 */
 #else
+
+/* 64비트에서 FIXADDR_TOP = 메모리끝 - 2M - 1페이지(4K) */
 #define FIXADDR_TOP	(VSYSCALL_END-PAGE_SIZE)
 
 /* Only covers 32bit vsyscalls currently. Need another set for 64bit. */
@@ -75,7 +80,9 @@ enum fixed_addresses {
 	FIX_HOLE,
 	FIX_VDSO,
 #else
-	VSYSCALL_LAST_PAGE,
+	VSYSCALL_LAST_PAGE,			/* VSYSCALL 끝부분 */
+								/* VSYSCALL의 크기(8M)를 페이지 크기(4K)로 나눈다. 여기서는 LAST_PAGE=0 FIRST_PAGE=2047이 될것이다. */
+								/* VSYSCALL_FIRST/LAST_PAGE 는 페이지(PTE) 단위, VSYSCALL_START,END 는 PMD(2M) 단위 */
 	VSYSCALL_FIRST_PAGE = VSYSCALL_LAST_PAGE
 			    + ((VSYSCALL_END-VSYSCALL_START) >> PAGE_SHIFT) - 1,
 	VVAR_PAGE,
@@ -121,7 +128,7 @@ enum fixed_addresses {
 	FIX_LNW_VRTC,
 #endif
 	__end_of_permanent_fixed_addresses,
-
+	/* 이곳이 FIXADDR의 끝이다. 아래쪽은 부팅시만 사용 */
 	/*
 	 * 256 temporary boot-time mappings, used by early_ioremap(),
 	 * before ioremap() is functional.
@@ -129,9 +136,27 @@ enum fixed_addresses {
 	 * If necessary we round it up to the next 256 pages boundary so
 	 * that we can have a single pgd entry and a single pte table:
 	 */
+	/* 비트맵이 아니다. 이곳은 boot-time 을 위한 공간이다. */
 #define NR_FIX_BTMAPS		64
 #define FIX_BTMAPS_SLOTS	4
 #define TOTAL_FIX_BTMAPS	(NR_FIX_BTMAPS * FIX_BTMAPS_SLOTS)
+	/* 이 루틴은 같은 PTE에 <부팅 매핑> 페이지(256)들이 같은 PTE블럭에 연속적으로 할당가능한지 체크한다.
+	 * 공간이 충분하다면 연속해서 할당하고 모자라면 PTE블럭을 넘겨서 정렬한후 할당한다.
+	 *
+	 * (x ^ (x + small_block - 1)) & large_block 에서
+	 * x는 현재값, small_block은 할당할 값, large_block은 구분되는 블럭이다.
+	 * small_block이 large_block에 들어갈수 있다면 값이 넘치지 않으면 and도 0이 된다.
+	 * x가 원래 large_block의 비트값을 가지는 경우도 있기에 자신과 xor해서 체크한다.
+	 * 자신과 xor하면 값이 변하지 않으면 0이 된다.
+	 * large_block 단위로 넘치지 않았다면 xor결과 0이 되고 and 또한 0이 된다.
+	 * (large_block은 2의 승수)
+	 *
+	 * 결과가 0이 아니면 x + block - (x & (block - 1)) 은 블럭단위를 증가시키고 
+	 * (x & (block - 1))로 block보다 작은 값을 구한다.
+	 * x의 block단위안에서 값을 빼면 블럭 단위로 정렬된다.
+	 *
+	 * 0이면 small_block이 들어가기에 공간이 충분하다. 주소를 그대로 사용한다.
+	 **/
 	FIX_BTMAP_END =
 	 (__end_of_permanent_fixed_addresses ^
 	  (__end_of_permanent_fixed_addresses + TOTAL_FIX_BTMAPS - 1)) &
@@ -186,8 +211,10 @@ static inline void __set_fixmap(enum fixed_addresses idx,
 
 #define clear_fixmap(idx)			\
 	__set_fixmap(idx, 0, __pgprot(0))
-
-#define __fix_to_virt(x)	(FIXADDR_TOP - ((x) << PAGE_SHIFT))
+/* PAGE_SHIFT = 12 = 4K */
+/* __fix_to_virt는 페이지 번호를 가상주소로
+ * __virt_to_fix는 가상주소를 페이지 번호로 바꾼다 */
+#define __fix_to_virt(x)	(FIXADDR_TOP - ((x) << PAGE_SHIFT))	
 #define __virt_to_fix(x)	((FIXADDR_TOP - ((x)&PAGE_MASK)) >> PAGE_SHIFT)
 
 extern void __this_fixmap_does_not_exist(void);

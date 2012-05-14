@@ -216,7 +216,9 @@ static inline void native_clts(void)
  * use a variable and mimic reads and writes to it to enforce serialization
  */
 static unsigned long __force_order;
-
+/* volatile 만으로는 컴파일러의 메모리 읽기 쓰기 재배치에 부족하고 "memory" 를 clobber 필드에 놓는것은 성능을 저해한다.
+ * 변수에 읽기 쓰기 하는것처럼 속여서 문제를 해결했다.
+ */
 static inline unsigned long native_read_cr0(void)
 {
 	unsigned long val;

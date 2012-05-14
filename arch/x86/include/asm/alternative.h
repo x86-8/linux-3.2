@@ -48,6 +48,9 @@ struct alt_instr {
 	u16 cpuid;		/* cpuid bit set for replacement */
 	u8  instrlen;		/* length of original instruction */
 	u8  replacementlen;	/* length of new instruction, <= instrlen */
+#ifdef CONFIG_X86_64
+	u32 pad2;
+#endif
 };
 
 extern void alternative_instructions(void);
@@ -74,12 +77,17 @@ static inline int alternatives_text_reserved(void *start, void *end)
 	return 0;
 }
 #endif	/* CONFIG_SMP */
-
+/* old와 new의 두가지 코드와 메타데이터를 두가지 섹션에 만들어놓고
+ * 나중에 런타임으로 체크(alternative_instruction -> apply_alternatives)해서
+ * new 코드를 old에 덮어씌운다.
+ * 치환하기 전까지는 oldinstr이 실행된다.
+ */
 /* alternative assembly primitive: */
 #define ALTERNATIVE(oldinstr, newinstr, feature)			\
 									\
       "661:\n\t" oldinstr "\n662:\n"					\
       ".section .altinstructions,\"a\"\n"				\
+      _ASM_ALIGN "\n"							\
       "	 .long 661b - .\n"			/* label           */	\
       "	 .long 663f - .\n"			/* new instruction */	\
       "	 .word " __stringify(feature) "\n"	/* feature bit     */	\

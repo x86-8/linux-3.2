@@ -1,4 +1,4 @@
-#include <asm-generic/vmlinux.lds.h>
+
 
 OUTPUT_FORMAT(CONFIG_OUTPUT_FORMAT, CONFIG_OUTPUT_FORMAT, CONFIG_OUTPUT_FORMAT)
 
@@ -21,15 +21,15 @@ SECTIONS
 	 * address 0.
 	 */
 	. = 0;
-	.head.text : {
+	.head.text : {				/* 재배치후에는 이부분은 덮어쓴다.. */
 		_head = . ;
-		HEAD_TEXT
+		HEAD_TEXT 				/* #define HEAD_TEXT *(.head.text) */
 		_ehead = . ;
 	}
-	.rodata..compressed : {
+	.rodata..compressed : {		/* 압축 커널부분 */
 		*(.rodata..compressed)
 	}
-	.text :	{
+	.text :	{					/* 안전한 커널코드 */
 		_text = .; 	/* Text */
 		*(.text)
 		*(.text.*)
@@ -43,7 +43,7 @@ SECTIONS
 	}
 	.got : {
 		_got = .;
-		KEEP(*(.got.plt))
+		KEEP(*(.got.plt)) /* 제거하면 안되는 영역 */
 		KEEP(*(.got))
 		_egot = .;
 	}
@@ -53,7 +53,7 @@ SECTIONS
 		*(.data.*)
 		_edata = . ;
 	}
-	. = ALIGN(L1_CACHE_BYTES);
+	. = ALIGN(L1_CACHE_BYTES); /* cache line 크기로 정렬 */
 	.bss : {
 		_bss = . ;
 		*(.bss)
@@ -62,6 +62,7 @@ SECTIONS
 		. = ALIGN(8);	/* For convenience during zeroing */
 		_ebss = .;
 	}
+/* 64비트에서만 pgtable 추가 */
 #ifdef CONFIG_X86_64
        . = ALIGN(PAGE_SIZE);
        .pgtable : {

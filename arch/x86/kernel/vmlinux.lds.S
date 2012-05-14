@@ -36,6 +36,7 @@ OUTPUT_ARCH(i386)
 ENTRY(phys_startup_32)
 jiffies = jiffies_64;
 #else
+/* 64비트면 시작주소는 phys_startup_64다 */
 OUTPUT_ARCH(i386:x86-64)
 ENTRY(phys_startup_64)
 jiffies_64 = jiffies;
@@ -85,22 +86,23 @@ SECTIONS
         . = LOAD_OFFSET + LOAD_PHYSICAL_ADDR;
         phys_startup_32 = startup_32 - LOAD_OFFSET;
 #else
-        . = __START_KERNEL;
+        . = __START_KERNEL; /* load될 VMA 주소를 바꾼다. 이 값은 LOAD_OFFSET + 16M 이다. */
         phys_startup_64 = startup_64 - LOAD_OFFSET;
+/* LOAD_OFFSET == 0xffffffff80000000 물리메모리와의 직접매핑구역 진입(시작)지점이다. */
 #endif
 
 	/* Text and read-only data */
-	.text :  AT(ADDR(.text) - LOAD_OFFSET) {
-		_text = .;
-		/* bootstrapping code */
-		HEAD_TEXT
+	.text :  AT(ADDR(.text) - LOAD_OFFSET) { /* .text의 LMA는 16M ; VMA는 0xffffffff80000000 + 16M */ 
+		_text = .;			/* VMA == __START_KERNEL(LOAD_OFFSET == 16M) */
+		/* bootstrapping code */ 
+		HEAD_TEXT				/* 커널의 시작 = x86/kernel/head_64.S */
 #ifdef CONFIG_X86_32
 		. = ALIGN(PAGE_SIZE);
 		*(.text..page_aligned)
 #endif
 		. = ALIGN(8);
 		_stext = .;
-		TEXT_TEXT
+		TEXT_TEXT	/* 각 text_section을 모아주는 것. */
 		SCHED_TEXT
 		LOCK_TEXT
 		KPROBES_TEXT
@@ -110,7 +112,7 @@ SECTIONS
 		*(.gnu.warning)
 		/* End of text section */
 		_etext = .;
-	} :text = 0x9090
+	} :text = 0x9090    /* 0x90은 nop이다. 이걸 두 번함. but, 하는 이유는 모름. */
 
 	NOTES :text :note
 
@@ -141,7 +143,7 @@ SECTIONS
 
 		CACHELINE_ALIGNED_DATA(L1_CACHE_BYTES)
 
-		DATA_DATA
+		DATA_DATA				/* asm-generic에 있는 vmlinus.lds.h의 DATA공간이 들어간다. (스택포함) */
 		CONSTRUCTORS
 
 		/* rarely changed data like cpu maps */
@@ -322,10 +324,10 @@ SECTIONS
 
 	. = ALIGN(PAGE_SIZE);
 	.brk : AT(ADDR(.brk) - LOAD_OFFSET) {
-		__brk_base = .;
-		. += 64 * 1024;		/* 64k alignment slop space */
+		__brk_base = .;			/* 커널에서 bss는 bss끝이다. (=heap)  */
+		. += 64 * 1024;			/* 64k alignment slop space */
 		*(.brk_reservation)	/* areas brk users have reserved */
-		__brk_limit = .;
+		__brk_limit = .;	/* 공간 확보 */
 	}
 
 	_end = .;

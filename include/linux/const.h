@@ -11,7 +11,8 @@
  * Similarly, _AT() will cast an expression with a type in C, but
  * leave it unchanged in asm.
  */
-
+// 데이터 형을 강제로 casting한다.
+// AC는 앞쪽이 자료 AT는 뒤쪽이 자료
 #ifdef __ASSEMBLY__
 #define _AC(X,Y)	X
 #define _AT(T,X)	X

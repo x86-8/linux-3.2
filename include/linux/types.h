@@ -8,6 +8,7 @@
 
 #define DECLARE_BITMAP(name,bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]
+ /* 비트만큼 선언(올림) */
 #else
 #ifndef __EXPORTED_HEADERS__
 #warning "Attempt to use kernel headers from user space, see http://kernelnewbies.org/KernelHeaders"

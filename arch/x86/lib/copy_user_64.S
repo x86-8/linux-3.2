@@ -132,12 +132,12 @@ ENDPROC(bad_from_user)
  */
 ENTRY(copy_user_generic_unrolled)
 	CFI_STARTPROC
-	cmpl $8,%edx
+	cmpl $8,%edx		 /* 카운트는 바이트 사이즈  size < 8이면 17f로 점프 */
 	jb 20f		/* less then 8 bytes, go to byte copy loop */
 	ALIGN_DESTINATION
 	movl %edx,%ecx
-	andl $63,%edx
-	shrl $6,%ecx
+	andl $63,%edx				/* dx = % 8 카운트 */
+	shrl $6,%ecx				/* cx= 8바이트 카운트 */
 	jz 17f
 1:	movq (%rsi),%r8
 2:	movq 1*8(%rsi),%r9
@@ -239,12 +239,12 @@ ENTRY(copy_user_generic_string)
 	CFI_STARTPROC
 	andl %edx,%edx
 	jz 4f
-	cmpl $8,%edx
+	cmpl $8,%edx		 /* 8개 이하면 byte 단위로 복사 */
 	jb 2f		/* less than 8 bytes, go to byte copy loop */
 	ALIGN_DESTINATION
 	movl %edx,%ecx
-	shrl $3,%ecx
-	andl $7,%edx
+	shrl $3,%ecx				/* / 8 = 8바이트 count */
+	andl $7,%edx				/* % 8 = 잔여숫자 */
 1:	rep
 	movsq
 2:	movl %edx,%ecx

@@ -182,13 +182,13 @@ struct thread_info {
 
 
 /* how to get the current stack pointer from C */
-register unsigned long current_stack_pointer asm("esp") __used;
+register unsigned long current_stack_pointer asm("esp") __used; /* __used는 define된  attribute 지시자로 참조되지 않아도 알리지 않는다. */
 
 /* how to get the thread information struct from C */
 static inline struct thread_info *current_thread_info(void)
 {
 	return (struct thread_info *)
-		(current_stack_pointer & ~(THREAD_SIZE - 1));
+		(current_stack_pointer & ~(THREAD_SIZE - 1)); /* 스택포인터(esp) 를 쓰레드 크기 단위로 마스크 , 쓰레드 크기는 8KB */
 }
 
 #else /* !__ASSEMBLY__ */

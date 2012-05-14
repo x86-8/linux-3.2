@@ -30,6 +30,9 @@
 #include <string.h>
 #include <inttypes.h>
 
+/*
+ * 32비트 리틀엔디안을 구한다.
+ */
 static uint32_t getle32(const void *p)
 {
 	const uint8_t *cp = p;
@@ -69,7 +72,7 @@ int main(int argc, char *argv[])
 	}
 
 	ilen = ftell(f);
-	olen = getle32(&olen);
+	olen = getle32(&olen); 	/* 32비트 리틀엔디안 */
 	fclose(f);
 
 	/*
@@ -77,17 +80,21 @@ int main(int argc, char *argv[])
 	 * sizes, compute the necessary decompression offset...
 	 */
 
-	offs = (olen > ilen) ? olen - ilen : 0;
+	offs = (olen > ilen) ? olen - ilen : 0; /* 압축된 커널부분(.rodata..compressed)이 포함되기 때문에 뺀다. */
 	offs += olen >> 12;	/* Add 8 bytes for each 32K block */
 	offs += 64*1024 + 128;	/* Add 64K + 128 bytes slack */
 	offs = (offs+4095) & ~4095; /* Round to a 4K boundary */
 
+	/* piggy.S를 생성한다.
+	 * piggy.S를 컴파일하면 압축파일 정보가 담긴 심볼과
+	 * 압축된 커널 - vmlinux.bin.gz를 포함하는 piggy.o가 된다.
+	 */
 	printf(".section \".rodata..compressed\",\"a\",@progbits\n");
-	printf(".globl z_input_len\n");
+	printf(".globl z_input_len\n"); /* 압축된 길이 */
 	printf("z_input_len = %lu\n", ilen);
-	printf(".globl z_output_len\n");
+	printf(".globl z_output_len\n"); /* 압축풀렸을때의 길이 */
 	printf("z_output_len = %lu\n", (unsigned long)olen);
-	printf(".globl z_extract_offset\n");
+	printf(".globl z_extract_offset\n"); /* 압축 */
 	printf("z_extract_offset = 0x%lx\n", offs);
 	/* z_extract_offset_negative allows simplification of head_32.S */
 	printf(".globl z_extract_offset_negative\n");

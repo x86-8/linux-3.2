@@ -143,6 +143,7 @@ EXPORT_SYMBOL(strncpy);
  * of course, the buffer size is zero). It does not pad
  * out the result like strncpy() does.
  */
+/* 사이즈만큼 복사하고 끝에 NUL을 넣어준다. */
 size_t strlcpy(char *dest, const char *src, size_t size)
 {
 	size_t ret = strlen(src);

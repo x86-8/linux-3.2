@@ -46,7 +46,7 @@ struct list_head {
 
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
-
+/* head를 자기 자신으로 초기화 */
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {
 	list->next = list;

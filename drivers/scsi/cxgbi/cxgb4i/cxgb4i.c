@@ -150,6 +150,7 @@ static struct scsi_transport_template *cxgb4i_stt;
  * The section below implments CPLs that related to iscsi tcp connection
  * open/close/abort and data send/receive.
  */
+/* (512 + 64 - 1) / 64  = type의 비트수로 나눈다. 무조건 올림 //열심히 하고 계시군요...*/
 #define DIV_ROUND_UP(n, d)	(((n) + (d) - 1) / (d))
 #define RCV_BUFSIZ_MASK		0x3FFU
 #define MAX_IMM_TX_PKT_LEN	128

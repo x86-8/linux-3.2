@@ -40,7 +40,7 @@ export LC_COLLATE LC_NUMERIC
 
 # To put more focus on warnings, be less verbose as default
 # Use 'make V=1' to see the full commands
-
+# origin 옵션은 변수가 선언된 방법을 리턴한다.
 ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE = $(V)
 endif
@@ -164,7 +164,7 @@ export srctree objtree VPATH
 # line overrides the setting of ARCH below.  If a native build is happening,
 # then ARCH is assigned, getting whatever value it gets normally, and 
 # SUBARCH is subsequently ignored.
-
+# 지정된 아키텍쳐 이름으로 변환 i[456]86 -> i386
 SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 				  -e s/arm.*/arm/ -e s/sa110/arm/ \
 				  -e s/s390x/s390/ -e s/parisc64/parisc/ \
@@ -191,6 +191,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # "make" in the configured kernel build directory always uses that.
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+# 아키텍쳐 지정 make ARCH=blah 로 지정이 안되어있으면 uname 머신정보로 지정
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= $(SUBARCH)
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
@@ -201,7 +202,7 @@ SRCARCH 	:= $(ARCH)
 
 # Additional ARCH settings for x86
 ifeq ($(ARCH),i386)
-        SRCARCH := x86
+        SRCARCH := x86 # 64비트와 같은 부분을 참조
 endif
 ifeq ($(ARCH),x86_64)
         SRCARCH := x86
@@ -497,6 +498,7 @@ else
 # Build targets only - this includes vmlinux, arch specific targets, clean
 # targets and others. In general all targets except *config targets.
 
+# 
 ifeq ($(KBUILD_EXTMOD),)
 # Additional helpers built in scripts/
 # Carefully list dependencies so we do not try to build scripts twice
@@ -529,6 +531,7 @@ $(KCONFIG_CONFIG) include/config/auto.conf.cmd: ;
 # with it and forgot to run make oldconfig.
 # if auto.conf.cmd is missing then we are probably in a cleaned tree so
 # we execute the config step to be sure to catch updated Kconfig files
+# %는 확장자를 제외한 파일명
 include/config/%.conf: $(KCONFIG_CONFIG) include/config/auto.conf.cmd
 	$(Q)$(MAKE) -f $(srctree)/Makefile silentoldconfig
 else
@@ -564,6 +567,7 @@ else
 KBUILD_CFLAGS	+= -O2
 endif
 
+# 하위 디렉토리의 파일이 포함되었다. head-y등의 처리 완료
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
 ifneq ($(CONFIG_FRAME_WARN),0)
@@ -762,6 +766,7 @@ export KBUILD_VMLINUX_OBJS := $(vmlinux-all)
 
 # Rule to link vmlinux - also used during CONFIG_KALLSYMS
 # May be overridden by arch/$(ARCH)/Makefile
+# vmlinux.lds 의 커맨드라인 옵션을 변수에 넣는다.
 quiet_cmd_vmlinux__ ?= LD      $@
       cmd_vmlinux__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_vmlinux) -o $@ \
       -T $(vmlinux-lds) $(vmlinux-init)                          \
@@ -769,6 +774,7 @@ quiet_cmd_vmlinux__ ?= LD      $@
       $(filter-out $(vmlinux-lds) $(vmlinux-init) $(vmlinux-main) vmlinux.o FORCE ,$^)
 
 # Generate new vmlinux version
+	  # 읽을수있는 파일인가
 quiet_cmd_vmlinux_version = GEN     .version
       cmd_vmlinux_version = set -e;                     \
 	if [ ! -r .version ]; then			\
@@ -992,6 +998,7 @@ prepare: prepare0
 
 # KERNELRELEASE can change from a few different places, meaning version.h
 # needs to be updated, so this check is forced on all builds
+# UTS는 universal time-sharing system
 
 uts_len := 64
 define filechk_utsrelease.h
@@ -1076,7 +1083,7 @@ headers_check: headers_install
 ifdef CONFIG_MODULES
 
 # By default, build modules as well
-
+# make만 하면 기본적으로 vmlinux와 modules가 실행된다.
 all: modules
 
 #	Build modules
@@ -1084,7 +1091,7 @@ all: modules
 #	A module can be listed more than once in obj-m resulting in
 #	duplicate lines in modules.order files.  Those are removed
 #	using awk while concatenating to the final file.
-
+# 커널에 포함되는 모듈은 modules.order에 착탈식 모듈은 modules.builtin
 PHONY += modules
 modules: $(vmlinux-dirs) $(if $(KBUILD_BUILTIN),vmlinux) modules.builtin
 	$(Q)$(AWK) '!x[$$0]++' $(vmlinux-dirs:%=$(objtree)/%/modules.order) > $(objtree)/modules.order
@@ -1185,6 +1192,7 @@ PHONY += $(mrproper-dirs) mrproper archmrproper
 $(mrproper-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _mrproper_%,%,$@)
 
+# 아키텍쳐 종속적인 archclean 실행후 설정파일들 삭제
 mrproper: clean archmrproper $(mrproper-dirs)
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
@@ -1192,7 +1200,7 @@ mrproper: clean archmrproper $(mrproper-dirs)
 # distclean
 #
 PHONY += distclean
-
+# distclean은 mrproper후 결과물까지 다 날려버린다.
 distclean: mrproper
 	@find $(srctree) $(RCS_FIND_IGNORE) \
 		\( -name '*.orig' -o -name '*.rej' -o -name '*~' \
@@ -1295,6 +1303,7 @@ help:
 	@echo  '		2: warnings which occur quite often but may still be relevant'
 	@echo  '		3: more obscure warnings, can most likely be ignored'
 	@echo  '		Multiple levels can be combined with W=12 or W=123'
+	@echo  '  make RECORDMCOUNT_WARN=1 [targets] Warn about ignored mcount sections'
 	@echo  ''
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
 	@echo  'For further info see the ./README file'

@@ -637,7 +637,7 @@ void set_cpu_present(unsigned int cpu, bool present)
 	else
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_present_bits));
 }
-
+/* cpu는 cpu 번호 online은 세팅할 값(set,clear) */
 void set_cpu_online(unsigned int cpu, bool online)
 {
 	if (online)

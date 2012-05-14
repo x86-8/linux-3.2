@@ -8199,7 +8199,7 @@ void __init sched_init(void)
 	unsigned long alloc_size = 0, ptr;
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
-	alloc_size += 2 * nr_cpu_ids * sizeof(void **);
+	alloc_size += 2 * nr_cpu_ids * sizeof(void **); /* 2* 최대cpu수 * 포인터 크기 */
 #endif
 #ifdef CONFIG_RT_GROUP_SCHED
 	alloc_size += 2 * nr_cpu_ids * sizeof(void **);

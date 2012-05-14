@@ -208,18 +208,18 @@ static inline void __raw_write_lock_bh(rwlock_t *lock)
 
 static inline void __raw_write_lock(rwlock_t *lock)
 {
-	preempt_disable();
-	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_);
-	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);
+	preempt_disable();	/* 카운트 단순증가  */
+	rwlock_acquire(&lock->dep_map, 0, 0, _RET_IP_); /* 디버깅 관련해서 락을 체크한다. */
+	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock); /* 실제 락부분 do_raw_write_lock을 호출 */
 }
 
 #endif /* CONFIG_PREEMPT */
 
 static inline void __raw_write_unlock(rwlock_t *lock)
 {
-	rwlock_release(&lock->dep_map, 1, _RET_IP_);
+	rwlock_release(&lock->dep_map, 1, _RET_IP_); /* 디 버 그 용 */
 	do_raw_write_unlock(lock);
-	preempt_enable();
+	preempt_enable();	/* 선점허용 */
 }
 
 static inline void __raw_read_unlock(rwlock_t *lock)

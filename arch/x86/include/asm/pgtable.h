@@ -71,6 +71,7 @@ extern struct mm_struct *pgd_page_get_mm(struct page *page);
 #define __pud(x)	native_make_pud(x)
 #endif
 
+// PMD 단계가 있으면 아래 define을 실행
 #ifndef __PAGETABLE_PMD_FOLDED
 #define pmd_val(x)	native_pmd_val(x)
 #define __pmd(x)	native_make_pmd(x)
@@ -297,13 +298,13 @@ static inline pmd_t pmd_mknotpresent(pmd_t pmd)
 static inline pgprotval_t massage_pgprot(pgprot_t pgprot)
 {
 	pgprotval_t protval = pgprot_val(pgprot);
-
+	/* 페이지가 있으면 지원되는 비트만 남긴다. */
 	if (protval & _PAGE_PRESENT)
 		protval &= __supported_pte_mask;
 
 	return protval;
 }
-
+/* 페이지 프레임 번호를 받아서 pte속성과 합쳐서 리턴한다. */
 static inline pte_t pfn_pte(unsigned long page_nr, pgprot_t pgprot)
 {
 	return __pte(((phys_addr_t)page_nr << PAGE_SHIFT) |
@@ -462,6 +463,7 @@ static inline unsigned long pmd_index(unsigned long address)
  * this function returns the index of the entry in the pte page which would
  * control the given virtual address
  */
+/* pte값을 구한다. */
 static inline unsigned long pte_index(unsigned long address)
 {
 	return (address >> PAGE_SHIFT) & (PTRS_PER_PTE - 1);
@@ -577,7 +579,7 @@ static inline int pgd_none(pgd_t pgd)
  * this macro returns the index of the entry in the pgd page which would
  * control the given virtual address
  */
-#define pgd_index(address) (((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
+#define pgd_index(address) (((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1)) /* pgd의 index를 구한다. */
 
 /*
  * pgd_offset() returns a (pgd_t *)
@@ -760,7 +762,7 @@ static inline void pmdp_set_wrprotect(struct mm_struct *mm,
  */
 static inline void clone_pgd_range(pgd_t *dst, pgd_t *src, int count)
 {
-       memcpy(dst, src, count * sizeof(pgd_t));
+       memcpy(dst, src, count * sizeof(pgd_t)); /* pgd 카운트만큼 복사 */
 }
 
 

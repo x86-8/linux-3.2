@@ -10,17 +10,17 @@ ENTRY(_start)
 SECTIONS
 {
 	. = 0;
-	.bstext		: { *(.bstext) }
+	.bstext		: { *(.bstext) } /* 부트섹터 코드 */
 	.bsdata		: { *(.bsdata) }
 
-	. = 497;
+	. = 497; /* 부트 프로토콜 헤더 */
 	.header		: { *(.header) }
 	.entrytext	: { *(.entrytext) }
 	.inittext	: { *(.inittext) }
 	.initdata	: { *(.initdata) }
 	__end_init = .;
 
-	.text		: { *(.text) }
+	.text		: { *(.text) } /* 부트 프로토콜 정보 끝에는 setup 코드 */
 	.text32		: { *(.text32) }
 
 	. = ALIGN(16);

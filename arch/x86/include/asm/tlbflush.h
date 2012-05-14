@@ -15,6 +15,8 @@
 #define __flush_tlb_single(addr) __native_flush_tlb_single(addr)
 #endif
 
+// http://puresay.springnote.com/pages/3955705.xhtml
+/* cr3를 다시써주는 초기화 */
 static inline void __native_flush_tlb(void)
 {
 	native_write_cr3(native_read_cr3());
@@ -34,7 +36,7 @@ static inline void __native_flush_tlb_global(void)
 
 	cr4 = native_read_cr4();
 	/* clear PGE */
-	native_write_cr4(cr4 & ~X86_CR4_PGE);
+	native_write_cr4(cr4 & ~X86_CR4_PGE); /* cr4의 PGE비트를 껐다가 복구해서 global TLB를 지운다. */
 	/* write old PGE again and flush TLBs */
 	native_write_cr4(cr4);
 
@@ -43,9 +45,14 @@ static inline void __native_flush_tlb_global(void)
 
 static inline void __native_flush_tlb_single(unsigned long addr)
 {
-	asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
+	asm volatile("invlpg (%0)" ::"r" (addr) : "memory"); /* TLB 페이지 무효화 */
 }
-
+/* PGE가 켜있고 페이지의 G비트가 켜져있으면 해당 TLB 캐시는 삭제되지 않는다. (invlpg도 소용없음)
+ * 그래서 pge가 있으면 PGE를 껐다 켜는 방법으로 비운다.
+ * 보통은 cr3를 다시 써주는 방식을 사용한다.
+ *
+ * TLB를 무효화 하는 방식은 보통 invlpg명령을 쓰거나 cr3 값을 갱신함으로 비워진다. 
+ */
 static inline void __flush_tlb_all(void)
 {
 	if (cpu_has_pge)
@@ -54,6 +61,7 @@ static inline void __flush_tlb_all(void)
 		__flush_tlb();
 }
 
+/* invlpg명령을 쓸수 있으면 쓰고 아니면 cr3 쓰기 */
 static inline void __flush_tlb_one(unsigned long addr)
 {
 	if (cpu_has_invlpg)

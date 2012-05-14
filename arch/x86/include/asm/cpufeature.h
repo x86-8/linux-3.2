@@ -5,7 +5,7 @@
 #define _ASM_X86_CPUFEATURE_H
 
 #include <asm/required-features.h>
-
+/* N개의 CPU 정보 (INT:32비트 words) */
 #define NCAPINTS	10	/* N 32-bit words worth of info */
 
 /*
@@ -44,7 +44,7 @@
 #define X86_FEATURE_SELFSNOOP	(0*32+27) /* "ss" CPU self snoop */
 #define X86_FEATURE_HT		(0*32+28) /* Hyper-Threading */
 #define X86_FEATURE_ACC		(0*32+29) /* "tm" Automatic clock control */
-#define X86_FEATURE_IA64	(0*32+30) /* IA-64 processor */
+#define X86_FEATURE_IA64	(0*32+30) /* IA-64 processor: Itaninum(Intel & HP) */
 #define X86_FEATURE_PBE		(0*32+31) /* Pending Break Enable */
 
 /* AMD-defined CPU features, CPUID level 0x80000001, word 1 */
@@ -211,6 +211,12 @@ extern const char * const x86_power_flags[32];
 #define test_cpu_cap(c, bit)						\
 	 test_bit(bit, (unsigned long *)((c)->x86_capability))
 
+/* (bit>>5)는 32bit짜리 크기의 배열 번호를 알기위하여 쓰인다.
+ * REQUIRED_MASK는 사용하는데 필요한 비트들이다. 나머지는 0이다.
+ * 블럭번호는 bits / 32로 구하고 비트번호는 bits % 32 로 구한다.
+ * 매크로를 사용하는 입장에서는 그냥 연속된 비트번호(0~319==32bits*10)를 쓰면
+ * 필요한 비트(REQUIRED)면 1이 아니면 0이 리턴된다.
+ */
 #define REQUIRED_MASK_BIT_SET(bit)					\
 	 ( (((bit)>>5)==0 && (1UL<<((bit)&31) & REQUIRED_MASK0)) ||	\
 	   (((bit)>>5)==1 && (1UL<<((bit)&31) & REQUIRED_MASK1)) ||	\
@@ -223,6 +229,7 @@ extern const char * const x86_power_flags[32];
 	   (((bit)>>5)==8 && (1UL<<((bit)&31) & REQUIRED_MASK8)) ||	\
 	   (((bit)>>5)==9 && (1UL<<((bit)&31) & REQUIRED_MASK9)) )
 
+/* 필요한 비트에 있다면 1 아니면 수집한 정보(CPU)와 비트를 테스트한다. */
 #define cpu_has(c, bit)							\
 	(__builtin_constant_p(bit) && REQUIRED_MASK_BIT_SET(bit) ? 1 :	\
 	 test_cpu_cap(c, bit))
@@ -235,6 +242,8 @@ extern const char * const x86_power_flags[32];
 
 #define set_cpu_cap(c, bit)	set_bit(bit, (unsigned long *)((c)->x86_capability))
 #define clear_cpu_cap(c, bit)	clear_bit(bit, (unsigned long *)((c)->x86_capability))
+ /* clear한 비트를 표시한다 */
+/* cpu데이터 부분의 APIC를 클리어 하고 set_bit로 클리어 했다고 표시해준다. */
 #define setup_clear_cpu_cap(bit) do { \
 	clear_cpu_cap(&boot_cpu_data, bit);	\
 	set_bit(bit, (unsigned long *)cpu_caps_cleared); \

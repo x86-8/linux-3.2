@@ -17,6 +17,11 @@
 
 #define SMAP	0x534d4150	/* ASCII "SMAP" */
 
+
+/**
+ @brief	e820 Interrupt 를 통한 현재 Memory map 구성을 확인하고 e820 정보를 e820_map에 입력한다.
+ @return	성공시: 확인된 memory map 구성 갯수, 실패시:0
+ */
 static int detect_memory_e820(void)
 {
 	int count = 0;
@@ -25,9 +30,12 @@ static int detect_memory_e820(void)
 	static struct e820entry buf; /* static so it is zeroed */
 
 	initregs(&ireg);
-	ireg.ax  = 0xe820;
+	ireg.ax  = 0xe820;		// 0xE820
+	// 0xE820 : returns a memory map of all the installed RAM,
+	// and of physical memory ranges reserved by the BIOS.
+	// http://www.uruk.org/orig-grub/mem64mb.html
 	ireg.cx  = sizeof buf;
-	ireg.edx = SMAP;
+	ireg.edx = SMAP;	/* 필요한 signature */
 	ireg.di  = (size_t)&buf;
 
 	/*
@@ -46,12 +54,18 @@ static int detect_memory_e820(void)
 
 	do {
 		intcall(0x15, &ireg, &oreg);
+		// 0x15: ax(e820)
+		// &ireg : Input Register
+		// &oreg : Ouput Register
 		ireg.ebx = oreg.ebx; /* for next iteration... */
+		// ebx : Offset 주소.
+		// Input 의 경우 시작 Offset, Output의 경우 다음 Offset.
+		// 만약 Offset이 0 이면 끝을 의미한다.
 
 		/* BIOSes which terminate the chain with CF = 1 as opposed
 		   to %ebx = 0 don't always report the SMAP signature on
 		   the final, failing, probe. */
-		if (oreg.eflags & X86_EFLAGS_CF)
+		if (oreg.eflags & X86_EFLAGS_CF)	// Error 발생시, CF Flag가 Set이 된다.
 			break;
 
 		/* Some BIOSes stop returning SMAP in the middle of
@@ -59,25 +73,43 @@ static int detect_memory_e820(void)
 		   screwed up the map at that point, we might have a
 		   partial map, the full map, or complete garbage, so
 		   just return failure. */
+		// 정상적인 검색 루프에서는 Return 값으로 oreg.eax 에 SMAP 값이 입력되어야 한다.
+		// 일부 BIOS 에서는 다른 값들이 올 수도 있지만 SMAP 이 아닌 경우,
+		// 모두 Error 로 간주한다.
 		if (oreg.eax != SMAP) {
 			count = 0;
 			break;
 		}
 
-		*desc++ = buf;
+		*desc++ = buf; 	/* e820 엔트리를 e820_map에 입력 */
 		count++;
+		// ireg.ebx = Next Search Memory Offset
 	} while (ireg.ebx && count < ARRAY_SIZE(boot_params.e820_map));
 
-	return boot_params.e820_entries = count;
+	return boot_params.e820_entries = count; /* 총 갯수 */
 }
 
+/**
+ @brief	0xe801 Interrupt 명령을 통한 Memory map을 확인한다.\n
+	 확인된 Memory map 정보는 boot_params 에 저장된다.\n
+	 확인하는 사항은 전체 메모리 맵 구성의 크기이다.\n
+	 확인 가능한 최대 메모리 크기는 4G + 16M 이다.\n
+	 최대 확인 가능한 메모리 크기까지만 표현한다.\n
+	 결과값은 boot_params.alt_mem_k 에 저장된다.
+ @return	성공시:0, 실패시:-1
+ */
 static int detect_memory_e801(void)
 {
 	struct biosregs ireg, oreg;
 
 	initregs(&ireg);
 	ireg.ax = 0xe801;
+	// 0xe801 : 0xe820(2002), 0xe801(1994) 2002 년 이전의 CPU는 e801
+	// 명령으로만 Memory map 을 확인할 수 있으므로...
 	intcall(0x15, &ireg, &oreg);
+	// 연산 결과
+	// ax : Kbyte 단위의 1 ~ 15 * 1024 사이의 크기 값.(표현가능한 크기: 1Kbyte ~ 15 Mbyte)
+	// bx : 64KByte 단위의 크기값. (최대 4GB)
 
 	if (oreg.eflags & X86_EFLAGS_CF)
 		return -1;
@@ -106,6 +138,13 @@ static int detect_memory_e801(void)
 	return 0;
 }
 
+/**
+ @brief	0x88 Interrupt 명령으로 메모리\n
+	 1Kbyte 단위의 메모리 크기를 확인한다.\n
+	 확인 가능한 최대 메모리 크기는 64M + 1M 이다.\n
+	 확인된 결과값은 boot_params.screen_info.ext_mem_k 에 저장된다.
+ @return	성공시:0, 실패시:-1
+ */
 static int detect_memory_88(void)
 {
 	struct biosregs ireg, oreg;
@@ -119,6 +158,14 @@ static int detect_memory_88(void)
 	return -(oreg.eflags & X86_EFLAGS_CF); /* 0 or -1 */
 }
 
+
+/*
+ @brief	Memory Map 확인을 한다.\n
+	 e820, e801, 88 Interrupt 명령을 통해서 memory map 확인을 한다.\n
+	 확인된 메모리 정보는 boot_params 에 저장되며, 세가지 명령 중 하나라도 성공한다면\n
+	 성공으로 간주한다.
+ @return	성공시:0, 실패시:-1
+ */
 int detect_memory(void)
 {
 	int err = -1;

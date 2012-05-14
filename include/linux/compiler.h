@@ -2,7 +2,13 @@
 #define __LINUX_COMPILER_H
 
 #ifndef __ASSEMBLY__
+/* __CHECKER__는 커널 내부적으로 쓰이는 sparse에서 쓰이는 매크로다. accesor macro로써 가능하면 accesor macro들을 사용해 접근해야 한다.*/
 
+//This looks like it's for defining weakly-defined symbols, where an unresolved symbol gets set to NULL rather than causing the program to abort with an error.
+
+// http://studyfoss.egloos.com/5375570
+// http://kldp.org/node/96789
+// http://old.nabble.com/Significance-of--__iomem%22-td23191855.html
 #ifdef __CHECKER__
 # define __user		__attribute__((noderef, address_space(1)))
 # define __kernel	__attribute__((address_space(0)))

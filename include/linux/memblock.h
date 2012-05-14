@@ -70,6 +70,7 @@ extern phys_addr_t memblock_alloc_try_nid(phys_addr_t size, phys_addr_t align,
 extern phys_addr_t memblock_alloc(phys_addr_t size, phys_addr_t align);
 
 /* Flags for memblock_alloc_base() amd __memblock_alloc_base() */
+/* ANYWHERE는 64비트로 0xfffff.... */
 #define MEMBLOCK_ALLOC_ANYWHERE	(~(phys_addr_t)0)
 #define MEMBLOCK_ALLOC_ACCESSIBLE	0
 

@@ -324,7 +324,7 @@ static spinlock_t pool_lock;			/* protects page_address_pool */
 static struct page_address_slot {
 	struct list_head lh;			/* List of page_address_maps */
 	spinlock_t lock;			/* Protect this bucket's list */
-} ____cacheline_aligned_in_smp page_address_htable[1<<PA_HASH_ORDER];
+} ____cacheline_aligned_in_smp page_address_htable[1<<PA_HASH_ORDER]; /* 캐시라인단위로 align 한다. page_address_htable[128] */
 
 static struct page_address_slot *page_slot(const struct page *page)
 {
@@ -419,11 +419,11 @@ void __init page_address_init(void)
 {
 	int i;
 
-	INIT_LIST_HEAD(&page_address_pool);
+	INIT_LIST_HEAD(&page_address_pool); /* head를 초기화 next=head, prev=헤드 */
 	for (i = 0; i < ARRAY_SIZE(page_address_maps); i++)
 		list_add(&page_address_maps[i].list, &page_address_pool);
 	for (i = 0; i < ARRAY_SIZE(page_address_htable); i++) {
-		INIT_LIST_HEAD(&page_address_htable[i].lh);
+		INIT_LIST_HEAD(&page_address_htable[i].lh); /* PAE 512혹은 1024개의 해시테이블 초기화 */
 		spin_lock_init(&page_address_htable[i].lock);
 	}
 	spin_lock_init(&pool_lock);

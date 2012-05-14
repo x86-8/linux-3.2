@@ -606,7 +606,7 @@ static inline void hlist_del_init(struct hlist_node *n)
 		INIT_HLIST_NODE(n);
 	}
 }
-
+/* head뒤에 node를 붙인다. */
 static inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 {
 	struct hlist_node *first = h->first;

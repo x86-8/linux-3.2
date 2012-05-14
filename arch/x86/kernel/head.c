@@ -5,7 +5,7 @@
 #include <asm/setup.h>
 #include <asm/bios_ebda.h>
 
-#define BIOS_LOWMEM_KILOBYTES 0x413
+#define BIOS_LOWMEM_KILOBYTES 0x413 /* 사용가능한 메모리 (<1M) ex) 628 */
 
 /*
  * The BIOS places the EBDA/XBDA at the top of conventional
@@ -32,10 +32,10 @@ void __init reserve_ebda_region(void)
 
 	/* end of low (conventional) memory */
 	lowmem = *(unsigned short *)__va(BIOS_LOWMEM_KILOBYTES);
-	lowmem <<= 10;
+	lowmem <<= 10;				/* 사용가능한 메모리를 KB에서 Bytes 단위로 올림 */
 
 	/* start of EBDA area */
-	ebda_addr = get_bios_ebda();
+	ebda_addr = get_bios_ebda(); /* 0x40E에서 EBDA 주소를 구한다. */
 
 	/* Fixup: bios puts an EBDA in the top 64K segment */
 	/* of conventional memory, but does not adjust lowmem. */
@@ -48,9 +48,9 @@ void __init reserve_ebda_region(void)
 		lowmem = 0x9f000;
 
 	/* Paranoia: should never happen, but... */
-	if ((lowmem == 0) || (lowmem >= 0x100000))
+	if ((lowmem == 0) || (lowmem >= 0x100000)) /* 가용메모리가 0이거나 1M를 넘을수 없다. */
 		lowmem = 0x9f000;
 
 	/* reserve all memory between lowmem and the 1MB mark */
-	memblock_x86_reserve_range(lowmem, 0x100000, "* BIOS reserved");
+	memblock_x86_reserve_range(lowmem, 0x100000, "* BIOS reserved"); /* EBDA 영역을 예약 */
 }

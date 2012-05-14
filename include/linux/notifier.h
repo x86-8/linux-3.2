@@ -46,7 +46,7 @@
  * chains are slightly more difficult to use because they require special
  * runtime initialization.
  */
-
+/* notifier_call 은 tick_notify 함수를 가리킨다. */
 struct notifier_block {
 	int (*notifier_call)(struct notifier_block *, unsigned long, void *);
 	struct notifier_block __rcu *next;

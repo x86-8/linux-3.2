@@ -184,7 +184,8 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 #endif
 
 #if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
-
+// SMP거나 스핀락 디버깅이 켜있으면 이쪽을 실행
+/* 타입틀리면 에러에러 */
 #define raw_spin_lock_irqsave(lock, flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\

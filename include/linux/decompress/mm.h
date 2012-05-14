@@ -75,7 +75,9 @@ static void free(void *where)
 
 /* Use defines rather than static inline in order to avoid spurious
  * warnings when not needed (indeed large_malloc / large_free are not
- * needed by inflate */
+ * needed by inflate
+ * malloc 함수는 스택처럼 단순하게 포인터를 증감시킨다. 이쪽 malloc define(kmalloc)를 쓰는게 낫다.
+ */
 
 #define malloc(a) kmalloc(a, GFP_KERNEL)
 #define free(a) kfree(a)

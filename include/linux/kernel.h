@@ -4,6 +4,7 @@
 /*
  * 'kernel.h' contains some often-used function prototypes etc
  */
+/* 올림 정렬이요 */
 #define __ALIGN_KERNEL(x, a)		__ALIGN_KERNEL_MASK(x, (typeof(x))(a) - 1)
 #define __ALIGN_KERNEL_MASK(x, mask)	(((x) + (mask)) & ~(mask))
 
@@ -85,6 +86,7 @@
 }							\
 )
 
+/* 0이면 자신이 리턴할 주소 1,2,3으로 +레벨을 지정가능 */
 #define _RET_IP_		(unsigned long)__builtin_return_address(0)
 #define _THIS_IP_  ({ __label__ __here; __here: (unsigned long)&&__here; })
 
@@ -538,7 +540,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
 	typeof(y) _min2 = (y);			\
 	(void) (&_min1 == &_min2);		\
 	_min1 < _min2 ? _min1 : _min2; })
-
+/* x가 더 크면 x를 반환 아니면 y를 반환  */
 #define max(x, y) ({				\
 	typeof(x) _max1 = (x);			\
 	typeof(y) _max2 = (y);			\

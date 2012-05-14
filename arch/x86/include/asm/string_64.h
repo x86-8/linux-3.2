@@ -32,6 +32,7 @@ static __always_inline void *__inline_memcpy(void *to, const void *from, size_t 
 extern void *memcpy(void *to, const void *from, size_t len);
 #else
 extern void *__memcpy(void *to, const void *from, size_t len);
+ /* len이 상수고 64바이트 이상이면 __memcpy를 사용하고 아니면 gcc의 builtin memcpy를 사용한다. */
 #define memcpy(dst, src, len)					\
 ({								\
 	size_t __len = (len);					\

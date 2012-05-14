@@ -18,8 +18,8 @@
 #include "vesa.h"
 
 /* VESA information */
-static struct vesa_general_info vginfo;
-static struct vesa_mode_info vminfo;
+static struct vesa_general_info vginfo;		///< General VESA Graphic Mode 정보
+static struct vesa_mode_info vminfo;		///< VESA Graphic Mode  정보를 포함한다.
 
 static __videocard video_vesa;
 
@@ -37,7 +37,7 @@ static int vesa_probe(void)
 	struct mode_info *mi;
 	int nmodes = 0;
 
-	video_vesa.modes = GET_HEAP(struct mode_info, 0);
+	video_vesa.modes = GET_HEAP(struct mode_info, 0); // 정렬만 한다.
 
 	initregs(&ireg);
 	ireg.ax = 0x4f00;
@@ -47,30 +47,30 @@ static int vesa_probe(void)
 	if (oreg.ax != 0x004f ||
 	    vginfo.signature != VESA_MAGIC ||
 	    vginfo.version < 0x0102)
-		return 0;	/* Not present */
+	  return 0;	/* Not present */ // SuperVGA 지원안하면 리턴
 
 	set_fs(vginfo.video_mode_ptr.seg);
 	mode_ptr = vginfo.video_mode_ptr.off;
 
-	while ((mode = rdfs16(mode_ptr)) != 0xffff) {
+	while ((mode = rdfs16(mode_ptr)) != 0xffff) { // 0xffff가 끝, 지원하는 모드들의 주소
 		mode_ptr += 2;
 
-		if (!heap_free(sizeof(struct mode_info)))
-			break;	/* Heap full, can't save mode info */
+		if (!heap_free(sizeof(struct mode_info))) // heap영역에 남은 공간이 있는지 확인한다.
+			break;	/* Heap full, can't save mode info */ 
 
-		if (mode & ~0x1ff)
+		if (mode & ~0x1ff) // 0x1ff를 초과하면 continue.
 			continue;
-
+		// 1~0x1ff값이 온다.
 		memset(&vminfo, 0, sizeof vminfo); /* Just in case... */
-
+		// 각각의 비디오 모드에 대한 자세한 정보를 얻는다.
 		ireg.ax = 0x4f01;
 		ireg.cx = mode;
 		ireg.di = (size_t)&vminfo;
 		intcall(0x10, &ireg, &oreg);
 
-		if (oreg.ax != 0x004f)
+		if (oreg.ax != 0x004f) // al에 4f가 오면 지원함, ah==0 success
 			continue;
-
+		// 자세한 정보를 넣어준다.
 		if ((vminfo.mode_attr & 0x15) == 0x05) {
 			/* Text Mode, TTY BIOS supported,
 			   supported by hardware */
@@ -102,14 +102,20 @@ static int vesa_probe(void)
 	return nmodes;
 }
 
-static int vesa_set_mode(struct mode_info *mode)
+/**
+ @brief	VESA 관련된 값 확인 후, 확인된 값들을 boot_params 에 입력한다.
+ @return	성공시:-1, 실패시: 0
+ */
+static int vesa_set_mode(
+		struct mode_info *mode
+		)
 {
 	struct biosregs ireg, oreg;
-	int is_graphic;
-	u16 vesa_mode = mode->mode - VIDEO_FIRST_VESA;
+	int is_graphic;		// Graphic Mode : 1, Text Mode : 0
+	u16 vesa_mode = mode->mode - VIDEO_FIRST_VESA; // - 0x200
 
 	memset(&vminfo, 0, sizeof vminfo); /* Just in case... */
-
+	// vesa vga 정보를 얻어온다.
 	initregs(&ireg);
 	ireg.ax = 0x4f01;
 	ireg.cx = vesa_mode;
@@ -119,11 +125,12 @@ static int vesa_set_mode(struct mode_info *mode)
 	if (oreg.ax != 0x004f)
 		return -1;
 
-	if ((vminfo.mode_attr & 0x15) == 0x05) {
+	// 프레임 버퍼가 가능하면 vesa_mode를 바꾸고 아니면 vesa_mode는 인자로 받은 mode
+	if ((vminfo.mode_attr & 0x15) == 0x05) { // 하위 4비트중 하드웨어에서 지원하는 모드 & bios 출력 지원 이 켜있는가?
 		/* It's a supported text mode */
 		is_graphic = 0;
-#ifdef CONFIG_FB_BOOT_VESA_SUPPORT
-	} else if ((vminfo.mode_attr & 0x99) == 0x99) {
+#ifdef CONFIG_FB_BOOT_VESA_SUPPORT // 커널에서 VESA 옵션이 켜있으면
+	} else if ((vminfo.mode_attr & 0x99) == 0x99) { // 프레임 버퍼를 세팅할수 있는 비트들이 켜있으면
 		/* It's a graphics mode with linear frame buffer */
 		is_graphic = 1;
 		vesa_mode |= 0x4000; /* Request linear frame buffer */
@@ -132,7 +139,12 @@ static int vesa_set_mode(struct mode_info *mode)
 		return -1;	/* Invalid mode */
 	}
 
-
+	/*
+	 ireg.ax 4f = VESA
+	 ireg.ax 02 = Video Mode Set
+	 intcall 0x10 : Video Function
+	 */
+	// 비디오 모드 세팅
 	initregs(&ireg);
 	ireg.ax = 0x4f02;
 	ireg.bx = vesa_mode;
@@ -143,7 +155,7 @@ static int vesa_set_mode(struct mode_info *mode)
 
 	graphic_mode = is_graphic;
 	if (!is_graphic) {
-		/* Text mode */
+	  /* Text mode */ // 일반 text 모드
 		force_x = mode->x;
 		force_y = mode->y;
 		do_restore = 1;
@@ -159,6 +171,9 @@ static int vesa_set_mode(struct mode_info *mode)
 #ifndef _WAKEUP
 
 /* Switch DAC to 8-bit mode */
+/**
+ @brief	DAC -> 8bit mode
+ */
 static void vesa_dac_set_8bits(void)
 {
 	struct biosregs ireg, oreg;
@@ -187,15 +202,23 @@ static void vesa_dac_set_8bits(void)
 }
 
 /* Save the VESA protected mode info */
+/**
+ @brief	Protected Mode 에서 호출 가능한
+ 	 VESA 관련 Code 를 boot_params 에 설정한다.
+ */
 static void vesa_store_pm_info(void)
 {
 	struct biosregs ireg, oreg;
 
+	/*
+	 intcall 0x10 : Video Interrupt
+	 ireg.ax=0x4f0a : VESA
+	 */
 	initregs(&ireg);
 	ireg.ax = 0x4f0a;
 	intcall(0x10, &ireg, &oreg);
 
-	if (oreg.ax != 0x004f)
+	if (oreg.ax != 0x004f)	// 실패시..
 		return;
 
 	boot_params.screen_info.vesapm_seg = oreg.es;
@@ -204,6 +227,9 @@ static void vesa_store_pm_info(void)
 
 /*
  * Save video mode parameters for graphics mode
+ */
+/**
+ @brief	vesa_probe 로 확인된 모드 설정값을 boot_prarams 전역 구조체에 입력한다.
  */
 static void vesa_store_mode_params_graphics(void)
 {
@@ -251,13 +277,13 @@ void vesa_store_edid(void)
 	/* ireg.cx = 0;	*/		/* Controller 0 */
 	ireg.es = 0;			/* ES:DI must be 0 by spec */
 	intcall(0x10, &ireg, &oreg);
-
+// 0x4f15 함수의 지원 여부를 테스트한다.
 	if (oreg.ax != 0x004f)
 		return;		/* No EDID */
 
 	/* BH = time in seconds to transfer EDD information */
 	/* BL = DDC level supported */
-
+// EDID 정보를 얻어온다.
 	ireg.ax = 0x4f15;		/* VBE DDC */
 	ireg.bx = 0x0001;		/* Read EDID */
 	/* ireg.cx = 0; */		/* Controller 0 */

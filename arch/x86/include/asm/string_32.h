@@ -32,15 +32,15 @@ extern size_t strlen(const char *s);
 static __always_inline void *__memcpy(void *to, const void *from, size_t n)
 {
 	int d0, d1, d2;
-	asm volatile("rep ; movsl\n\t"
+	asm volatile("rep ; movsl\n\t" /* 일단 *to -> *from으로 4bytes 단위로 스트링 복사  */
 		     "movl %4,%%ecx\n\t"
 		     "andl $3,%%ecx\n\t"
 		     "jz 1f\n\t"
-		     "rep ; movsb\n\t"
+		     "rep ; movsb\n\t" /* size % 3으로 남는 바이트를 복사(0~3) */
 		     "1:"
-		     : "=&c" (d0), "=&D" (d1), "=&S" (d2)
-		     : "0" (n / 4), "g" (n), "1" ((long)to), "2" ((long)from)
-		     : "memory");
+		     : "=&c" (d0), "=&D" (d1), "=&S" (d2) /* cx, di, si에 각각 할당된다. &는 내용이 바뀌었음을 뜻함 */
+		     : "0" (n / 4), "g" (n), "1" ((long)to), "2" ((long)from) /* 0, 1, 2는 각각의 오퍼랜드를 뜻한다. cx=n/4, 남는레지스터=n, di=to, si=from이 될 것이다. */
+		     : "memory");		/* movs 명령으로 메모리 내용이 바뀌었다 */
 	return to;
 }
 

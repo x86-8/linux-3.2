@@ -46,6 +46,10 @@ extern struct module __this_module;
 #endif
 
 /* For every exported symbol, place a struct in the __ksymtab section */
+/* 전역 선언 */
+/* 심볼 이름 string */
+/* CONFIG에 심볼 접두사가 있으면 추가  */
+/* 데이터 주소와 심볼명 주소 */
 #define __EXPORT_SYMBOL(sym, sec)				\
 	extern typeof(sym) sym;					\
 	__CRC_SYMBOL(sym, sec)					\

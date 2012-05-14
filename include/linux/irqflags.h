@@ -55,9 +55,13 @@
 
 /*
  * Wrap the arch provided IRQ routines to provide appropriate checks.
+ * raw_local_ 매크로 함수들은 플래그의 타입을 체크해서 다르면 워닝을 띄우고 arch_local_irq 함수를 호출한다.
  */
+
 #define raw_local_irq_disable()		arch_local_irq_disable()
 #define raw_local_irq_enable()		arch_local_irq_enable()
+ /* do.. while(0)를 사용하면 매크로를 함수처럼 쓸수 있다. (세미콜론 문제 & 한줄 if문 에러) */
+ /* 플래그를 저장한다. */
 #define raw_local_irq_save(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\
@@ -88,6 +92,7 @@
 #ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
 #define local_irq_enable() \
 	do { trace_hardirqs_on(); raw_local_irq_enable(); } while (0)
+	/* 인터럽트 금지 & 최적화 장벽 *//*  */
 #define local_irq_disable() \
 	do { raw_local_irq_disable(); trace_hardirqs_off(); } while (0)
 #define local_irq_save(flags)				\

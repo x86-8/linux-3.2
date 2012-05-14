@@ -59,7 +59,7 @@ static int set_bios_mode(u8 mode)
 #endif
 	return -1;
 }
-
+/* bios에서 어떤 모드를 지원하는지 탐색해서 지원하는 수를 리턴한다.  */
 static int bios_probe(void)
 {
 	u8 mode;
@@ -83,7 +83,7 @@ static int bios_probe(void)
 	for (mode = 0x14; mode <= 0x7f; mode++) {
 		if (!heap_free(sizeof(struct mode_info)))
 			break;
-
+		/* 해당 text 모드를 이미 standard video mode 에서 지원하면 넘긴다. */
 		if (mode_defined(VIDEO_FIRST_BIOS+mode))
 			continue;
 
@@ -103,7 +103,7 @@ static int bios_probe(void)
 		/* CRTC cursor location low should be zero(?) */
 		if (in_idx(crtc, 0x0f))
 			continue;
-
+		// 세팅후 video 하드웨어 테스트에 통과하면 지원되는 video_mode로 넣는다.
 		mi = GET_HEAP(struct mode_info, 1);
 		mi->mode = VIDEO_FIRST_BIOS+mode;
 		mi->depth = 0;	/* text */
@@ -112,9 +112,9 @@ static int bios_probe(void)
 		nmodes++;
 	}
 
-	set_bios_mode(saved_mode);
+	set_bios_mode(saved_mode); // 원래 비디오 모드로 설정
 
-	return nmodes;
+	return nmodes;		/* 지원하는 수 */
 }
 
 static __videocard video_bios =

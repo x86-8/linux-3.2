@@ -32,7 +32,7 @@
 
 #include <asm/cpufeature.h>
 #include <asm/msr-index.h>
-
+/* 리턴값 0: 성공 1: 실패 */
 verify_cpu:
 	pushfl				# Save caller passed flags
 	pushl	$0			# Kill any dangerous flags
@@ -41,16 +41,16 @@ verify_cpu:
 	pushfl				# standard way to check for cpuid
 	popl	%eax
 	movl	%eax,%ebx
-	xorl	$0x200000,%eax
+	xorl	$0x200000,%eax /* cpuid 비트를 바꿔본다 */
 	pushl	%eax
 	popfl
 	pushfl
 	popl	%eax
 	cmpl	%eax,%ebx
-	jz	verify_cpu_no_longmode	# cpu has no cpuid
+	jz	verify_cpu_no_longmode  # cpu has no cpuid /* cpuid를 못쓰면 longmode도 없다. (Pentium+) */
 
 	movl	$0x0,%eax		# See if cpuid 1 is implemented
-	cpuid
+	cpuid /* cpuid 문자열 정보 */
 	cmpl	$0x1,%eax
 	jb	verify_cpu_no_longmode	# no cpuid 1
 
@@ -61,7 +61,7 @@ verify_cpu:
 	jnz	verify_cpu_noamd
 	cmpl	$0x444d4163,%ecx
 	jnz	verify_cpu_noamd
-	mov	$1,%di			# cpu is from AMD
+	mov	$1,%di			# cpu is from AMD /* amd면 di=1 */
 	jmp	verify_cpu_check
 
 verify_cpu_noamd:
@@ -74,7 +74,7 @@ verify_cpu_noamd:
 
 	# only call IA32_MISC_ENABLE when:
 	# family > 6 || (family == 6 && model >= 0xd)
-	movl	$0x1, %eax		# check CPU family and model
+	movl	$0x1, %eax		# check CPU family and model /* 버전 등등등등 자세한 정보 */
 	cpuid
 	movl	%eax, %ecx
 
@@ -90,11 +90,11 @@ verify_cpu_noamd:
 	jb	verify_cpu_check	# family == 6, model < 0xd, skip
 
 verify_cpu_clear_xd:
-	movl	$MSR_IA32_MISC_ENABLE, %ecx
-	rdmsr
-	btrl	$2, %edx		# clear MSR_IA32_MISC_ENABLE_XD_DISABLE
-	jnc	verify_cpu_check	# only write MSR if bit was changed
-	wrmsr
+	movl	$MSR_IA32_MISC_ENABLE, %ecx /* 0x1a0 */
+	rdmsr /* edx:eax  = MSR[ECX] */
+	btrl	$2, %edx		# clear MSR_IA32_MISC_ENABLE_XD_DISABLE /* P4에서 x87 FPU 명령어 호환여부를 0으로 설정 */
+	jnc	verify_cpu_check	# only write MSR if bit was changed /* 지원안하면 건너뛴다. */
+	wrmsr /* 켜있으면 리셋 */
 
 verify_cpu_check:
 	movl    $0x1,%eax		# Does the cpu have what it takes
@@ -128,7 +128,8 @@ verify_cpu_sse_test:
 	wrmsr
 	xor	%di,%di			# don't loop
 	jmp	verify_cpu_sse_test	# try again
-
+	
+/* longmode 지원안함 or sse_지원 */
 verify_cpu_no_longmode:
 	popfl				# Restore caller passed flags
 	movl $1,%eax

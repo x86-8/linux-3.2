@@ -18,7 +18,15 @@
 #include "boot.h"
 #include "cpustr.h"
 
-static char *cpu_name(int level)
+
+/**
+ @brief	CPU 레벨에 맞는 Vendor name을 리턴한다.
+	 level 이 15 라면 level 6으로 간주한다.
+ @return	Vendor Name
+ */
+static char *cpu_name(
+		int level	///< CPU Level
+		)
 {
 	static char buf[6];
 
@@ -32,14 +40,24 @@ static char *cpu_name(int level)
 	}
 }
 
-int validate_cpu(void)
+
+/**
+ @brief	CPU를 검증한다.\n
+	 CPU 가 지원하는 명령어 Set 에서 커널에서 필요한 명령어 Set 지원이 \n
+	 안된다면 실패로 간주한다.
+ @return	성공시:0, 실패시:-1
+ */
+int
+validate_cpu(void)
 {
 	u32 *err_flags;
 	int cpu_level, req_level;
 	const unsigned char *msg_strs;
 
+	// CPU Check...
 	check_cpu(&cpu_level, &req_level, &err_flags);
 
+	// CPU Level 이 낮으면..
 	if (cpu_level < req_level) {
 		printf("This kernel requires an %s CPU, ",
 		       cpu_name(req_level));
@@ -48,6 +66,8 @@ int validate_cpu(void)
 		return -1;
 	}
 
+	// err_flags 에 설정된 에러 상태들을 출력한다.
+	// CPU에서 어떤 명령어 Set 들이 미지원하는지에 대한 정보들을 출력한다.
 	if (err_flags) {
 		int i, j;
 		puts("This kernel requires the following features "

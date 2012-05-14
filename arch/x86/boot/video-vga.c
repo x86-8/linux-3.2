@@ -77,7 +77,7 @@ static void vga_set_8font(void)
 	ireg.bl = 0x20;
 	intcall(0x10, &ireg, NULL);
 
-	/* Turn off cursor emulation */
+	/* Turn off cursor emulation */ // 커서 끔
 	ireg.ax = 0x1201;
 	ireg.bl = 0x34;
 	intcall(0x10, &ireg, NULL);
@@ -85,7 +85,7 @@ static void vga_set_8font(void)
 	/* Cursor is scan lines 6-7 */
 	ireg.ax = 0x0100;
 	ireg.cx = 0x0607;
-	intcall(0x10, &ireg, NULL);
+	intcall(0x10, &ireg, NULL); // 커서모양: 8라인에서 6-7라인이 커서다.
 }
 
 static void vga_set_14font(void)
@@ -118,7 +118,7 @@ static void vga_set_80x43(void)
 
 	initregs(&ireg);
 
-	/* Set 350 scans */
+	/* Set 350 scans */ // 350 / 폰트(8) = 43
 	ireg.ax = 0x1201;
 	ireg.bl = 0x30;
 	intcall(0x10, &ireg, NULL);
@@ -131,9 +131,25 @@ static void vga_set_80x43(void)
 }
 
 /* I/O address of the VGA CRTC */
+/**
+ @brief	Graphic CRTC IO PORT ADDRESS 설정 유무를 확인한다.
+ 3B4:MONO(흑백), 3D4:Color
+ @return	설정되어 있을 시:0x3d4, 설정되어 있지 않을 시:0x3b4
+ */
 u16 vga_crtc(void)
 {
-	return (inb(0x3cc) & 1) ? 0x3d4 : 0x3b4;
+	/*
+	 inb(x) : 주소값 x 에서 1 byte 만큼의 데이터를 가져온다.
+	 inb(0x3cc) 의 결과로 CRTC 레지스터의 값을 알 수 있다.
+	 이를 1 과 & 연산한다..
+	 CRTC 가 설정되어 있다면 1, 아니면 0
+	 */
+  /*
+bit 0 - Input/Output Address Select: This bit controls the location of the CRTC and Feature Control register locations.
+* 0 - CRTC at 0x3Bx, FC at 0x3BA (mono compatibility)
+* 1 - CRTC at 0x3Dx, FC at 0x3DA (color compatibility)
+*/
+  return (inb(0x3cc) & 1) ? 0x3d4 : 0x3b4; // 흑백, 칼라에 따라 다른 포트를 쓴다.
 }
 
 static void vga_set_480_scanlines(void)
@@ -189,7 +205,7 @@ static void vga_set_80x60(void)
 	vga_set_8font();
 	vga_set_vertical_end(60*8);
 }
-
+// 폰트, scan line, 커서모양세팅 & 커서off, 
 static int vga_set_mode(struct mode_info *mode)
 {
 	/* Set the basic mode */
@@ -240,7 +256,7 @@ static int vga_probe(void)
 		ega_modes,
 		vga_modes,
 	};
-	static int mode_count[] = {
+	static int mode_count[] = { // 갯수
 		sizeof(cga_modes)/sizeof(struct mode_info),
 		sizeof(ega_modes)/sizeof(struct mode_info),
 		sizeof(vga_modes)/sizeof(struct mode_info),
@@ -264,7 +280,7 @@ static int vga_probe(void)
 		ireg.ax = 0x1a00;
 		intcall(0x10, &ireg, &oreg);
 
-		if (oreg.al == 0x1a) {
+		if (oreg.al == 0x1a) { // vga, ega 구분
 			adapter = ADAPTER_VGA;
 #ifndef _WAKEUP
 			boot_params.screen_info.orig_video_isVGA = 1;
@@ -272,13 +288,13 @@ static int vga_probe(void)
 		} else {
 			adapter = ADAPTER_EGA;
 		}
-	} else {
+	} else { // 컬러 지원안함
 		adapter = ADAPTER_CGA;
 	}
 
-	video_vga.modes = mode_lists[adapter];
+	video_vga.modes = mode_lists[adapter]; // 지원되는 어댑터 리스트 (CGA, EGA, VGA)
 	video_vga.card_name = card_name[adapter];
-	return mode_count[adapter];
+	return mode_count[adapter]; // 지원하는 모드의 갯수
 }
 
 static __videocard video_vga = {

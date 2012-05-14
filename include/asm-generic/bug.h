@@ -43,13 +43,15 @@ struct bug_entry {
  * users don't need to reboot ASAP and can mostly shut down cleanly.
  */
 #ifndef HAVE_ARCH_BUG
+/* 출력후 멈춘다. */
 #define BUG() do { \
 	printk("BUG: failure at %s:%d/%s()!\n", __FILE__, __LINE__, __func__); \
 	panic("BUG!"); \
 } while (0)
 #endif
-
+			/* CONFIG_BUG면 invalid opcode 예외 발생. */
 #ifndef HAVE_ARCH_BUG_ON
+/* 참이면 버그! 보통은 false다. */
 #define BUG_ON(condition) do { if (unlikely(condition)) BUG(); } while(0)
 #endif
 
@@ -132,7 +134,7 @@ extern void warn_slowpath_null(const char *file, const int line);
 #define WARN_TAINT(condition, taint, format...) WARN_ON(condition)
 
 #endif
-
+ /* 경고는 한번만 */
 #define WARN_ON_ONCE(condition)	({				\
 	static bool __warned;					\
 	int __ret_warn_once = !!(condition);			\
@@ -143,6 +145,10 @@ extern void warn_slowpath_null(const char *file, const int line);
 	unlikely(__ret_warn_once);				\
 })
 
+/**
+ * 역시 한번만 경고
+ * WARN 계열은 if와 함께 실행되기에 매크로 함수의 마지막(대치되는) 문장에 unlikely가 붙는다. 
+ */
 #define WARN_ONCE(condition, format...)	({			\
 	static bool __warned;					\
 	int __ret_warn_once = !!(condition);			\

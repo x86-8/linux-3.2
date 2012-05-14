@@ -16,8 +16,10 @@
 #include "boot.h"
 #include "video.h"
 #include "vesa.h"
-
-static void store_cursor_position(void)
+/* 커서 위치를 저장하고 커서가 없는지 체크
+ * hide cursor 또는 start > end line면 커서는 없다.
+ */
+ static void store_cursor_position(void)
 {
 	struct biosregs ireg, oreg;
 
@@ -25,16 +27,19 @@ static void store_cursor_position(void)
 	ireg.ah = 0x03;
 	intcall(0x10, &ireg, &oreg);
 
-	boot_params.screen_info.orig_x = oreg.dl;
+	boot_params.screen_info.orig_x = oreg.dl; /* 커서 위치 저장 */
 	boot_params.screen_info.orig_y = oreg.dh;
-
-	if (oreg.ch & 0x20)
+	/* scan line은 0~7 값으로 커서 모양을 표시한다
+	 * start=0, end=7이면 꽉찬 커서이며
+	 * start=6, end=7이면 흔히 보는 under line 커서이다.
+	 */
+	if (oreg.ch & 0x20)	/* 5번 비트는 hide cursor를 의미한다. */
 		boot_params.screen_info.flags |= VIDEO_FLAGS_NOCURSOR;
 
-	if ((oreg.ch & 0x1f) > (oreg.cl & 0x1f))
+	if ((oreg.ch & 0x1f) > (oreg.cl & 0x1f)) /* start line > end line */
 		boot_params.screen_info.flags |= VIDEO_FLAGS_NOCURSOR;
 }
-
+// 현재 비디오 모드와 페이지 번호 저장
 static void store_video_mode(void)
 {
 	struct biosregs ireg, oreg;
@@ -47,7 +52,7 @@ static void store_video_mode(void)
 
 	/* Not all BIOSes are clean with respect to the top bit */
 	boot_params.screen_info.orig_video_mode = oreg.al & 0x7f;
-	boot_params.screen_info.orig_video_page = oreg.bh;
+	boot_params.screen_info.orig_video_page = oreg.bh; /* 현재 화면에 나타내는 page 번호 */
 }
 
 /*
@@ -56,6 +61,7 @@ static void store_video_mode(void)
  * parameters in the default 80x25 mode -- these are set directly,
  * because some very obscure BIOSes supply insane values.
  */
+// 비디오 모드와 형,열 커서 위치 저장
 static void store_mode_params(void)
 {
 	u16 font_size;
@@ -66,23 +72,26 @@ static void store_mode_params(void)
 	if (graphic_mode)
 		return;
 
-	store_cursor_position();
-	store_video_mode();
+	store_cursor_position(); /* 커서 위치를 저장한다. */
+	store_video_mode();	 /* 비디오 모드와 페이지 번호 저장 */
 
 	if (boot_params.screen_info.orig_video_mode == 0x07) {
-		/* MDA, HGC, or VGA in monochrome mode */
-		video_segment = 0xb000;
+	  /* MDA, HGC, or VGA in monochrome mode */
+	  /* 흑백이면 세그먼트를 흑백 비디오 버퍼(0xb000)로 설정 */
+		video_segment = 0xb000; 
 	} else {
 		/* CGA, EGA, VGA and so forth */
+		/* 칼라 비디오 버퍼, 보통은 이쪽이다. */
 		video_segment = 0xb800;
 	}
 
-	set_fs(0);
+	set_fs(0);		   /* 0에서부터 값을 구하기 위해 fs 초기화 */
 	font_size = rdfs16(0x485); /* Font size, BIOS area */
+	/* character height = font size */
 	boot_params.screen_info.orig_video_points = font_size;
 
-	x = rdfs16(0x44a);
-	y = (adapter == ADAPTER_CGA) ? 25 : rdfs8(0x484)+1;
+	x = rdfs16(0x44a); // columns: 열 갯수
+	y = (adapter == ADAPTER_CGA) ? 25 : rdfs8(0x484)+1; // rows: 행 갯수-1
 
 	if (force_x)
 		x = force_x;
@@ -204,6 +213,7 @@ static unsigned int mode_menu(void)
 	     "<SPACE> to continue, or wait 30 sec\n");
 
 	kbd_flush();
+	/* space면 탐색하지 않는다. 폴링으로 키 검사 */
 	while (1) {
 		key = getchar_timeout();
 		if (key == ' ' || key == 0)
@@ -213,9 +223,9 @@ static unsigned int mode_menu(void)
 		putchar('\a');	/* Beep! */
 	}
 
-
+	/* Enter를 눌렀다면 이곳에서 탐색한다. */
 	for (;;) {
-		display_menu();
+		display_menu();	/* menu방식? */
 
 		puts("Enter a video mode or \"scan\" to scan for "
 		     "additional modes: ");
@@ -223,7 +233,7 @@ static unsigned int mode_menu(void)
 		if (sel != SCAN)
 			return sel;
 
-		probe_cards(1);
+		probe_cards(1);	/* video_bios 검색 */
 	}
 }
 
@@ -234,6 +244,9 @@ static struct saved_screen {
 	u16 *data;
 } saved;
 
+/**
+ @brief	화면 데이터 저장
+ */
 static void save_screen(void)
 {
 	/* Should be called after store_mode_params() */
@@ -245,20 +258,23 @@ static void save_screen(void)
 	if (!heap_free(saved.x*saved.y*sizeof(u16)+512))
 		return;		/* Not enough heap to save the screen */
 
-	saved.data = GET_HEAP(u16, saved.x*saved.y);
+	saved.data = GET_HEAP(u16, saved.x*saved.y); // 2바이트(문자,속성) 단위로 x*y 만큼 heap 공간을 얻는다.
 
-	set_fs(video_segment);
-	copy_from_fs(saved.data, 0, saved.x*saved.y*sizeof(u16));
+	set_fs(video_segment);	/* 0xb800 or 0xb000 */
+	copy_from_fs(saved.data, 0, saved.x*saved.y*sizeof(u16)); /* 글자 크기와 속성까지 복사한다. */
 }
 
+/**
+ @brief
+ */
 static void restore_screen(void)
 {
 	/* Should be called after store_mode_params() */
 	int xs = boot_params.screen_info.orig_video_cols;
 	int ys = boot_params.screen_info.orig_video_lines;
 	int y;
-	addr_t dst = 0;
-	u16 *src = saved.data;
+	addr_t dst = 0;			// Destination..
+	u16 *src = saved.data;	// Source..
 	struct biosregs ireg;
 
 	if (graphic_mode)
@@ -271,27 +287,29 @@ static void restore_screen(void)
 
 	set_fs(video_segment);
 	for (y = 0; y < ys; y++) {
-		int npad;
+		int npad;	// 부족한 사이즈 크기.
 
 		if (y < saved.y) {
 			int copy = (xs < saved.x) ? xs : saved.x;
-			copy_to_fs(dst, src, copy*sizeof(u16));
-			dst += copy*sizeof(u16);
+			copy_to_fs(dst, src, copy * sizeof(u16));
+			dst += copy * sizeof(u16);
 			src += saved.x;
-			npad = (xs < saved.x) ? 0 : xs-saved.x;
+			npad = (xs < saved.x) ? 0 : xs - saved.x;
 		} else {
 			npad = xs;
 		}
 
 		/* Writes "npad" blank characters to
 		   video_segment:dst and advances dst */
-		asm volatile("pushw %%es ; "
-			     "movw %2,%%es ; "
-			     "shrw %%cx ; "
-			     "jnc 1f ; "
-			     "stosw \n\t"
-			     "1: rep;stosl ; "
-			     "popw %%es"
+		/*
+		 */
+		asm volatile("pushw %%es ; "	// push word es
+			     "movw %2,%%es ; "		// move word es("bdS" (video_segment))
+			     "shrw %%cx ; "			// shift right word cx(cx=npad); 1비트를 right shit 한다.
+			     "jnc 1f ; "			// jnc 1f; Carry 가 1이면 점프.
+			     "stosw \n\t"			//
+			     "1: rep;stosl ; "		//
+			     "popw %%es"			//
 			     : "+D" (dst), "+c" (npad)
 			     : "bdS" (video_segment),
 			       "a" (0x07200720));
@@ -315,16 +333,20 @@ static void restore_screen(void)
 void set_video(void)
 {
 	u16 mode = boot_params.hdr.vid_mode;
-
+	/* arch/x86/boot/compressed/vmlinux.lds.S 참조
+	 * BSS 뒤의 압축된 커널 끝에 HEAP 위치를 초기화 한다.
+	 */
 	RESET_HEAP();
-
-	store_mode_params();
-	save_screen();
-	probe_cards(0);
+	/* 이 함수에서는 계속 0x10 인터럽트가 쓰이는데
+	 * 0x10은 BIOS에서 제공하는 video 인터럽트이다.
+	 */
+	store_mode_params();	/* 비디오 모드, 행, 열, 커서위치등 저장 */
+	save_screen();		/* 화면의 글자와 속성을 saved.data 버퍼에 저장한다. */
+	probe_cards(0);		/* 그래픽 모드(0)를 먼저 탐색 */
 
 	for (;;) {
 		if (mode == ASK_VGA)
-			mode = mode_menu();
+			mode = mode_menu(); /* 메뉴 방식으로 비디오 모드 검색? */
 
 		if (!set_mode(mode))
 			break;
@@ -333,9 +355,9 @@ void set_video(void)
 		mode = ASK_VGA;
 	}
 	boot_params.hdr.vid_mode = mode;
-	vesa_store_edid();
-	store_mode_params();
+	vesa_store_edid(); // edid 정보 저장
+	store_mode_params();	/* 다시 한번 저장 */
 
-	if (do_restore)
+	if (do_restore)		/* 변했으면 화면 복구 */
 		restore_screen();
 }

@@ -162,18 +162,25 @@ static struct resource * __request_resource(struct resource *root, struct resour
 		return root;
 	if (end > root->end)
 		return root;
+	/* 이 루틴은 유사 tree로 root->child->sibling->sib...로 연결되며
+	 * 모든 sibling의 부모는 root다.
+	 * start와 end값을 참고하여, 오름차순으로 맞는 위치에 new를 삽입 */
 	p = &root->child;
 	for (;;) {
 		tmp = *p;
+		/* new의 끝부분 보다 tmp(기존의 있던)의 첫부분이 뒤에 있으면
+		 * tmp를 밀어내고 new를 삽입후 NULL리턴(정상적)  */
 		if (!tmp || tmp->start > end) {
 			new->sibling = tmp;
 			*p = new;
 			new->parent = root;
 			return NULL;
 		}
+		/* 충돌하지 않으면 다음 형제 노드를 탐색 */
 		p = &tmp->sibling;
 		if (tmp->end < start)
 			continue;
+		/* 충돌시, 기존의 sibling 반환 */
 		return tmp;
 	}
 }
@@ -237,11 +244,10 @@ void release_child_resources(struct resource *r)
 struct resource *request_resource_conflict(struct resource *root, struct resource *new)
 {
 	struct resource *conflict;
-
-	write_lock(&resource_lock);
-	conflict = __request_resource(root, new);
+	write_lock(&resource_lock); /* 쓰기 락을 건다. */
+	conflict = __request_resource(root, new); /* new 자원을 root에 추가한다. (오름차순) */
 	write_unlock(&resource_lock);
-	return conflict;
+	return conflict;	/* 충돌난 포인터, 0이면 성공 */
 }
 
 /**
@@ -256,7 +262,7 @@ int request_resource(struct resource *root, struct resource *new)
 	struct resource *conflict;
 
 	conflict = request_resource_conflict(root, new);
-	return conflict ? -EBUSY : 0;
+	return conflict ? -EBUSY : 0; /* 실패면 EBUSY */
 }
 
 EXPORT_SYMBOL(request_resource);
@@ -589,16 +595,17 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
 
 	for (;; parent = first) {
 		first = __request_resource(parent, new);
-		if (!first)
+		if (!first)	/* request로 등록해보고 등록되면 리턴 */
 			return first;
 
-		if (first == parent)
+		if (first == parent) /* 같으면 리턴, 한번 돌고나면 여기서 빠진다. */
 			return first;
 		if (WARN_ON(first == new))	/* duplicated insertion */
 			return first;
-
+		/* 처음이나 끝 둘중 더 큰 범위라면 뷁 */
 		if ((first->start > new->start) || (first->end < new->end))
 			break;
+		/* 완전히 똑같다면 */
 		if ((first->start == new->start) && (first->end == new->end))
 			break;
 	}

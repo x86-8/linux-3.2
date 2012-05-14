@@ -47,7 +47,7 @@ GLOBAL(memset)
 	popw	%di
 	ret
 ENDPROC(memset)
-
+		;; fs를 이용한 memcpy
 GLOBAL(copy_from_fs)
 	pushw	%ds
 	pushw	%fs

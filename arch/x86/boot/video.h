@@ -99,7 +99,8 @@ extern int graphic_mode;	/* Graphics mode with linear frame buffer */
 /* Accessing VGA indexed registers */
 static inline u8 in_idx(u16 port, u8 index)
 {
-	outb(index, port);
+  // address 포트에 억세스할 번호를 넣어주고 읽어들인다.
+	outb(index, port); 
 	return inb(port+1);
 }
 
