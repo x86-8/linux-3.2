@@ -19,9 +19,9 @@
 #define PARAM_SIZE 4096		/* sizeof(struct boot_params) */
 
 #define OLD_CL_MAGIC		0xA33F
-// 옛 버전 command line 
+/* 옛 버전 command line  */
 #define OLD_CL_ADDRESS		0x020	/* Relative to real mode data */
-// setup에서 boot protocol 2.02부터 지원하는 command line
+/* setup에서 boot protocol 2.02부터 지원하는 command line */
 #define NEW_CL_POINTER		0x228	/* Relative to real mode data */
 
 #ifndef __ASSEMBLY__

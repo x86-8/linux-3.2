@@ -86,23 +86,28 @@ SECTIONS
         . = LOAD_OFFSET + LOAD_PHYSICAL_ADDR;
         phys_startup_32 = startup_32 - LOAD_OFFSET;
 #else
-        . = __START_KERNEL; /* load될 VMA 주소를 바꾼다. 이 값은 LOAD_OFFSET + 16M 이다. */
+	/* load될 VMA 주소를 바꾼다. 이 값은 LOAD_OFFSET + 16M 이다. */
+        . = __START_KERNEL;
         phys_startup_64 = startup_64 - LOAD_OFFSET;
 /* LOAD_OFFSET == 0xffffffff80000000 물리메모리와의 직접매핑구역 진입(시작)지점이다. */
 #endif
 
 	/* Text and read-only data */
-	.text :  AT(ADDR(.text) - LOAD_OFFSET) { /* .text의 LMA는 16M ; VMA는 0xffffffff80000000 + 16M */ 
-		_text = .;			/* VMA == __START_KERNEL(LOAD_OFFSET == 16M) */
+	/* .text의 LMA는 16M ; VMA는 0xffffffff80000000 + 16M */ 
+	.text :  AT(ADDR(.text) - LOAD_OFFSET) {
+		_text = .;	
+	/* VMA == __START_KERNEL(LOAD_OFFSET == 16M) */
 		/* bootstrapping code */ 
-		HEAD_TEXT				/* 커널의 시작 = x86/kernel/head_64.S */
+	/* 커널의 시작 = x86/kernel/head_64.S */
+		HEAD_TEXT
 #ifdef CONFIG_X86_32
 		. = ALIGN(PAGE_SIZE);
 		*(.text..page_aligned)
 #endif
 		. = ALIGN(8);
 		_stext = .;
-		TEXT_TEXT	/* 각 text_section을 모아주는 것. */
+	/* 각 text_section을 모아주는 것. */
+		TEXT_TEXT
 		SCHED_TEXT
 		LOCK_TEXT
 		KPROBES_TEXT
@@ -110,10 +115,10 @@ SECTIONS
 		IRQENTRY_TEXT
 		*(.fixup)
 		*(.gnu.warning)
-		/* End of text section */
+	/* End of text section */
 		_etext = .;
-	} :text = 0x9090    /* 0x90은 nop이다. 이걸 두 번함. but, 하는 이유는 모름. */
-
+	} :text = 0x9090
+    /* 0x90은 nop이다. */
 	NOTES :text :note
 
 	EXCEPTION_TABLE(16) :text = 0x9090
@@ -143,7 +148,8 @@ SECTIONS
 
 		CACHELINE_ALIGNED_DATA(L1_CACHE_BYTES)
 
-		DATA_DATA				/* asm-generic에 있는 vmlinus.lds.h의 DATA공간이 들어간다. (스택포함) */
+		/* asm-generic에 있는 vmlinus.lds.h의 DATA공간이 들어간다. (스택포함) */
+		DATA_DATA
 		CONSTRUCTORS
 
 		/* rarely changed data like cpu maps */
@@ -324,10 +330,14 @@ SECTIONS
 
 	. = ALIGN(PAGE_SIZE);
 	.brk : AT(ADDR(.brk) - LOAD_OFFSET) {
-		__brk_base = .;			/* 커널에서 bss는 bss끝이다. (=heap)  */
-		. += 64 * 1024;			/* 64k alignment slop space */
-		*(.brk_reservation)	/* areas brk users have reserved */
-		__brk_limit = .;	/* 공간 확보 */
+	/* 커널에서 bss는 bss끝이다. (=heap)  */
+		__brk_base = .;
+	/* 64k alignment slop space */
+		. += 64 * 1024;
+	/* areas brk users have reserved */
+		*(.brk_reservation)
+	/* 공간 확보 */
+		__brk_limit = .;
 	}
 
 	_end = .;

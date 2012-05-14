@@ -15,7 +15,7 @@
 #define __flush_tlb_single(addr) __native_flush_tlb_single(addr)
 #endif
 
-// http://puresay.springnote.com/pages/3955705.xhtml
+/* http://puresay.springnote.com/pages/3955705.xhtml */
 /* cr3를 다시써주는 초기화 */
 static inline void __native_flush_tlb(void)
 {

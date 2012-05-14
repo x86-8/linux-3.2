@@ -11,8 +11,7 @@
 #include <asm/pgtable_types.h>
 
 /* Physical address where kernel should be loaded. */
-// define으로 정렬
-// 16M
+/* define으로 정렬 ; 16M */
 #define LOAD_PHYSICAL_ADDR ((CONFIG_PHYSICAL_START \
 				+ (CONFIG_PHYSICAL_ALIGN - 1)) \
 				& ~(CONFIG_PHYSICAL_ALIGN - 1))

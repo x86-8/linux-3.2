@@ -20,11 +20,11 @@ __must_check unsigned long
 copy_user_generic_string(void *to, const void *from, unsigned len);
 __must_check unsigned long
 copy_user_generic_unrolled(void *to, const void *from, unsigned len);
-// http://studyfoss.egloos.com/5129119 
+/* http://studyfoss.egloos.com/5129119  */
 static __always_inline __must_check unsigned long
 copy_user_generic(void *to, const void *from, unsigned len)
 {
-// http://psman2.tistory.com/entry/setuparch
+/* http://psman2.tistory.com/entry/setuparch */
 	unsigned ret;
 	/* REP 명령을 빠르게 지원하면 string
 	 * 구닥다리 P4면 unrolled

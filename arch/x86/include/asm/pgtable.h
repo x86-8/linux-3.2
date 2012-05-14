@@ -71,7 +71,7 @@ extern struct mm_struct *pgd_page_get_mm(struct page *page);
 #define __pud(x)	native_make_pud(x)
 #endif
 
-// PMD 단계가 있으면 아래 define을 실행
+/* PMD 단계가 있으면 아래 define을 실행 */
 #ifndef __PAGETABLE_PMD_FOLDED
 #define pmd_val(x)	native_pmd_val(x)
 #define __pmd(x)	native_make_pmd(x)

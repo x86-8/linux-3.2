@@ -31,7 +31,7 @@ static inline void native_restore_fl(unsigned long flags)
 	asm volatile("push %0 ; popf"
 		     : /* no output */
 		     :"g" (flags)
-		     :"memory", "cc"); // condition code register (flags 변경)
+		     :"memory", "cc"); /* condition code register (flags 변경) */
 }
 /** 
  *   native_irq_ 함수는 x86 어셈 명령으로 irq(인터럽트 요청)을 금지 혹은 허용한다.
@@ -107,7 +107,7 @@ static inline void halt(void)
  * For spinlocks, etc:
  */			
 /* notrace는 __cyg_profile... enter와 exit를 삽입하지 않는다. (no_instrument_function */
-// 플래그 저장, 인터럽트 금지, 플래그값 리턴
+/* 플래그 저장, 인터럽트 금지, 플래그값 리턴 */
 static inline notrace unsigned long arch_local_irq_save(void)
 {
 	unsigned long flags = arch_local_save_flags();
@@ -159,9 +159,9 @@ static inline notrace unsigned long arch_local_irq_save(void)
 #ifndef __ASSEMBLY__
 static inline int arch_irqs_disabled_flags(unsigned long flags)
 {
-	return !(flags & X86_EFLAGS_IF); // 인터럽트가 cli상태면 TRUE, sti상태면 FALSE
+	return !(flags & X86_EFLAGS_IF); /* 인터럽트가 cli상태면 TRUE, sti상태면 FALSE */
 }
-// 인터럽트가 금지됐는지 체크하는 함수
+/* 인터럽트가 금지됐는지 체크하는 함수 */
 static inline int arch_irqs_disabled(void)
 {
 	unsigned long flags = arch_local_save_flags();

@@ -58,7 +58,7 @@ static inline void native_set_pte_atomic(pte_t *ptep, pte_t pte)
 {
 	native_set_pte(ptep, pte);
 }
-// pmd를 재빠르게 대입해준다.
+/* pmd를 재빠르게 대입해준다. */
 static inline void native_set_pmd(pmd_t *pmdp, pmd_t pmd)
 {
 	*pmdp = pmd;

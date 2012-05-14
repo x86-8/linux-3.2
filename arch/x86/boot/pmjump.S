@@ -72,6 +72,6 @@ GLOBAL(in_pm32)
 
 	# Set up LDTR to make Intel VT happy # LDT를 0으로 만든다.
 	lldt	%cx
-		;; eax는 hdr.code32_start 이 코드가 끝나고 제어를 넘길 곳(커널본체가 로드된곳)이 들어있다.
+		/* eax는 hdr.code32_start 이 코드가 끝나고 제어를 넘길 곳(커널본체가 로드된곳)이 들어있다. */
 	jmpl	*%eax			# Jump to the 32-bit entrypoint # setup를 끝내고 커널로 점프한다.
 ENDPROC(in_pm32)

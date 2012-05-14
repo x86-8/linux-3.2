@@ -6,7 +6,7 @@
  * implements both the traditional 2-level x86 page tables and the
  * newer 3-level PAE-mode page tables.
  */
-// PAE가 켜져있으면 3레벨 아니면 2레벨, PMD_SHIFT수가 다르다.
+/* PAE가 켜져있으면 3레벨 아니면 2레벨, PMD_SHIFT수가 다르다. */
 #ifdef CONFIG_X86_PAE
 # include <asm/pgtable-3level_types.h>
 # define PMD_SIZE	(1UL << PMD_SHIFT)

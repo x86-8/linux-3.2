@@ -34,7 +34,8 @@ unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
 	 * 그 부분에 1인 비트가 있는지 mask 해본다. 있으면 found
 	 */
 	if (size & (BITS_PER_LONG-1)) {
-		tmp = (addr[words] & (~0UL >> (BITS_PER_LONG /* 마지막 word 와 비트 조각 개수만큼 mask (하위n비트) */
+	/* 마지막 word 와 비트 조각 개수만큼 mask (하위n비트) */
+		tmp = (addr[words] & (~0UL >> (BITS_PER_LONG
 					 - (size & (BITS_PER_LONG-1)))));
 		if (tmp)
 			goto found;

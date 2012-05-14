@@ -168,7 +168,7 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	 * to have any identity mapped pages in the kernel page table
 	 * after the boot processor executes this code.
 	 */
-		;; 다른 코어들이 사용하도록 PAE등과 페이징을 다시 초기화 해주는것 같다.
+	/* 다른 코어들이 사용하도록 PAE등과 페이징을 다시 초기화 해주는것 같다. */
 	/* Enable PAE mode and PGE */
 	movl	$(X86_CR4_PAE | X86_CR4_PGE), %eax /* PAE와 PGE를 켠다. */
 	movq	%rax, %cr4

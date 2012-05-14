@@ -60,9 +60,9 @@ suffix-$(CONFIG_KERNEL_LZMA)	:= lzma
 suffix-$(CONFIG_KERNEL_XZ)	:= xz
 suffix-$(CONFIG_KERNEL_LZO) 	:= lzo
 
-quiet_cmd_mkpiggy = MKPIGGY $@
 # $<는 첫번째 종속물, $@는 타겟 이름
 # mkpiggy vmlinux > vmlinux.bin
+quiet_cmd_mkpiggy = MKPIGGY $@
       cmd_mkpiggy = $(obj)/mkpiggy $< > $@ || ( rm -f $@ ; false )
 
 targets += piggy.S
