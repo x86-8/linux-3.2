@@ -504,6 +504,7 @@ static u64 __init __e820_update_range(struct e820map *e820x, u64 start,
 		/* old type일때만 한다. */
 		ei_end = ei->addr + ei->size;
 		/* totally covered by new range? */
+		/* 변경할 엔트리가 ei 엔트리를 포함하는 경우 new type로 변경  */
 		if (ei->addr >= start && ei_end <= end) {
 			ei->type = new_type;
 			real_updated_size += ei->size;
@@ -511,8 +512,12 @@ static u64 __init __e820_update_range(struct e820map *e820x, u64 start,
 		}
 
 		/* new range is totally covered? */
+		/* 변경할 엔트리가 ei엔트리에 포함되는 경우
+		 * oldtype엔트리와 new type 엔트리를 쪼개서 원래의 ei엔트리 사이즈를 쪼개서 맨 뒤에다 
+		 * new entry, ei_end - end 사이즈 만큼의 ei를 추가해준다.
+		 */
 		if (ei->addr < start && ei_end > end) {
-			__e820_add_region(e820x, start, size, new_type);
+			__eu820_add_region(e820x, start, size, new_type);
 			__e820_add_region(e820x, end, ei_end - end, ei->type);
 			ei->size = start - ei->addr;
 			real_updated_size += size;
@@ -520,11 +525,13 @@ static u64 __init __e820_update_range(struct e820map *e820x, u64 start,
 		}
 
 		/* partially covered */
+		/* 부분적으로 겹치는 경우, 겹쳐지는 영역 선택 */
 		final_start = max(start, ei->addr);
 		final_end = min(end, ei_end);
+		/* 겹쳐지지 않는 경우는 패스 */
 		if (final_start >= final_end)
 			continue;
-
+		/* 겹치는 부분을 new type으로 등록해준다. */
 		__e820_add_region(e820x, final_start, final_end - final_start,
 				  new_type);
 
@@ -534,12 +541,15 @@ static u64 __init __e820_update_range(struct e820map *e820x, u64 start,
 		 * left range could be head or tail, so need to update
 		 * size at first.
 		 */
+		/* old type의 겹치지 않는 영역의 사이즈 조절 */
 		ei->size -= final_end - final_start;
+		/* ei 엔트리 = head, size값만 변경 */
 		if (ei->addr < final_start)
 			continue;
+		/* ei 엔트리 = tail, 시작주소 값도 변경 */
 		ei->addr = final_end;
 	}
-	return real_updated_size;
+	return real_updated_size; /* 실제로 변경된 값 */
 }
 
 u64 __init e820_update_range(u64 start, u64 size, unsigned old_type,
@@ -578,12 +588,13 @@ u64 __init e820_remove_range(u64 start, u64 size, unsigned old_type,
 		struct e820entry *ei = &e820.map[i];
 		u64 final_start, final_end;
 		u64 ei_end;
-
+		/* RAM타입인지 아닌지 체크*/
 		if (checktype && ei->type != old_type)
 			continue;
 
 		ei_end = ei->addr + ei->size;
 		/* totally covered? */
+		/* 검색중인 블럭이 더 작으면 지워버린다.  */
 		if (ei->addr >= start && ei_end <= end) {
 			real_removed_size += ei->size;
 			memset(ei, 0, sizeof(struct e820entry));
@@ -591,6 +602,9 @@ u64 __init e820_remove_range(u64 start, u64 size, unsigned old_type,
 		}
 
 		/* new range is totally covered? */
+		/* 검색중인 블럭이 remove할 블럭보다 더 크면 하나는 사이즈를 줄이고
+		 * 뒤쪽에는 하나를 등록해서 remove 영역은 공백으로 만든다.
+		 */
 		if (ei->addr < start && ei_end > end) {
 			e820_add_region(end, ei_end - end, ei->type);
 			ei->size = start - ei->addr;
