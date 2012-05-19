@@ -64,3 +64,4 @@
 54:2012/04/28:05:<init/main.c> [61%] - setup_arch - x86_init.resources.probe_rom
 55:2012/05/05:06:<init/main.c> [61%] - setup_arch - x86_init.resources.probe_rom - request_resource
 56:2012/05/12:06:<init/main.c> [61%] - setup_arch - insert_resource, 버전/저장소 변경
+57:2012/05/19:04:<init/main.c> [61%] - setup_arch - 

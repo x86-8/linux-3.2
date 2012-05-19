@@ -129,7 +129,7 @@ void __init e820_add_region(u64 start, u64 size, int type)
 {
 	__e820_add_region(&e820, start, size, type);
 }
-
+/* e820 타입을 출력 */
 static void __init e820_print_type(u32 type)
 {
 	switch (type) {
@@ -480,18 +480,17 @@ static u64 __init __e820_update_range(struct e820map *e820x, u64 start,
 	u64 end;
 	unsigned int i;
 	u64 real_updated_size = 0;
-
+	/* 타입이 달라야한다. */
 	BUG_ON(old_type == new_type);
-
 	if (size > (ULLONG_MAX - start))
 		size = ULLONG_MAX - start;
 
-	end = start + size;
+	end = start + size;	/* end값 계산 */
 	printk(KERN_DEBUG "e820 update range: %016Lx - %016Lx ",
 		       (unsigned long long) start,
 		       (unsigned long long) end);
-	e820_print_type(old_type);
-	printk(KERN_CONT " ==> ");
+	e820_print_type(old_type); /* usable, reserved 등의 타입 출력 */
+	printk(KERN_CONT " ==> "); /* old_type ==> new_type 출력 */
 	e820_print_type(new_type);
 	printk(KERN_CONT "\n");
 
@@ -502,7 +501,7 @@ static u64 __init __e820_update_range(struct e820map *e820x, u64 start,
 
 		if (ei->type != old_type)
 			continue;
-
+		/* old type일때만 한다. */
 		ei_end = ei->addr + ei->size;
 		/* totally covered by new range? */
 		if (ei->addr >= start && ei_end <= end) {

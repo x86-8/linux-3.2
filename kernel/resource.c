@@ -595,10 +595,10 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
 
 	for (;; parent = first) {
 		first = __request_resource(parent, new);
-		if (!first)	/* request로 등록해보고 등록되면 리턴 */
+		if (!first)	/* request로 등록해보고 등록되면 리턴 No conflict */
 			return first;
 
-		if (first == parent) /* 같으면 리턴, 한번 돌고나면 여기서 빠진다. */
+		if (first == parent) /* 같으면 리턴, 한번 돌고나면 여기서 빠진다. Conflict */
 			return first;
 		if (WARN_ON(first == new))	/* duplicated insertion */
 			return first;
@@ -610,24 +610,28 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
 			break;
 	}
 
+	/* 삽입할 블럭(new)이 더 크거나 같으면 브레이크크크 */
 	for (next = first; ; next = next->sibling) {
 		/* Partial overlap? Bad, and unfixable */
+		/* 부분적으로 겹치는 경우는 conflict된 상태 */
 		if (next->start < new->start || next->end > new->end)
 			return next;
+		/* next->sibling이 겹치치 않는 경우(next가 겹칠 수도 있음)
+		 * 또는 sibling이 없는 경우는 추가하기 위해 break */
 		if (!next->sibling)
 			break;
 		if (next->sibling->start > new->end)
 			break;
 	}
-
-	new->parent = parent;
+	/* new가 더 크기때문에 new가 부모가 된다. */
+	new->parent = parent;	
 	new->sibling = next->sibling;
-	new->child = first;
-
+	new->child = first; /* i'm your father */
+	/* sibling들을 돌면서 parent와 sibling을 바꿔준다. */
 	next->sibling = NULL;
 	for (next = first; next; next = next->sibling)
 		next->parent = new;
-
+	/* 자식이 child인 경우와 sibling일 경우 다르게 처리 */
 	if (parent->child == first) {
 		parent->child = new;
 	} else {
