@@ -644,7 +644,7 @@ static __init void reserve_ibft_region(void)
 	if (size)
 		memblock_x86_reserve_range(addr, addr + size, "* ibft");
 }
-
+/* low memory는 KB단위 */
 static unsigned reserve_low = CONFIG_X86_RESERVE_LOW << 10;
 
 static void __init trim_bios_range(void)
@@ -658,6 +658,8 @@ static void __init trim_bios_range(void)
 	 * since some BIOSes are known to corrupt low memory.  See the
 	 * Kconfig help text for X86_RESERVE_LOW.
 	 */
+	/* Interrupt Vector Table, Bios Data area, 부트로더등의 영역을 low memory로 예약해놓는다. */
+	/* 0부터 low로 예약된 영역(보통64KB)를 예약되었다고 표시 */
 	e820_update_range(0, ALIGN(reserve_low, PAGE_SIZE),
 			  E820_RAM, E820_RESERVED);
 
@@ -666,6 +668,7 @@ static void __init trim_bios_range(void)
 	 * area (640->1Mb) as ram even though it is not.
 	 * take them out.
 	 */
+	/* 기본메모리(640KB) 제외한 384KB를 제거 */
 	e820_remove_range(BIOS_BEGIN, BIOS_END - BIOS_BEGIN, E820_RAM, 1);
 	sanitize_e820_map(e820.map, ARRAY_SIZE(e820.map), &e820.nr_map);
 }
@@ -892,11 +895,12 @@ void __init setup_arch(char **cmdline_p)
 	x86_init.resources.probe_roms(); /* 롬 영역을 스캔하고 자원을 등록한다. */
 
 	/* after parse_early_param, so could debug it */
+	/* iomem 리소스 아래에 code 리소스를 등록  */
 	insert_resource(&iomem_resource, &code_resource);
 	insert_resource(&iomem_resource, &data_resource);
 	insert_resource(&iomem_resource, &bss_resource);
 
-	trim_bios_range();
+	trim_bios_range();	/* 하위 1M 메모리의 앞뒤를 짤라준디. */
 #ifdef CONFIG_X86_32
 	if (ppro_with_ram_bug()) {
 		e820_update_range(0x70000000ULL, 0x40000ULL, E820_RAM,
