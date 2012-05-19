@@ -517,7 +517,7 @@ static u64 __init __e820_update_range(struct e820map *e820x, u64 start,
 		 * new entry, ei_end - end 사이즈 만큼의 ei를 추가해준다.
 		 */
 		if (ei->addr < start && ei_end > end) {
-			__eu820_add_region(e820x, start, size, new_type);
+			__e820_add_region(e820x, start, size, new_type);
 			__e820_add_region(e820x, end, ei_end - end, ei->type);
 			ei->size = start - ei->addr;
 			real_updated_size += size;
