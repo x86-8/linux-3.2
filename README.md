@@ -1,0 +1,66 @@
+iamroot x86 초급 Kernel 스터디 8차
+=================================
+* 1차 교재 = 리눅스 커널의 내부구조
+* 2차 교재 = 만들면서 배우는 OS 커널의 구조와 원리
+* 부트로더 = [LILO 23.2][http://code.google.com/p/linx86study8-lilo232]
+* 커널분석 = [Linux 3.2][https://github.com/x86-8/linux-3.2.git]
+
+회차:날짜:인원:모임내용
+=====================
+01:2011/03/26:38:스터디 OT
+02:2011/04/02:34:<리눅스 커널 내부구조> 1-3장
+03:2011/04/09:25:<리눅스 커널 내부구조> 4장
+04:2011/04/16:21:<리눅스 커널 내부구조> 5-6장
+05:2011/04/23:05:<리눅스 커널 내부구조> 7-9장
+06:2011/04/30:18:<리눅스 커널 내부구조> 가상화, <만들면서 배우는 OS 커널의 구조와 원리> P.1-78
+07:2011/05/07:21:<만들면서 배우는 OS 캐널의 구조와 원리> P.79-117
+08:2011/05/14:19:<만들면서 배우는 OS 커널의 구조와 원리> P.117~225
+09:2011/05/21:19:<만들면서 배우는 OS 커널의 구조와 원리> P.226-255
+10:2011/05/28:15:<만들면서 배우는 OS 커널의 구조와 원리> P.256-325
+11:2011/06/04:16:<first.S> [39%]
+12:2011/06/11:12:<first.S> [37%] - use_boot - pread - disk_read - disk_convert
+13:2011/06/18:12:<first.s> [56%]
+14:2011/06/25:11:<second.s> [5%], 스터디후 간단한 회식
+15:2011/07/02:11:<second.s> [6%] - kt_read
+16:2011/07/09:12:<second.s> [6%] - build_vol_tab - is_prev_mapper
+17:2011/07/16:13:<second.s> [6%] - build_vol_tab
+18:2011/07/23:10:<lilo.c> [94%] - geo_init
+19:2011/07/30:09:<lilo.c> [100%]
+20:2011/08/06:10:<second.s> [8%]
+21:2011/08/13:09:<second.s> [22%] - load1 - loadit - load
+22:2011/08/20:07:<second.s> [32%]
+23:2011/09/03:10:<arch/x86/boot/header.S>, <arch/x86/boot/main.c> [72%] - copy_boot_params
+24:2011/09/17:10:<arch/x86/boot/main.c> [78%] - console_init - parse_earlyprintk - early_serial_init
+25:2011/09/24:10:<arch/x86/boot/main.c> [78%] - validate_cpu - check_cpu
+26:2011/10/01:08:<arch/x86/boot/main.c> [80%]
+27:2011/10/08:09:<arch/x86/boot/main.c> [96%] - query_edd
+28:2011/10/15:06:<arch/x86/boot/main.c> [98%] - set_video - mode_menu
+29:2011/10/22:06:<arch/x86/boot/main.c> [98%] - set_video - vga_recalc_vertical
+30:2011/10/29:09:<arch/x86/boot/main.c> [100%] - go_to_protected_mode - reset_coprocessor, 스터디 회식
+31:2011/11/05:10:<arch/x86/boot/main.c>, <pm.c>, <pmjump.S>, <head_64.S> [26%] - verify_cpu
+32:2011/11/12:04:<Makefile>, <arch/x86/boot/compressed/head_64.S> [38%]
+33:2011/11/19:09:<arch/x86/boot/compressed/head_64.S> [85%] - decompress_kernel - parse_elf - malloc - kmalloc
+34:2011/11/26:05:<arch/x86/boot/compressed/head_64.S>, <arch/x86/kernel/head_64.S> [9%]
+35:2011/12/03:06:<arch/x86/kernel/head_64.S> [21%]
+36:2011/12/10:06:<arch/x86/kernel/head_64.S> [31%]
+37:2011/12/17:07:<Makefile>, <vmlinux.lds.S>, <arch/x86/kernel/head_64.S> [35%]
+38:2011/12/24:03:<arch/x86/kernel/head_64.S>, <arch/x86/kernel/head64.c>, <init/main.c> [57%], 스터디 회식
+39:2012/01/07:05:<init/main.c> [57%] - boot_init_stack_canary - get_random_bytes - extract_entropy - spin_lock_irqsave
+40:2012/01/14:05:<init/main.c> [59%] - cgroup_init_early
+41:2012/01/28:07:<init/main.c> [60%] - init_tick
+42:2012/02/04:08:<init/main.c> [60%] - init_tick
+43:2012/02/11:07:<init/main.c> [61%] - setup_arch
+44:2012/02/18:06:<init/main.c> [61%] - setup_arch - early_cpu_init
+45:2012/02/25:04:<init/main.c> [61%] - setup_arch - early_ioremap_init
+46:2012/03/03:05:<init/main.c> [61%] - setup_arch - setup_olpc_ofw_pgd
+47:2012/03/10:06:<init/main.c> [61%] - setup_arch - setup_memory_map
+48:2012/03/17:06:<init/main.c> [61%] - setup_arch - parse_setup_data
+49:2012/03/24:04:<init/main.c> [61%] - setup_arch - x86_configure_nx
+50:2012/03/31:05:<init/main.c> [61%] - setup_arch - memblock_x86_reserve_range_setup_data
+51:2012/04/07:05:<init/main.c> [61%] - setup_arch - memblock_x86_reserve_range_setup_data, 2012 스터디 OT
+52:2012/04/14:04:<init/main.c> [61%] - setup_arch - acpi_mps_check
+53:2012/04/21:05:<init/main.c> [61%] - setup_arch - dmi_scan_machin
+54:2012/04/28:05:<init/main.c> [61%] - setup_arch - x86_init.resources.probe_rom
+55:2012/05/05:06:<init/main.c> [61%] - setup_arch - x86_init.resources.probe_rom - request_resource
+56:2012/05/12:06:<init/main.c> [61%] - setup_arch - insert_resource, 버전/저장소 변경
+57:2012/05/19:07:<init/main.c> [61%] - setup_arch - early_gart_iommu_check
