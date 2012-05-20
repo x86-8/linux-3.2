@@ -5,8 +5,8 @@ Linux kernel 스터디 iamroot x86-8 초급
 * 부트로더 = [LILO 23.2](http://code.google.com/p/linx86study8-lilo232)
 * 커널분석 = [Linux 3.2](https://github.com/x86-8/linux-3.2.git)
 
-Study history
-=============
+Study history (날짜:인원:내용)
+==============================
 01. 2011/03/26:38:스터디 OT
 02. 2011/04/02:34:리눅스 커널 내부구조 1-3장
 03. 2011/04/09:25:리눅스 커널 내부구조 4장
