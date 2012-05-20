@@ -1,3 +1,10 @@
+#+TITLE: Linux kernel 분석 FAQ
+#+AUTHOR: Chun SH
+#+EMAIL: simplenfast@gmail.com
+#+LANGUAGE: ko
+#+OPTIONS: author:nil timestamp:nil
+#+OPTIONS: H:3 \n:nil @:t ::t |:t ^:t -:t f:t *:tl creator:nil
+
 * 리눅스 부팅과정 파일 순서
 - SETUP : [[file:../arch/x86/boot/header.S::globl%20_start][boot/header.S]] - [[file:../arch/x86/boot/main.c::void%20main%20void][boot/main.c]] - [[file:../arch/x86/boot/pm.c::void%20go_to_protected_mode%20void][boot/pm.c]] - [[file:../arch/x86/boot/pmjump.S::GLOBAL%20protected_mode_jump][boot/pmjump.S]]
 - COMPRESSED : [[file:../arch/x86/boot/compressed/head_64.S::ENTRY%20startup_32][compressed/head_64.S]]
