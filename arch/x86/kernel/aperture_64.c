@@ -115,21 +115,35 @@ static u32 __init find_cap(int bus, int slot, int func, int cap)
 {
 	int bytes;
 	u8 pos;
-
+	/**
+	 * status 레지스터에서 0x10(CAP_LIST)가 없으면 0을 리턴
+	 * Capabilities List - If set to 1 the device implements the pointer
+	 * for a New Capabilities Linked list at offset 0x34;
+	 * otherwise, the linked list is not available. 
+	 */
 	if (!(read_pci_config_16(bus, slot, func, PCI_STATUS) &
 						PCI_STATUS_CAP_LIST))
 		return 0;
-
+	/* cap list 다음 레지스터 위치를 가져온다. */
 	pos = read_pci_config_byte(bus, slot, func, PCI_CAPABILITY_LIST);
+	/* 0x3c까지는 예약되어 있기 때문에 리스트는 40이후부터 있다. null이면 끝 */
 	for (bytes = 0; bytes < 48 && pos >= 0x40; bytes++) {
 		u8 id;
 
-		pos &= ~3;
+		pos &= ~3;	/* 4로 정렬 */
+		/*
+		 * linked 리스트에서 device? vendor? id중 1바이트만 얻어온다.
+		 * 아마도 vendor id의 최하위 바이트
+		 * http://www.pcisig.com/specifications/conventional/pci_30/ECN_Conventional_Adv_Caps_27Jul06.pdf
+		 * http://www.ece.mtu.edu/faculty/btdavis/courses/mtu_ee3173_f04/papers/PCI_22.pdf
+		 */
+		/* capabilities ID 자세한건 위 문서를 참조 */
 		id = read_pci_config_byte(bus, slot, func, pos+PCI_CAP_LIST_ID);
-		if (id == 0xff)
+		if (id == 0xff)	/* 0xff는 reserved 영역 */
 			break;
-		if (id == cap)
+		if (id == cap)	/* cap 값을 찾았으면 해당 위치(레지스터)를 리턴 */
 			return pos;
+		/* 다음 리스트 위치 */
 		pos = read_pci_config_byte(bus, slot, func,
 						pos+PCI_CAP_LIST_NEXT);
 	}
@@ -145,8 +159,13 @@ static u32 __init read_agp(int bus, int slot, int func, int cap, u32 *order)
 	u32 aper_low, aper_hi;
 	u64 aper;
 	u32 old_order;
-
+	/*
+	 * http://download.intel.com/support/motherboards/desktop/sb/agp30.pdf
+	 * 스펙 참조
+	 */
+	/* AGP 정보 출력 */
 	printk(KERN_INFO "AGP bridge at %02x:%02x:%02x\n", bus, slot, func);
+	/* +0x14의 하위 12비트는 램 크기다.  */
 	apsizereg = read_pci_config_16(bus, slot, func, cap + 0x14);
 	if (apsizereg == 0xffffffff) {
 		printk(KERN_ERR "APSIZE in AGP bridge unreadable\n");
@@ -191,7 +210,8 @@ static u32 __init read_agp(int bus, int slot, int func, int cap, u32 *order)
 
 /*
  * Look for an AGP bridge. Windows only expects the aperture in the
- * AGP bridge and some BIOS forget to initialize the Northbridge too.
+ * AGP bridge and some BIOS forget to initialize the Northbridge(memory controler , graphic card ) too.
+ * Southbridge (soundcard, ... etc)
  * Work around this here.
  *
  * Do an PCI bus scan by hand because we're running before the PCI
@@ -201,12 +221,20 @@ static u32 __init read_agp(int bus, int slot, int func, int cap, u32 *order)
  * generically. It's probably overkill to always scan all slots because
  * the AGP bridges should be always an own bus on the HT hierarchy,
  * but do it here for future safety.
+ * The AGP3.0 specification only requires the PCI Port controller to
+ * provide a means for PCI masters to have peer-to-peer
+ * write access to the PCI target that resides on the AGP3.0 Port.
  */
 static u32 __init search_agp_bridge(u32 *order, int *valid_agp)
 {
 	int bus, slot, func;
 
-	/* Poor man's PCI discovery */
+	/**
+	 * Poor man's PCI discovery
+	 * 31 30 - 24 23 - 16 15 - 11 10 - 8 7 - 2 1 - 0
+	 * Enable Bit Reserved Bus Number Device Number Function Number Register Number 00
+	 * http://www.tpikorea.com/micronet-intime-techguide-PCI%20configuration.htm
+	 */
 	for (bus = 0; bus < 256; bus++) {
 		for (slot = 0; slot < 32; slot++) {
 			for (func = 0; func < 8; func++) {
@@ -216,23 +244,30 @@ static u32 __init search_agp_bridge(u32 *order, int *valid_agp)
 							PCI_CLASS_REVISION);
 				if (class == 0xffffffff)
 					break;
-
+				/* PCI_CLASS_REVISION(08)의 값은
+				 * Class code/ Subclass/ Prog IF/ Revision ID 로
+				 * 상위 16비트의 class와 subclass값을 switch한다.
+				 */
 				switch (class >> 16) {
 				case PCI_CLASS_BRIDGE_HOST:
 				case PCI_CLASS_BRIDGE_OTHER: /* needed? */
 					/* AGP bridge? */
+					/* capabilities list에서 AGP를 찾는다. */
 					cap = find_cap(bus, slot, func,
 							PCI_CAP_ID_AGP);
 					if (!cap)
 						break;
 					*valid_agp = 1;
+					/* 시스템에 agp가 존재하면 read_agp를 호출한다. */
 					return read_agp(bus, slot, func, cap,
 							order);
 				}
 
 				/* No multi-function device? */
+				/* Multiple function bit(최상위비트) 확인 */
 				type = read_pci_config_byte(bus, slot, func,
 							       PCI_HEADER_TYPE);
+				/* Multiple function이 켜있으면 나머지 function은 무시한다. */
 				if (!(type & 0x80))
 					break;
 			}
@@ -258,7 +293,9 @@ static int __init parse_gart_mem(char *p)
 	return 0;
 }
 early_param("gart_fix_e820", parse_gart_mem);
-
+/* Graphics address remapping table
+ * 비디오 메모리를 시스템 메모리에 remapping 해서 직접 억세스 가능하게 한다.
+ */
 void __init early_gart_iommu_check(void)
 {
 	/*
@@ -277,7 +314,7 @@ void __init early_gart_iommu_check(void)
 	u32 aper_size = 0, aper_order = 0, last_aper_order = 0;
 	u64 aper_base = 0, last_aper_base = 0;
 	int aper_enabled = 0, last_aper_enabled = 0, last_valid = 0;
-
+	/// early가 아니면 리턴
 	if (!early_pci_allowed())
 		return;
 
