@@ -59,7 +59,7 @@ Study history (날짜:인원:내용)
 50. 2012/03/31:05:*init/main.c* - setup_arch - memblock_x86_reserve_range_setup_data
 51. 2012/04/07:05:*init/main.c* - setup_arch - memblock_x86_reserve_range_setup_data, 2012 OT
 52. 2021/04/14:04:*init/main.c* - setup_arch - acpi_mps_check
-53. 2012/04/21:05:*init/main.c* - setup_arch - dmi_scan_machin
+53. 2012/04/21:05:*init/main.c* - setup_arch - dmi_scan_machine
 54. 2012/04/28:05:*init/main.c* - setup_arch - x86_init.resources.probe_rom
 55. 2012/05/05:06:*init/main.c* - setup_arch - x86_init.resources.probe_rom - request_resource
 56. 2012/05/12:06:*init/main.c* - setup_arch - insert_resource, 저장소 변경
