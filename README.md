@@ -64,3 +64,4 @@ Study history (날짜:인원:내용)
 55. 2012/05/05:06:*init/main.c* - setup_arch - x86_init.resources.probe_rom - request_resource
 56. 2012/05/12:06:*init/main.c* - setup_arch - insert_resource, 저장소 변경
 57. 2012/05/19:07:*init/main.c* - setup_arch - early_gart_iommu_check
+58. 2012/05/26:06:*init/main.c* - setup_arch - 

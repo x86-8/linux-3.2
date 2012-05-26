@@ -123,7 +123,7 @@ static void __init set_num_var_ranges(void)
 
 	num_var_ranges = config & 0xff;
 }
-
+/* 다 켜준다 */
 static void __init init_table(void)
 {
 	int i, max;
@@ -590,6 +590,7 @@ int __initdata changed_by_mtrr_cleanup;
  * initialized (i.e. before smp_init()).
  *
  */
+/* Memory type range register  */
 void __init mtrr_bp_init(void)
 {
 	u32 phys_addr;
@@ -599,16 +600,18 @@ void __init mtrr_bp_init(void)
 	phys_addr = 32;
 
 	if (cpu_has_mtrr) {
+		/* 함수 포인터가 담긴 mtrr_ops 구조체를 넣는다. */
 		mtrr_if = &generic_mtrr_ops;
 		size_or_mask = 0xff000000;			/* 36 bits */
 		size_and_mask = 0x00f00000;
-		phys_addr = 36;
+		phys_addr = 36;	/* 이건 최대 물리 메모리 값 */
 
 		/*
 		 * This is an AMD specific MSR, but we assume(hope?) that
 		 * Intel will implement it to when they extend the address
 		 * bus of the Xeon.
 		 */
+		/* Intel Pentium 4 계열이면 물리메모리 상한선은 36비트 = 64G */
 		if (cpuid_eax(0x80000000) >= 0x80000008) {
 			phys_addr = cpuid_eax(0x80000008) & 0xff;
 			/* CPUID workaround for Intel 0F33/0F34 CPU */
@@ -621,6 +624,7 @@ void __init mtrr_bp_init(void)
 
 			size_or_mask = ~((1ULL << (phys_addr - PAGE_SHIFT)) - 1);
 			size_and_mask = ~size_or_mask & 0xfffff00000ULL;
+			/* via architecture에 따른 mask와 물리 메모리 상한선 세팅 */
 		} else if (boot_cpu_data.x86_vendor == X86_VENDOR_CENTAUR &&
 			   boot_cpu_data.x86 == 6) {
 			/*
@@ -632,6 +636,7 @@ void __init mtrr_bp_init(void)
 			phys_addr = 32;
 		}
 	} else {
+		/* 아키텍쳐에 따른 설정 */
 		switch (boot_cpu_data.x86_vendor) {
 		case X86_VENDOR_AMD:
 			if (cpu_has_k6_mtrr) {

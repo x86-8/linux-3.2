@@ -910,6 +910,7 @@ void __init setup_arch(char **cmdline_p)
 		e820_print_map("bad_ppro");
 	}
 #else
+	/* PCI포트를 통해 AGP가 있는지 검색하고 관련 작업들을 한다. */
 	early_gart_iommu_check();
 #endif
 
@@ -917,6 +918,7 @@ void __init setup_arch(char **cmdline_p)
 	 * partially used pages are not usable - thus
 	 * we are rounding upwards:
 	 */
+	/* 최대 페이지 넘버 값 */
 	max_pfn = e820_end_of_ram_pfn();
 
 	/* update e820 for memory not covered by WB MTRRs */

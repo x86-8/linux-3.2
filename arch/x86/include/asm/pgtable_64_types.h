@@ -52,6 +52,7 @@ typedef struct { pteval_t pte; } pte_t;
 #define PGDIR_MASK	(~(PGDIR_SIZE - 1))
 
 /* See Documentation/x86/x86_64/mm.txt for a description of the memory map. */
+/* 리눅스의 최대 지원 메모리는 46비트 */
 #define MAXMEM		 _AC(__AC(1, UL) << MAX_PHYSMEM_BITS, UL)
 #define VMALLOC_START    _AC(0xffffc90000000000, UL)
 #define VMALLOC_END      _AC(0xffffe8ffffffffff, UL)

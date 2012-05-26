@@ -51,11 +51,10 @@ EXPORT_SYMBOL(pci_mem_start);
  * This function checks if any part of the range <start,end> is mapped
  * with type.
  */
-int
-e820_any_mapped(u64 start, u64 end, unsigned type)
+int e820_any_mapped(u64 start, u64 end, unsigned type)
 {
 	int i;
-
+	/**< e820맵을 이잡듯이 뒤지면서 그 공간이 type에 속하면 1 */
 	for (i = 0; i < e820.nr_map; i++) {
 		struct e820entry *ei = &e820.map[i];
 
@@ -63,6 +62,10 @@ e820_any_mapped(u64 start, u64 end, unsigned type)
 			continue;
 		if (ei->addr >= end || ei->addr + ei->size <= start)
 			continue;
+		/* ei->addr < end && ei->end > start
+		 * e820맵의 블럭이 인자로 넘어온 블럭과 일부가 겹치고
+		 * type이 동일하면 참을 리턴
+		 */
 		return 1;
 	}
 	return 0;
@@ -242,6 +245,7 @@ void __init e820_print_map(char *who)
  * 값이 시작주소라면 overlap_list에 넣고 시작주소+크기라면 리스트에서 뺀다.
  * overlap_list에 여러개가 들어간다면 이 구역에서 중첩이 일어났다는 것이다.
  * 그 구역에서 가장 높은 type 값으로 결정한다.
+ * 정상이면 0 리턴
  */
 
 int __init sanitize_e820_map(struct e820entry *biosmap, int max_nr_map,
@@ -636,11 +640,12 @@ void __init update_e820(void)
 	u32 nr_map;
 
 	nr_map = e820.nr_map;
+	/* sanitize 결과 에러나면 리턴 */
 	if (sanitize_e820_map(e820.map, ARRAY_SIZE(e820.map), &nr_map))
 		return;
 	e820.nr_map = nr_map;
 	printk(KERN_INFO "modified physical RAM map:\n");
-	e820_print_map("modified");
+	e820_print_map("modified"); /* 수정되었다고 표시 */
 }
 static void __init update_e820_saved(void)
 {
@@ -857,23 +862,27 @@ static unsigned long __init e820_end_pfn(unsigned long limit_pfn, unsigned type)
 
 		if (ei->type != type)
 			continue;
-
+		/* 시작 페이지 넘버와 끝 페이지 넘버를 구한다. */
 		start_pfn = ei->addr >> PAGE_SHIFT;
 		end_pfn = (ei->addr + ei->size) >> PAGE_SHIFT;
 
+		/* 64비트에서는 limit는 1 << 34 */
+		/* 한계를 넘어서면 무시한다. */
 		if (start_pfn >= limit_pfn)
 			continue;
+		/* limit를 넘어서는 부분 역시 무시. limit로 설정후 루프를 끝낸다. */
 		if (end_pfn > limit_pfn) {
 			last_pfn = limit_pfn;
 			break;
 		}
+		/* 최상위값 갱신 */
 		if (end_pfn > last_pfn)
 			last_pfn = end_pfn;
 	}
-
+	/* 아키텍쳐의 최대값을 넘어서는지 체크 */
 	if (last_pfn > max_arch_pfn)
 		last_pfn = max_arch_pfn;
-
+	/* max page frame number 출력 */
 	printk(KERN_INFO "last_pfn = %#lx max_arch_pfn = %#lx\n",
 			 last_pfn, max_arch_pfn);
 	return last_pfn;
