@@ -131,7 +131,7 @@ static u32 __init find_cap(int bus, int slot, int func, int cap)
 		u8 id;
 
 		pos &= ~3;	/* 4로 정렬 */
-		/*
+		/**
 		 * linked 리스트에서 device? vendor? id중 1바이트만 얻어온다.
 		 * 아마도 vendor id의 최하위 바이트
 		 * http://www.pcisig.com/specifications/conventional/pci_30/ECN_Conventional_Adv_Caps_27Jul06.pdf
@@ -159,7 +159,7 @@ static u32 __init read_agp(int bus, int slot, int func, int cap, u32 *order)
 	u32 aper_low, aper_hi;
 	u64 aper;
 	u32 old_order;
-	/*
+	/**
 	 * http://download.intel.com/support/motherboards/desktop/sb/agp30.pdf
 	 * 스펙 참조
 	 */
@@ -174,37 +174,41 @@ static u32 __init read_agp(int bus, int slot, int func, int cap, u32 *order)
 
 	/* old_order could be the value from NB gart setting */
 	old_order = *order;
-
+	/* 12bits 실제값을 가져온다. */
 	apsize = apsizereg & 0xfff;
 	/* Some BIOS use weird encodings not in the AGPv3 table. */
-	if (apsize & 0xff)
+	if (apsize & 0xff)	/* 128M까지 값이면 확인겸 상위 비트를 켜준다. */
 		apsize |= 0xf00;
-	nbits = hweight16(apsize);
-	*order = 7 - nbits;
+	nbits = hweight16(apsize); /* 1인 비트수를 복잡하게 센다. */
+	*order = 7 - nbits;	   /* 위쪽 4비트를 켜주기 때문에 7개면 딱 32개다. */
 	if ((int)*order < 0) /* < 32MB */
 		*order = 0;
 
 	aper_low = read_pci_config(bus, slot, func, 0x10);
 	aper_hi = read_pci_config(bus, slot, func, 0x14);
+	/* base address 아래 22비트는 없앤다. */
 	aper = (aper_low & ~((1<<22)-1)) | ((u64)aper_hi << 32);
 
 	/*
 	 * On some sick chips, APSIZE is 0. It means it wants 4G
 	 * so let double check that order, and lets trust AMD NB settings:
 	 */
+	/* aper는 베이스 주소, 인자로 넘어온 크기를 출력  */
 	printk(KERN_INFO "Aperture from AGP @ %Lx old size %u MB\n",
 			aper, 32 << old_order);
+	/* BASE addr 에  (32M+order) shift만큼 더했을때 4G가 넘으면 인자로 넘어온 옛값을 사용 */
 	if (aper + (32ULL<<(20 + *order)) > 0x100000000ULL) {
 		printk(KERN_INFO "Aperture size %u MB (APSIZE %x) is not right, using settings from NB\n",
 				32 << *order, apsizereg);
 		*order = old_order;
 	}
-
+	/* 문제없으면 AGP의 메모리 출력 */
 	printk(KERN_INFO "Aperture from AGP @ %Lx size %u MB (APSIZE %x)\n",
 			aper, 32 << *order, apsizereg);
-
+	/* 베이스 주소, 메모리 크기, 단위 */
 	if (!aperture_valid(aper, (32*1024*1024) << *order, 32<<20))
 		return 0;
+	/* 메모리 주소를 리턴 */
 	return (u32)aper;
 }
 
@@ -258,7 +262,9 @@ static u32 __init search_agp_bridge(u32 *order, int *valid_agp)
 					if (!cap)
 						break;
 					*valid_agp = 1;
-					/* 시스템에 agp가 존재하면 read_agp를 호출한다. */
+					/* 시스템에 agp가 존재하면 read_agp를 호출한다.
+					 * memory 주소를 리턴, 에러면 NULL
+					 */
 					return read_agp(bus, slot, func, cap,
 							order);
 				}
@@ -319,8 +325,9 @@ void __init early_gart_iommu_check(void)
 		return;
 
 	/* This is mostly duplicate of iommu_hole_init */
+	/* agp를 탐색한다. */
 	search_agp_bridge(&agp_aper_order, &valid_agp);
-
+	/* AMD 노스브릿지를 쭈욱 검사 */
 	fix = 0;
 	for (i = 0; amd_nb_bus_dev_ranges[i].dev_limit; i++) {
 		int bus;
@@ -356,27 +363,30 @@ void __init early_gart_iommu_check(void)
 			last_valid = 1;
 		}
 	}
-
+	/* 값이 없으면 리턴 */
 	if (!fix && !aper_enabled)
 		return;
-
+	/* 역시 크기제한 4G이상이 아니어야 한다. */
 	if (!aper_base || !aper_size || aper_base + aper_size > 0x100000000UL)
 		fix = 1;
 
 	if (gart_fix_e820 && !fix && aper_enabled) {
+		/* 겹치는 영역이 있으면 등록하고 update(sanitize) */
 		if (e820_any_mapped(aper_base, aper_base + aper_size,
 				    E820_RAM)) {
 			/* reserve it, so we can reuse it in second kernel */
 			printk(KERN_INFO "update e820 for GART\n");
+			/* aper 영역을 예약한다. */
 			e820_add_region(aper_base, aper_size, E820_RESERVED);
 			update_e820();
 		}
 	}
 
-	if (valid_agp)
+	if (valid_agp)		/* agp가 유효하면 리턴 */
 		return;
 
 	/* disable them all at first */
+	/* agp가 없으면 range를 다 돌면서 disable한다. */
 	for (i = 0; i < amd_nb_bus_dev_ranges[i].dev_limit; i++) {
 		int bus;
 		int dev_base, dev_limit;
@@ -384,13 +394,13 @@ void __init early_gart_iommu_check(void)
 		bus = amd_nb_bus_dev_ranges[i].bus;
 		dev_base = amd_nb_bus_dev_ranges[i].dev_base;
 		dev_limit = amd_nb_bus_dev_ranges[i].dev_limit;
-
 		for (slot = dev_base; slot < dev_limit; slot++) {
 			if (!early_is_amd_nb(read_pci_config(bus, slot, 3, 0x00)))
 				continue;
 
 			ctl = read_pci_config(bus, slot, 3, AMD64_GARTAPERTURECTL);
 			ctl &= ~GARTEN;
+			/* 1을 mask 하고 다시 써준다. 아마도 0번 비트가 disable */
 			write_pci_config(bus, slot, 3, AMD64_GARTAPERTURECTL, ctl);
 		}
 	}
