@@ -64,7 +64,8 @@ static inline unsigned long long native_read_tscp(unsigned int *aux)
 #define EAX_EDX_ARGS(val, low, high)	"A" (val)
 #define EAX_EDX_RET(val, low, high)	"=A" (val)
 #endif
-/* rdmsr의 동작은 같으나 gcc에서 A의 동작은 32비트와 64비트가 다르기 때문에 서로 다른 매크로로 동작한다.  */
+/* rdmsr의 동작은 똑같이 32비트로 나뉘어서 나오지만
+ * gcc에서 A의 동작은 32비트와 64비트가 다르기 때문에 서로 다른 매크로로 동작한다.  */
 static inline unsigned long long native_read_msr(unsigned int msr)
 {
 	DECLARE_ARGS(val, low, high);
@@ -144,7 +145,10 @@ static inline unsigned long long native_read_pmc(int counter)
  * Note: the rd* operations modify the parameters directly (without using
  * pointer indirection), this allows gcc to optimize better
  */
-
+/* 64비트를 둘로 나눈다. low==var1, high==var2
+ * MSR 자체가 32비트 레지스터로 처리하기 때문이다.
+ * 워닝을 피하기 위해 void를 사용.
+ */
 #define rdmsr(msr, val1, val2)					\
 do {								\
 	u64 __val = native_read_msr((msr));			\

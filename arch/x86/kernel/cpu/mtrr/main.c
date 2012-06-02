@@ -109,12 +109,16 @@ static int have_wrcomb(void)
 	return mtrr_if->have_wrcomb ? mtrr_if->have_wrcomb() : 0;
 }
 
-/*  This function returns the number of variable MTRRs  */
+/**
+ *  This function returns the number of variable MTRRs  
+ *
+ */
+/* MTRR 개수 */
 static void __init set_num_var_ranges(void)
 {
 	unsigned long config = 0, dummy;
 
-	if (use_intel())
+	if (use_intel())	/* 인텔인가! */
 		rdmsr(MSR_MTRRcap, config, dummy);
 	else if (is_cpu(AMD))
 		config = 2;
@@ -123,7 +127,7 @@ static void __init set_num_var_ranges(void)
 
 	num_var_ranges = config & 0xff;
 }
-/* 다 켜준다 */
+/* MTRR 갯수만큼 배열을 1로 한다. */
 static void __init init_table(void)
 {
 	int i, max;
@@ -588,9 +592,8 @@ int __initdata changed_by_mtrr_cleanup;
  *
  * This needs to be called early; before any of the other CPUs are
  * initialized (i.e. before smp_init()).
- *
+ * Memory type range register
  */
-/* Memory type range register  */
 void __init mtrr_bp_init(void)
 {
 	u32 phys_addr;
@@ -606,15 +609,18 @@ void __init mtrr_bp_init(void)
 		size_and_mask = 0x00f00000;
 		phys_addr = 36;	/* 이건 최대 물리 메모리 값 */
 
-		/*
+		/**
 		 * This is an AMD specific MSR, but we assume(hope?) that
 		 * Intel will implement it to when they extend the address
 		 * bus of the Xeon.
+		 * Intel Pentium 4 계열이면 물리메모리 상한선은 36비트 = 64G
+		 * ref)http://en.wikipedia.org/wiki/Cpuid 
 		 */
-		/* Intel Pentium 4 계열이면 물리메모리 상한선은 36비트 = 64G */
 		if (cpuid_eax(0x80000000) >= 0x80000008) {
 			phys_addr = cpuid_eax(0x80000008) & 0xff;
-			/* CPUID workaround for Intel 0F33/0F34 CPU */
+			/* CPUID workaround for Intel 0F33/0F34 CPU
+			   * * http://www.cpu-world.com/cgi-bin/CPUID.pl?MANUF=&FAMILY=&MODEL=&SIGNATURE=3891&PART=&ACTION=Filter&STEPPING= 
+			 */
 			if (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL &&
 			    boot_cpu_data.x86 == 0xF &&
 			    boot_cpu_data.x86_model == 0x3 &&
@@ -627,7 +633,7 @@ void __init mtrr_bp_init(void)
 			/* via architecture에 따른 mask와 물리 메모리 상한선 세팅 */
 		} else if (boot_cpu_data.x86_vendor == X86_VENDOR_CENTAUR &&
 			   boot_cpu_data.x86 == 6) {
-			/*
+			/* 비아면 비아 비아
 			 * VIA C* family have Intel style MTRRs,
 			 * but don't support PAE
 			 */
@@ -636,7 +642,7 @@ void __init mtrr_bp_init(void)
 			phys_addr = 32;
 		}
 	} else {
-		/* 아키텍쳐에 따른 설정 */
+		/* MTRR을 지원하지 않으면 아키텍쳐에 따른 설정 */
 		switch (boot_cpu_data.x86_vendor) {
 		case X86_VENDOR_AMD:
 			if (cpu_has_k6_mtrr) {
@@ -666,7 +672,7 @@ void __init mtrr_bp_init(void)
 	}
 
 	if (mtrr_if) {
-		set_num_var_ranges();
+		set_num_var_ranges(); /* 전역변수에 mtrr갯수를 넣는다. */
 		init_table();
 		if (use_intel()) {
 			get_mtrr_state();

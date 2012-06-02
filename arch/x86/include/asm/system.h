@@ -350,7 +350,7 @@ static inline void write_cr4(unsigned long x)
 {
 	native_write_cr4(x);
 }
-
+/* 캐시를 무효화(비운다.) */
 static inline void wbinvd(void)
 {
 	native_wbinvd();

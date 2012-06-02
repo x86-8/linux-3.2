@@ -164,7 +164,7 @@ extern void __xadd_wrong_size(void)
 #define cmpxchg_local(ptr, old, new)					\
 	__cmpxchg_local((ptr), (old), (new), sizeof(*ptr))
 #endif
-
+/* ptr에는 inc값이 더해지고 __ret는 원래값을 반환 */
 #define __xadd(ptr, inc, lock)						\
 	({								\
 	        __typeof__ (*(ptr)) __ret = (inc);			\
@@ -203,6 +203,7 @@ extern void __xadd_wrong_size(void)
  * xadd_sync() is always locked
  * xadd_local() is never locked
  */
+ /*ptr = lock->ticket , inc = .tail(1)*/
 #define xadd(ptr, inc)		__xadd((ptr), (inc), LOCK_PREFIX)
 #define xadd_sync(ptr, inc)	__xadd((ptr), (inc), "lock; ")
 #define xadd_local(ptr, inc)	__xadd((ptr), (inc), "")

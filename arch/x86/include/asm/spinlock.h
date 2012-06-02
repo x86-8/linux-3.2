@@ -49,19 +49,28 @@
  * issues and should be optimal for the uncontended case. Note the tail must be
  * in the high part, because a wide xadd increment of the low part would carry
  * up and contaminate the high part.
+ * http://studyfoss.egloos.com/5144295
  */
 static __always_inline void __ticket_spin_lock(arch_spinlock_t *lock)
 {
 	register struct __raw_tickets inc = { .tail = 1 };
+	/* inc = 원래값= lock->tickets
+	 * lock->tickets += inc
+	 * 이번 티켓을 발급한다. (상위 바이트)
+	 */
+	inc = xadd(&lock->tickets, inc);
 
-	inc = xadd(&lock->tickets, inc); /* inc = lock->slock 동시에 lock->slock += inc ; fetch-and-add? ; 티켓을 발급한다. (상위 바이트) */
 
 	for (;;) {
-		if (inc.head == inc.tail)		/* 자신의 티켓과 현재 번호를 비교한다. ; %h와 %b는 ax로 비유하면 ah, al */
+		if (inc.head == inc.tail)
+	/* 자신의 티켓과 현재 번호를 비교한다. ; %h와 %b는 ax로 비유하면 ah, al */
 			break;
-/* Pentium4 이상에서는 rep nop는 pause 명령으로 동작하고 이전 프로세서에서는 단순한 nop로 동작한다. pause는 스핀락에서 cpu에 힌트를 제공해 성능을 증가시키고 전력소모를 줄인다. */
+/* Pentium4 이상에서는 rep nop는 pause 명령으로 동작하고
+ * 이전 프로세서에서는 단순한 nop로 동작한다.
+ * pause는 스핀락에서 cpu에 힌트를 제공해 성능을 증가시키고 전력소모를 줄인다. */
 		cpu_relax();
-		inc.head = ACCESS_ONCE(lock->tickets.head);			/* 자신의 티켓 순서를 기다리며 spin */
+		inc.head = ACCESS_ONCE(lock->tickets.head);
+	/* 자신의 티켓 순서를 기다리며 spin */
 	}
 	barrier();		/* make sure nothing creeps before the lock is taken */
 }

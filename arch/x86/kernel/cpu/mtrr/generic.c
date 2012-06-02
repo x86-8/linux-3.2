@@ -278,9 +278,11 @@ static void get_fixed_ranges(mtrr_type *frs)
 	int i;
 
 	k8_check_syscfg_dram_mod_en();
-
+	/* FIXED RANGE는 각각의 레지스터마다 블럭 크기가 다르다. */
 	rdmsr(MSR_MTRRfix64K_00000, p[0], p[1]);
-
+	/* 위의 1개 아래의 2, 8개 해서 총 11개의 레지스터가 있다.
+	 * 각각의 레지스터는 8비트 크기(64/8=8개)로 나뉜다.
+	 */
 	for (i = 0; i < 2; i++)
 		rdmsr(MSR_MTRRfix16K_80000 + i, p[2 + i * 2], p[3 + i * 2]);
 	for (i = 0; i < 8; i++)
@@ -343,7 +345,7 @@ static void __init print_mtrr_state(void)
 {
 	unsigned int i;
 	int high_width;
-
+	/* MTRR 기본 타입 출력과 영역 출력 */
 	pr_debug("MTRR default type: %s\n",
 		 mtrr_attrib_to_str(mtrr_state.def_type));
 	if (mtrr_state.have_fixed) {
@@ -395,18 +397,20 @@ void __init get_mtrr_state(void)
 	unsigned int i;
 
 	vrs = mtrr_state.var_ranges;
-
+	/* FIXED RANGE는 1M이하의 고정된 영역에 대한 것이다.
+	 * VARIABLE RANGE는 1M 위쪽으로 BASE, MASK로 가변적인 영역이다.
+	 */
 	rdmsr(MSR_MTRRcap, lo, dummy);
-	mtrr_state.have_fixed = (lo >> 8) & 1;
+	mtrr_state.have_fixed = (lo >> 8) & 1; /* 8번비트: fixed range의 지원여부 */
 
 	for (i = 0; i < num_var_ranges; i++)
-		get_mtrr_var_range(i, &vrs[i]);
+		get_mtrr_var_range(i, &vrs[i]); /* variable range 를 얻는다. */
 	if (mtrr_state.have_fixed)
-		get_fixed_ranges(mtrr_state.fixed_ranges);
+		get_fixed_ranges(mtrr_state.fixed_ranges); /* fixed range 를 얻는다. */
 
 	rdmsr(MSR_MTRRdefType, lo, dummy);
 	mtrr_state.def_type = (lo & 0xff);
-	mtrr_state.enabled = (lo & 0xc00) >> 10;
+	mtrr_state.enabled = (lo & 0xc00) >> 10; /* FE,E 비트(MTRR Enable, Fixed Enable) */
 
 	if (amd_special_default_mtrr()) {
 		unsigned low, high;
@@ -424,13 +428,13 @@ void __init get_mtrr_state(void)
 	mtrr_state_set = 1;
 
 	/* PAT setup for BP. We need to go through sync steps here */
-	local_irq_save(flags);
-	prepare_set();
+	local_irq_save(flags);	/* 플래그 저장, 인터럽트 금지 */
+	prepare_set();		/* MTRR 상태 저장, 캐시 금지 */
 
 	pat_init();
 
 	post_set();
-	local_irq_restore(flags);
+	local_irq_restore(flags); /* 복원 */
 }
 
 /* Some BIOS's are messed up and don't set all MTRRs the same! */
@@ -662,6 +666,7 @@ static DEFINE_RAW_SPINLOCK(set_atomicity_lock);
  * The caller must ensure that local interrupts are disabled and
  * are reenabled after post_set() has been called.
  */
+/* 캐시 금지 */
 static void prepare_set(void) __acquires(set_atomicity_lock)
 {
 	unsigned long cr0;
@@ -673,26 +678,29 @@ static void prepare_set(void) __acquires(set_atomicity_lock)
 	 * changes to the way the kernel boots
 	 */
 
-	raw_spin_lock(&set_atomicity_lock);
+	raw_spin_lock(&set_atomicity_lock); /* 락을 건다. */
 
 	/* Enter the no-fill (CD=1, NW=0) cache mode and flush caches. */
-	cr0 = read_cr0() | X86_CR0_CD;
-	write_cr0(cr0);
-	wbinvd();
+	cr0 = read_cr0() | X86_CR0_CD; /* Globally enables/disable the memory cache 이런 것이다. */
+	write_cr0(cr0); /* CD 비트를 켜서 캐시 금지 */
+	wbinvd();	/* Flushes internal cache */
 
 	/* Save value of CR4 and clear Page Global Enable (bit 7) */
+	/* PGE가 켜있으면 TLB가 FLUSH안될수 있기 때문에 CLEAR 한다. */
 	if (cpu_has_pge) {
 		cr4 = read_cr4();
 		write_cr4(cr4 & ~X86_CR4_PGE);
 	}
 
 	/* Flush all TLBs via a mov %cr3, %reg; mov %reg, %cr3 */
-	__flush_tlb();
+	__flush_tlb();		/* CR3을 이용해 TLB 비운다. */
 
 	/* Save MTRR state */
+	/* MTRR 기본 상태 저장 */
 	rdmsr(MSR_MTRRdefType, deftype_lo, deftype_hi);
 
 	/* Disable MTRRs, and set the default type to uncached */
+	/* MTRR, Fixed range , type=uncacheable */
 	mtrr_wrmsr(MSR_MTRRdefType, deftype_lo & ~0xcff, deftype_hi);
 	wbinvd();
 }
@@ -706,12 +714,14 @@ static void post_set(void) __releases(set_atomicity_lock)
 	mtrr_wrmsr(MSR_MTRRdefType, deftype_lo, deftype_hi);
 
 	/* Enable caches */
+	/* 캐시 사용 */
 	write_cr0(read_cr0() & 0xbfffffff);
 
 	/* Restore value of CR4 */
+	/* PGE 상태 복원 */
 	if (cpu_has_pge)
 		write_cr4(cr4);
-	raw_spin_unlock(&set_atomicity_lock);
+	raw_spin_unlock(&set_atomicity_lock); /* 락을 푼다. */
 }
 
 static void generic_set_all(void)
