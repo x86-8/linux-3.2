@@ -70,13 +70,14 @@ x86_get_mtrr_mem_range(struct range *range, int nr_range,
 	unsigned long base, size;
 	mtrr_type type;
 	int i;
-
+	/* WB영역중 중첩되는 range를 합친다. */
 	for (i = 0; i < num_var_ranges; i++) {
 		type = range_state[i].type;
 		if (type != MTRR_TYPE_WRBACK)
-			continue;
+			continue; /* WB가 아니면 패스 */
 		base = range_state[i].base_pfn;
 		size = range_state[i].size_pfn;
+		/* WB영역중에서 중첩되는 부분을 합쳐서 range 배열에 넣는다. */
 		nr_range = add_range_with_merge(range, RANGE_NUM, nr_range,
 						base, base + size);
 	}
@@ -90,6 +91,7 @@ x86_get_mtrr_mem_range(struct range *range, int nr_range,
 	/* Take out UC ranges: */
 	for (i = 0; i < num_var_ranges; i++) {
 		type = range_state[i].type;
+		/* UC나 WP가 아니면 패스 */
 		if (type != MTRR_TYPE_UNCACHABLE &&
 		    type != MTRR_TYPE_WRPROT)
 			continue;
@@ -97,6 +99,10 @@ x86_get_mtrr_mem_range(struct range *range, int nr_range,
 		if (!size)
 			continue;
 		base = range_state[i].base_pfn;
+		/* base는 4KB 단위다. 256 이하, 즉 1M 이하이면서
+		 * fixed(1M) mtrr가 있으면서 enable인 예외상황을 가리킨다.
+		 * 즉 fixed mtrr과 variable mtrr이 중첩되서 생기는 버그 경고이다.
+		 */
 		if (base < (1<<(20-PAGE_SHIFT)) && mtrr_state.have_fixed &&
 		    (mtrr_state.enabled & 1)) {
 			/* Var MTRR contains UC entry below 1M? Skip it: */
@@ -106,9 +112,10 @@ x86_get_mtrr_mem_range(struct range *range, int nr_range,
 			size -= (1<<(20-PAGE_SHIFT)) - base;
 			base = 1<<(20-PAGE_SHIFT);
 		}
+		/* WB가 모인 range에서 UC, WP영역과 겹치는 부분을 뺀다. */
 		subtract_range(range, RANGE_NUM, base, base + size);
 	}
-	if (extra_remove_size)
+	if (extra_remove_size)	/* 인자로 들어온 4G 넘는 영역을 빼준다. */
 		subtract_range(range, RANGE_NUM, extra_remove_base,
 				 extra_remove_base + extra_remove_size);
 
@@ -123,7 +130,7 @@ x86_get_mtrr_mem_range(struct range *range, int nr_range,
 	}
 
 	/* sort the ranges */
-	nr_range = clean_sort_range(range, RANGE_NUM);
+	nr_range = clean_sort_range(range, RANGE_NUM); /* 정렬 */
 	if  (debug_print) {
 		printk(KERN_DEBUG "After sorting\n");
 		for (i = 0; i < nr_range; i++)
@@ -142,7 +149,7 @@ static unsigned long __init sum_ranges(struct range *range, int nr_range)
 	int i;
 
 	for (i = 0; i < nr_range; i++)
-		sum += range[i].end - range[i].start;
+		sum += range[i].end - range[i].start; /* 사이즈를 다 더한다. */
 
 	return sum;
 }
@@ -552,37 +559,42 @@ static void __init print_out_mtrr_range_state(void)
 			);
 	}
 }
-
+/* 클린업 여부 체크 */
 static int __init mtrr_need_cleanup(void)
 {
 	int i;
 	mtrr_type type;
 	unsigned long size;
 	/* Extra one for all 0: */
-	int num[MTRR_NUM_TYPES + 1];
+	int num[MTRR_NUM_TYPES + 1]; /* 64비트 MTRR 타입은 8개 */
 
 	/* Check entries number: */
 	memset(num, 0, sizeof(num));
+	/* MTRR을 돌면서 각 타입 개수를 카운트한다. */
 	for (i = 0; i < num_var_ranges; i++) {
 		type = range_state[i].type;
 		size = range_state[i].size_pfn;
 		if (type >= MTRR_NUM_TYPES)
 			continue;
-		if (!size)
+		if (!size)	/* 사이즈가 0인 타입은 따로 센다 */
 			type = MTRR_NUM_TYPES;
-		num[type]++;
+		num[type]++;	/* 이 타입의 갯수 증가 */
 	}
 
 	/* Check if we got UC entries: */
+	/* UC가 없으면 클린업할 필요 없음 */
 	if (!num[MTRR_TYPE_UNCACHABLE])
 		return 0;
 
 	/* Check if we only had WB and UC */
+	/* MTRR 총합(크기0 제외)이 WB수+UC수가 같지 않으면 리턴
+	 * WB+ UC로만 이루어진 경우는 클린업이 필요하다.
+	 */
 	if (num[MTRR_TYPE_WRBACK] + num[MTRR_TYPE_UNCACHABLE] !=
 	    num_var_ranges - num[MTRR_NUM_TYPES])
 		return 0;
-
-	return 1;
+	/* UC가 있고 WB+UC only면 cleanup */
+	return 1;		/* clean이 필요하다. */
 }
 
 static unsigned long __initdata range_sums;
@@ -682,16 +694,18 @@ int __init mtrr_cleanup(unsigned address_bits)
 	mtrr_type type;
 	int index_good;
 	int i;
-
+	/* 인텔이 아니거나 mtrr이 cleanup 되어 있으면 리턴 */
 	if (!is_cpu(INTEL) || enable_mtrr_cleanup < 1)
 		return 0;
-
+	/* 인텔이면서 mtrr이 cleanup 안되어 있어야 계속 진행 */
 	rdmsr(MSR_MTRRdefType, def, dummy);
 	def &= 0xff;
+	/* MTRR 기본 타입이 UC가 아니면 리턴  */
 	if (def != MTRR_TYPE_UNCACHABLE)
 		return 0;
 
 	/* Get it and store it aside: */
+	/* MTRR 값을 읽는다. */
 	memset(range_state, 0, sizeof(range_state));
 	for (i = 0; i < num_var_ranges; i++) {
 		mtrr_if->get(i, &base, &size, &type);
@@ -710,21 +724,22 @@ int __init mtrr_cleanup(unsigned address_bits)
 
 	memset(range, 0, sizeof(range));
 	x_remove_size = 0;
-	x_remove_base = 1 << (32 - PAGE_SHIFT);
-	if (mtrr_tom2)
+	x_remove_base = 1 << (32 - PAGE_SHIFT); /* 시작주소는 4G */
+	if (mtrr_tom2)		/* TOP_MEM 윗부분, AMD의 특별한 경우에만 존재? */
 		x_remove_size = (mtrr_tom2 >> PAGE_SHIFT) - x_remove_base;
-
+	/* WB가 모인 range중 UC, WP를 빼고 x_remove영역도 빼고 sort 한다. */
 	nr_range = x86_get_mtrr_mem_range(range, 0, x_remove_base, x_remove_size);
 	/*
 	 * [0, 1M) should always be covered by var mtrr with WB
 	 * and fixed mtrrs should take effect before var mtrr for it:
 	 */
+	/* 하위 1M 영역을 add & merge */
 	nr_range = add_range_with_merge(range, RANGE_NUM, nr_range, 0,
 					1ULL<<(20 - PAGE_SHIFT));
 	/* Sort the ranges: */
-	sort_range(range, nr_range);
+	sort_range(range, nr_range); /* 정렬한다. */
 
-	range_sums = sum_ranges(range, nr_range);
+	range_sums = sum_ranges(range, nr_range); /* range 크기 합 */
 	printk(KERN_INFO "total RAM covered: %ldM\n",
 	       range_sums >> (20 - PAGE_SHIFT));
 

@@ -56,22 +56,25 @@ static __always_inline void __ticket_spin_lock(arch_spinlock_t *lock)
 	register struct __raw_tickets inc = { .tail = 1 };
 	/* inc = 원래값= lock->tickets
 	 * lock->tickets += inc
-	 * 이번 티켓을 발급한다. (상위 바이트)
+	 * 이번 티켓을 발급한다. (head)
 	 */
 	inc = xadd(&lock->tickets, inc);
-
-
-	for (;;) {
+	for (;;) {		
+		/* 글자가 짧아서 while보다 for를 선호, VC에서는 warning?
+		 * while파와 for 파가 전쟁중
+		 */
 		if (inc.head == inc.tail)
-	/* 자신의 티켓과 현재 번호를 비교한다. ; %h와 %b는 ax로 비유하면 ah, al */
+			/* 자신의 티켓과(tail) 현재 순서를(head) 비교한다. 락을 얻었으면 break */
 			break;
 /* Pentium4 이상에서는 rep nop는 pause 명령으로 동작하고
  * 이전 프로세서에서는 단순한 nop로 동작한다.
  * pause는 스핀락에서 cpu에 힌트를 제공해 성능을 증가시키고 전력소모를 줄인다. */
 		cpu_relax();
+		/* 자기 순서라면 head가 같은 값으로 갱신된다 */
 		inc.head = ACCESS_ONCE(lock->tickets.head);
 	/* 자신의 티켓 순서를 기다리며 spin */
 	}
+	/* 컴파일러가 memory reordering을 못하게 메모리 장벽을 친다. */
 	barrier();		/* make sure nothing creeps before the lock is taken */
 }
 
@@ -92,6 +95,7 @@ static __always_inline int __ticket_spin_trylock(arch_spinlock_t *lock)
 #if (NR_CPUS < 256)
 static __always_inline void __ticket_spin_unlock(arch_spinlock_t *lock)
 {
+	/* head를 증가시킨다. (unlock) */
 	asm volatile(UNLOCK_LOCK_PREFIX "incb %0"
 		     : "+m" (lock->head_tail)
 		     :

@@ -66,3 +66,4 @@ Study history (날짜:인원:내용)
 57. 2012/05/19:07:*init/main.c* - setup_arch - early_gart_iommu_check
 58. 2012/05/26:06:*init/main.c* - setup_arch - mtrr_bp_init
 59. 2012/06/02:07:*init/main.c* - setup_arch - mtrr_bp_init
+60. 2012/06/09:06:*init/main.c* - setup_arch - mtrr_bp_init - mtrr_cleanup

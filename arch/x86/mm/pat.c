@@ -74,7 +74,7 @@ enum {
 	PAT_WB = 6,		/* Write Back (default) */
 	PAT_UC_MINUS = 7,	/* UC, but can be overriden by MTRR */
 };
-
+/* x번째 바이트에 y값을 넣는다. */
 #define PAT(x, y)	((u64)PAT_ ## y << ((x)*8))
 
 void pat_init(void)
@@ -82,9 +82,9 @@ void pat_init(void)
 	u64 pat;
 	bool boot_cpu = !boot_pat_state;
 
-	if (!pat_enabled)
+	if (!pat_enabled)	/* default = ON */
 		return;
-
+	/* cpu PAT 지원여부 체크 */
 	if (!cpu_has_pat) {
 		if (!boot_pat_state) {
 			pat_disable("PAT not supported by CPU.");
@@ -114,13 +114,16 @@ void pat_init(void)
 	 *      011 UC		_PAGE_CACHE_UC
 	 * PAT bit unused
 	 */
+	/* PAT는 PTE(4K) 혹은 PDE(4M,2M)의 PAT, PCD, PWT로 조합되어 사용된다.
+	 * WB, WC는 enum값
+	 */
 	pat = PAT(0, WB) | PAT(1, WC) | PAT(2, UC_MINUS) | PAT(3, UC) |
 	      PAT(4, WB) | PAT(5, WC) | PAT(6, UC_MINUS) | PAT(7, UC);
 
 	/* Boot CPU check */
 	if (!boot_pat_state)
 		rdmsrl(MSR_IA32_CR_PAT, boot_pat_state);
-
+	/* PAT 레지스터 값을 초기화한다. */
 	wrmsrl(MSR_IA32_CR_PAT, pat);
 
 	if (boot_cpu)

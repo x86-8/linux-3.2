@@ -49,35 +49,37 @@ void sort(void *base, size_t num, size_t size,
 	  void (*swap_func)(void *, void *, int size))
 {
 	/* pre-scale counters for performance */
+	/* i는 처음 검색할 중간 배열주소, n은 총 바이트 크기 */
 	int i = (num/2 - 1) * size, n = num * size, c, r;
 
-	if (!swap_func)
+	if (!swap_func)		/* 스왑 함수가 없으면 대입 */
 		swap_func = (size == 4 ? u32_swap : generic_swap);
 
 	/* heapify */
-	for ( ; i >= 0; i -= size) {
-		for (r = i; r * 2 + size < n; r  = c) {
-			c = r * 2 + size;
-			if (c < n - size &&
+	for ( ; i >= 0; i -= size) { /* 중간값부터 검색 */
+		for (r = i; r * 2 + size < n; r  = c) { /* 자식을 타고 들어간다. */
+			c = r * 2 + size;		/* 다음 값은(c)는 왼쪽 자식값 */
+			if (c < n - size &&		/* 끝값이 아니고 오른쪽 더 큰 자식을 선택  */
 					cmp_func(base + c, base + c + size) < 0)
 				c += size;
-			if (cmp_func(base + r, base + c) >= 0)
+			if (cmp_func(base + r, base + c) >= 0) /* 부모가 자식들보다 크면 중단 */
 				break;
-			swap_func(base + r, base + c, size);
+			swap_func(base + r, base + c, size); /* 큰 자식이 부모가 됨 */
 		}
 	}
 
 	/* sort */
-	for (i = n - size; i > 0; i -= size) {
+	for (i = n - size; i > 0; i -= size) { /* 끝부터 앞으로 정렬 */
+		/* 가장 먼저 큰 값이 들어있기 때문에 swap해서 마지막에 가장 큰값을 채운다. */
 		swap_func(base, base + i, size);
-		for (r = 0; r * 2 + size < i; r = c) {
-			c = r * 2 + size;
-			if (c < i - size &&
+		for (r = 0; r * 2 + size < i; r = c) { /* 역시 자식을 타고 들어간다. */
+			c = r * 2 + size;	       /* 왼쪽 자식 */
+			if (c < i - size &&	       /* 오른쪽 자식과 비교, c=큰자식 */
 					cmp_func(base + c, base + c + size) < 0)
 				c += size;
-			if (cmp_func(base + r, base + c) >= 0)
+			if (cmp_func(base + r, base + c) >= 0) /* 부모가 더 크면 중단 */
 				break;
-			swap_func(base + r, base + c, size);
+			swap_func(base + r, base + c, size); /* 큰 자식을 위로 올리고 swap하고 자식을 계속 탄다. */
 		}
 	}
 }

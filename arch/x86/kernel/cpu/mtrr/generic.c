@@ -431,7 +431,7 @@ void __init get_mtrr_state(void)
 	local_irq_save(flags);	/* 플래그 저장, 인터럽트 금지 */
 	prepare_set();		/* MTRR 상태 저장, 캐시 금지 */
 
-	pat_init();
+	pat_init();		/* PAT 값 세팅 */
 
 	post_set();
 	local_irq_restore(flags); /* 복원 */
@@ -666,7 +666,7 @@ static DEFINE_RAW_SPINLOCK(set_atomicity_lock);
  * The caller must ensure that local interrupts are disabled and
  * are reenabled after post_set() has been called.
  */
-/* 캐시 금지 */
+/* 캐시 세팅 전에 금지 */
 static void prepare_set(void) __acquires(set_atomicity_lock)
 {
 	unsigned long cr0;

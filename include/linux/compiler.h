@@ -312,6 +312,9 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
  * use is to mediate communication between process-level code and irq/NMI
  * handlers, all running on the same CPU.
  */
+/* spinlock에서 compiler가 메모리 최적화로 값을 읽는걸 생략해버리면 큰일난다.
+ * 그래서 volatile을 쓰고 가변적인 type을 고려해 typeof를 사용한다.
+ */
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 
 #endif /* __LINUX_COMPILER_H */

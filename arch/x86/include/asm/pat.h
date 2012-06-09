@@ -3,7 +3,7 @@
 
 #include <linux/types.h>
 #include <asm/pgtable_types.h>
-
+/* PAT 기본 = enable */
 #ifdef CONFIG_X86_PAT
 extern int pat_enabled;
 #else

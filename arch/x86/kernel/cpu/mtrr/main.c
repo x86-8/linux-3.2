@@ -675,7 +675,7 @@ void __init mtrr_bp_init(void)
 		set_num_var_ranges(); /* 전역변수에 mtrr갯수를 넣는다. */
 		init_table();
 		if (use_intel()) {
-			get_mtrr_state();
+			get_mtrr_state(); /* MTRR 값을 읽고 PAT를 초기화한다. */
 
 			if (mtrr_cleanup(phys_addr)) {
 				changed_by_mtrr_cleanup = 1;
