@@ -1431,6 +1431,7 @@ void __init bsp_end_local_APIC_setup(void)
 }
 
 #ifdef CONFIG_X86_X2APIC
+/* x2apic는 apic를 확장한 xapic를 확장한 intel의 확장스펙이다. */
 void check_x2apic(void)
 {
 	if (x2apic_enabled()) {

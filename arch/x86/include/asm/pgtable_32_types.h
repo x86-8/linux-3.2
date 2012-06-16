@@ -42,8 +42,10 @@ extern bool __vmalloc_start_set; /* set once high_memory is set */
 		    & PMD_MASK)
 
 #ifdef CONFIG_HIGHMEM
+/* HIGHMEM이 켜있으면 -8KB */
 # define VMALLOC_END	(PKMAP_BASE - 2 * PAGE_SIZE)
 #else
+/* HIGHMEM이 없으면 메모리 끝은 4G 부근 */
 # define VMALLOC_END	(FIXADDR_START - 2 * PAGE_SIZE)
 #endif
 

@@ -307,6 +307,7 @@ static void __init cleanup_highmap(void)
 
 static void __init reserve_brk(void)
 {
+	/* break 영역을 예약한다. */
 	if (_brk_end > _brk_start)
 		memblock_x86_reserve_range(__pa(_brk_start), __pa(_brk_end), "BRK");
 
@@ -638,7 +639,6 @@ void __init reserve_standard_io_resources(void)
 static __init void reserve_ibft_region(void)
 {
 	unsigned long addr, size = 0;
-
 	addr = find_ibft_region(&size);
 
 	if (size)
@@ -922,34 +922,40 @@ void __init setup_arch(char **cmdline_p)
 	max_pfn = e820_end_of_ram_pfn();
 
 	/* update e820 for memory not covered by WB MTRRs */
-	mtrr_bp_init();
+	mtrr_bp_init();		/* 캐시를 위해 mtrr을 초기화한다. */
+	/* Intel 아키텍쳐에서 WB가 아닌 부분을 e820에서 예약됨으로 업데이트 한다.
+	 * 이렇게 trim되고 e820이 갱신된 부분이 있으면 최대 페이지값을 갱신한다.
+	 */
 	if (mtrr_trim_uncached_memory(max_pfn))
 		max_pfn = e820_end_of_ram_pfn();
 
 #ifdef CONFIG_X86_32
 	/* max_low_pfn get updated here */
+	/* low와 high를 찾는다. */
 	find_low_pfn_range();
 #else
+	/* 최대 물리 페이지 수를 세팅 */
 	num_physpages = max_pfn;
 
-	check_x2apic();
+	check_x2apic();		/* intel x2apic 를 지원하는지 체크 */
 
 	/* How many end-of-memory variables you have, grandma! */
 	/* need this before calling reserve_initrd */
+	/* 1G보다 max_pfn이 크면 e820, 즉 low는 최대 1G이다. */
 	if (max_pfn > (1UL<<(32 - PAGE_SHIFT)))
-		max_low_pfn = e820_end_of_low_ram_pfn();
+		max_low_pfn = e820_end_of_low_ram_pfn(); /* 1G 이하의 PFN 최대값 */
 	else
-		max_low_pfn = max_pfn;
-
+		max_low_pfn = max_pfn; /* 1G 이하면 1G 이하의 PFN 최대값 */
+	/* 가용 메모리 주소 (가상주소) 끝을 high_memory로 둔다. */
 	high_memory = (void *)__va(max_pfn * PAGE_SIZE - 1) + 1;
 #endif
 
 	/*
 	 * Find and reserve possible boot-time SMP configuration:
 	 */
-	find_smp_config();
+	find_smp_config();	/* 기본메모리에서 smp를 찾아서 예약한다. */
 
-	reserve_ibft_region();
+	reserve_ibft_region();	/* iscsi boot firmware table을 검색하고 예약 */
 
 	/*
 	 * Need to conclude brk, before memblock_x86_fill()

@@ -119,14 +119,17 @@ static int cmp_range(const void *x1, const void *x2)
 
 	return start1 - start2;
 }
-/* 그냥 정렬 */
+/* 빈 공간을 없애고 카운트 후(compaction) heap 정렬*/
 int clean_sort_range(struct range *range, int az)
 {
 	int i, j, k = az - 1, nr_range = az;
-
+	/* k=최대값-1 */
 	for (i = 0; i < k; i++) {
-		if (range[i].end)
+		if (range[i].end) /* end에 값이 있으면 패스 */
 			continue;
+		/* 이 루프는 비어있는 엔트리에서만 실행한다.
+		 * 비어있는 엔트리를 마지막 엔트리와 swap한다.
+		 */
 		for (j = k; j > i; j--) {
 			if (range[j].end) {
 				k = j;
@@ -142,6 +145,7 @@ int clean_sort_range(struct range *range, int az)
 		k--;
 	}
 	/* count it */
+	/* 마지막 엔트리 값을 찾는다. (갯수) */
 	for (i = 0; i < az; i++) {
 		if (!range[i].end) {
 			nr_range = i;

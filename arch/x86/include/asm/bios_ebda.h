@@ -6,6 +6,7 @@
 /*
  * Returns physical address of EBDA.  Returns 0 if there is no EBDA.
  */
+/* EBDA의 가상 주소를 구한다. */
 static inline unsigned int get_bios_ebda(void)
 {
 	/*

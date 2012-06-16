@@ -566,14 +566,16 @@ void __init lowmem_pfn_init(void)
 	max_low_pfn = max_pfn;
 
 	if (highmem_pages == -1)
-		highmem_pages = 0;
+		highmem_pages = 0; /* highmem은 없다. */
 #ifdef CONFIG_HIGHMEM
+	/* 최대 페이지가 아키텍쳐 한계보다 높으면 리셋 & 에러출력 */
 	if (highmem_pages >= max_pfn) {
 		printk(KERN_ERR MSG_HIGHMEM_TOO_BIG,
 			pages_to_mb(highmem_pages), pages_to_mb(max_pfn));
 		highmem_pages = 0;
 	}
 	if (highmem_pages) {
+		/* 64MB보다  */
 		if (max_low_pfn - highmem_pages < 64*1024*1024/PAGE_SIZE) {
 			printk(KERN_ERR MSG_LOWMEM_TOO_SMALL,
 				pages_to_mb(highmem_pages));
@@ -600,7 +602,7 @@ void __init highmem_pfn_init(void)
 {
 	max_low_pfn = MAXMEM_PFN;
 
-	if (highmem_pages == -1)
+	if (highmem_pages == -1) /* 가용램-HIGH구분영역으로 초기화 */
 		highmem_pages = max_pfn - MAXMEM_PFN;
 
 	if (highmem_pages + MAXMEM_PFN < max_pfn)
@@ -636,7 +638,7 @@ void __init highmem_pfn_init(void)
 void __init find_low_pfn_range(void)
 {
 	/* it could update max_pfn */
-
+	/* 최대 값을 안넘으면 lowmem 넘으면 highmem */
 	if (max_pfn <= MAXMEM_PFN)
 		lowmem_pfn_init();
 	else

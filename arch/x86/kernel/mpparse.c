@@ -444,10 +444,11 @@ static unsigned long __init get_mpc_size(unsigned long physptr)
 {
 	struct mpc_table *mpc;
 	unsigned long size;
-
+	/* ioremap으로 물리메모리를 할당한다. */
 	mpc = early_ioremap(physptr, PAGE_SIZE);
 	size = mpc->length;
 	early_iounmap(mpc, PAGE_SIZE);
+	/* 사이즈만 구해서 출력 */
 	apic_printk(APIC_VERBOSE, "  mpc: %lx-%lx\n", physptr, physptr + size);
 
 	return size;
@@ -565,43 +566,45 @@ void __init default_get_smp_config(unsigned int early)
 static void __init smp_reserve_memory(struct mpf_intel *mpf)
 {
 	unsigned long size = get_mpc_size(mpf->physptr);
-
+	/* 찾아간 mpf의 물리주소 테이블 역시 예약한다. */
 	memblock_x86_reserve_range(mpf->physptr, mpf->physptr+size, "* MP-table mpc");
 }
-
+/* 찾으면 memblock에 예약하고 1을 리턴 */
 static int __init smp_scan_config(unsigned long base, unsigned long length)
 {
 	unsigned int *bp = phys_to_virt(base);
 	struct mpf_intel *mpf;
 	unsigned long mem;
-
+	/* verbosity보다 APIC_VERBOSE가 작거나 같으면 출력 */
 	apic_printk(APIC_VERBOSE, "Scan SMP from %p for %ld bytes.\n",
 			bp, length);
 	BUILD_BUG_ON(sizeof(*mpf) != 16);
 
 	while (length > 0) {
-		mpf = (struct mpf_intel *)bp;
+		mpf = (struct mpf_intel *)bp; /* mpf 구조체로 가정 */
+		/* 시그네쳐와 길이, 체크섬이 맞으면서 스펙이 1 or 4인 경우에만 실행 */
 		if ((*bp == SMP_MAGIC_IDENT) &&
 		    (mpf->length == 1) &&
 		    !mpf_checksum((unsigned char *)bp, 16) &&
 		    ((mpf->specification == 1)
 		     || (mpf->specification == 4))) {
-#ifdef CONFIG_X86_LOCAL_APIC
+#ifdef CONFIG_X86_LOCAL_APIC	/* x86에서는 기본으로 켜있다. */
 			smp_found_config = 1;
 #endif
-			mpf_found = mpf;
+			mpf_found = mpf; /* 찾은 주소 */
 
 			printk(KERN_INFO "found SMP MP-table at [%p] %llx\n",
 			       mpf, (u64)virt_to_phys(mpf));
 
 			mem = virt_to_phys(mpf);
+			/* memblock에 찾은 mpf 영역을 예약한다. */
 			memblock_x86_reserve_range(mem, mem + sizeof(*mpf), "* MP-table mpf");
 			if (mpf->physptr)
-				smp_reserve_memory(mpf);
+				smp_reserve_memory(mpf); /* 물리주소로 찾아가 예약 */
 
 			return 1;
 		}
-		bp += 4;
+		bp += 4;	/* 못찾았으면 계속 검색 bp(int * 4), 길이는 16바이트 */
 		length -= 16;
 	}
 	return 0;
@@ -619,6 +622,7 @@ void __init default_find_smp_config(void)
 	 * 2) Scan the top 1K of base RAM
 	 * 3) Scan the 64K of bios
 	 */
+	/* 위에 나타난 영역들에서 16바이트씩 더하면서 smp 스펙을 찾는다. */
 	if (smp_scan_config(0x0, 0x400) ||
 	    smp_scan_config(639 * 0x400, 0x400) ||
 	    smp_scan_config(0xF0000, 0x10000))
@@ -639,7 +643,7 @@ void __init default_find_smp_config(void)
 	 *
 	 * MP1.4 SPEC states to only scan first 1K of 4K EBDA.
 	 */
-
+	/* 위쪽에서 못찾았다면 EBDA에서 1KB만큼 또 smp를 찾아본다. */
 	address = get_bios_ebda();
 	if (address)
 		smp_scan_config(address, 0x400);

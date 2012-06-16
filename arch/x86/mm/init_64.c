@@ -302,10 +302,12 @@ void __init init_extra_mapping_uc(unsigned long phys, unsigned long size)
  */
 void __init cleanup_highmap(void)
 {
-	unsigned long vaddr = __START_KERNEL_map;
+	unsigned long vaddr = __START_KERNEL_map; /* 커널 코드 영역 */
+	/* 커널영역 크기(512M) 를 더한것 */
 	unsigned long vaddr_end = __START_KERNEL_map + (max_pfn_mapped << PAGE_SHIFT);
+	/* brk_end를 PMD_SIZE단위로 올림 */
 	unsigned long end = roundup((unsigned long)_brk_end, PMD_SIZE) - 1;
-	pmd_t *pmd = level2_kernel_pgt;
+	pmd_t *pmd = level2_kernel_pgt; /* 설정한 커널 페이지 테이블에서 가져온다. */
 
 	for (; vaddr + PMD_SIZE - 1 < vaddr_end; pmd++, vaddr += PMD_SIZE) {
 		if (pmd_none(*pmd))

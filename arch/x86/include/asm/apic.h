@@ -29,6 +29,9 @@
  * information and apic=debug for _lots_ of information.
  * apic_verbosity is defined in apic.c
  */
+/* verbosity이하있때 출력한다.
+ * 3번째인자 이후를 인자로 넘겨준다.
+ */
 #define apic_printk(v, s, a...) do {       \
 		if ((v) <= apic_verbosity) \
 			printk(s, ##a);    \
@@ -183,9 +186,9 @@ static inline int x2apic_enabled(void)
 {
 	u64 msr;
 
-	if (!cpu_has_x2apic)
+	if (!cpu_has_x2apic)	/* 지원 안하면 리턴 */
 		return 0;
-
+	/* MSR에서 다시 확인 */
 	rdmsrl(MSR_IA32_APICBASE, msr);
 	if (msr & X2APIC_ENABLE)
 		return 1;

@@ -92,6 +92,7 @@ done:
  * Routine used to find the iSCSI Boot Format Table. The logical
  * kernel address is set in the ibft_addr global variable.
  */
+/* iSCSI는 IP기반의 저장 네트워크 표준이다. ibft는 iscsi boot format table */
 unsigned long __init find_ibft_region(unsigned long *sizep)
 {
 	ibft_addr = NULL;

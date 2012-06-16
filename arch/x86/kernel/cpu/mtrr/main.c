@@ -676,7 +676,7 @@ void __init mtrr_bp_init(void)
 		init_table();
 		if (use_intel()) {
 			get_mtrr_state(); /* MTRR 값을 읽고 PAT를 초기화한다. */
-
+			/* 기본값은 SANITIZE옵션이 안켜져 있어서 패스한다. */
 			if (mtrr_cleanup(phys_addr)) {
 				changed_by_mtrr_cleanup = 1;
 				mtrr_if->set_all();
