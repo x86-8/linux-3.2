@@ -804,6 +804,7 @@ void __init memblock_analyze(void)
 	int i;
 
 	/* Check marker in the unused last array entry */
+	/* INACTIVE 값이 맞는지 확인한다. */
 	WARN_ON(memblock_memory_init_regions[INIT_MEMBLOCK_REGIONS].base
 		!= MEMBLOCK_INACTIVE);
 	WARN_ON(memblock_reserved_init_regions[INIT_MEMBLOCK_REGIONS].base
@@ -831,10 +832,11 @@ void __init memblock_init(void)
 	memblock.memory.max		= INIT_MEMBLOCK_REGIONS;
 	memblock.reserved.regions	= memblock_reserved_init_regions; /* 역시 129개 */
 	memblock.reserved.max	= INIT_MEMBLOCK_REGIONS;
-	/* 마지막 배열 세팅 */
+	/* 사용하지 않을 마지막 배열에 시그니쳐 값을 넣는다. */
 	/* Write a marker in the unused last array entry */
-	memblock.memory.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE; /* MEMBLOCK_REGIONS=128 */
-	/* MEMBLOCK_INACTIVE[44]          #define MEMBLOCK_INACTIVE 0x3a84fb0144c9e71bULL */
+	/* MEMBLOCK_REGIONS=128 */
+	/* MEMBLOCK_INACTIVE=0x3a84fb0144c9e71bULL, analyze에서 체크한다. */
+	memblock.memory.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE;
 	memblock.reserved.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE;
 	/* 첫 배열 세팅(0) */
 	/* Create a dummy zero size MEMBLOCK which will get coalesced away later.
