@@ -68,3 +68,4 @@ Study history (날짜:인원:내용)
 59. 2012/06/02:07:*init/main.c* - setup_arch - mtrr_bp_init
 60. 2012/06/09:06:*init/main.c* - setup_arch - mtrr_bp_init - mtrr_cleanup
 61. 2012/06/16:04:*init/main.c* - setup_arch - cleanup_highmap
+62. 2012/06/23:05:*init/main.c* - setup_arch - setup_trampolines

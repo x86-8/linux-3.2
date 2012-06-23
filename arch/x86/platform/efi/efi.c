@@ -386,7 +386,7 @@ void __init efi_reserve_boot_services(void)
 		efi_memory_desc_t *md = p;
 		u64 start = md->phys_addr;
 		u64 size = md->num_pages << EFI_PAGE_SHIFT;
-
+		/* CODE나 DATA일때만 실행 */
 		if (md->type != EFI_BOOT_SERVICES_CODE &&
 		    md->type != EFI_BOOT_SERVICES_DATA)
 			continue;
@@ -396,6 +396,11 @@ void __init efi_reserve_boot_services(void)
 		 * - Not within any part of the kernel
 		 * - Not the bios reserved area
 		*/
+		/* 아래 조건에 해당되지 않아야 한다.
+		 * 1. 서로 겹치는것 (포함, 일부겹침등)
+		 * 2. 블럭이 e820의 해당 타입으로 연속적으로 겹칠때
+		 * 3. memblock에 겹쳐 예약불가능한것. (혹은 예약된 영역에 완전히 속할때)
+		 */
 		if ((start+size >= virt_to_phys(_text)
 				&& start <= virt_to_phys(_end)) ||
 			!e820_all_mapped(start, start+size, E820_RAM) ||
@@ -403,10 +408,12 @@ void __init efi_reserve_boot_services(void)
 							1<<EFI_PAGE_SHIFT)) {
 			/* Could not reserve, skip it */
 			md->num_pages = 0;
+			/* 예약불가능 출력 */
 			memblock_dbg(PFX "Could not reserve boot range "
 					"[0x%010llx-0x%010llx]\n",
 						start, start+size-1);
 		} else
+			/* 예약할수 있다. EFI boot로 예약한다. */
 			memblock_x86_reserve_range(start, start+size,
 							"EFI Boot");
 	}

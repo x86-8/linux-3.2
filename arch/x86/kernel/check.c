@@ -59,7 +59,7 @@ static __init int set_corruption_check_size(char *arg)
 }
 early_param("memory_corruption_check_size", set_corruption_check_size);
 
-
+/* suspend, resume할때 bios의 64KB를 60초마다 체크한다. */
 void __init setup_bios_corruption_check(void)
 {
 	u64 addr = PAGE_SIZE;	/* assume first page is reserved anyway */
@@ -79,28 +79,32 @@ void __init setup_bios_corruption_check(void)
 
 	if (!memory_corruption_check)
 		return;
-
+	/* 올림 */
 	corruption_check_size = round_up(corruption_check_size, PAGE_SIZE);
-
+	/* 체크사이즈는 기본 64KB, 검사 주기는 60초
+	 * 0부터 크기를 넘지 않거나 체크할 최대갯수(8개)를 넘지 않으면 계속 체크
+	 */
 	while (addr < corruption_check_size && num_scan_areas < MAX_SCAN_AREAS) {
 		u64 size;
+		/* 사용가능한 메모리 블럭 시작주소를 구함 */
 		addr = memblock_x86_find_in_range_size(addr, &size, PAGE_SIZE);
 
-		if (addr == MEMBLOCK_ERROR)
+		if (addr == MEMBLOCK_ERROR) /* 크기가 안됨 */
 			break;
-
+		/* 할당불가, 역시 예외처리 */
 		if (addr >= corruption_check_size)
 			break;
-
+		/* addr부터 체크사이즈만큼의 크기 */
 		if ((addr + size) > corruption_check_size)
 			size = corruption_check_size - addr;
-
+		/* scan ram으로 등록 */
 		memblock_x86_reserve_range(addr, addr + size, "SCAN RAM");
 		scan_areas[num_scan_areas].addr = addr;
 		scan_areas[num_scan_areas].size = size;
 		num_scan_areas++;
 
 		/* Assume we've already mapped this early memory */
+		/* 0으로 set해서 체크한다. */
 		memset(__va(addr), 0, size);
 
 		addr += size;

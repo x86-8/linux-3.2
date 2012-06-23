@@ -1326,7 +1326,7 @@ void __ref xen_hvm_init_shared_info(void)
 
 	if (!shared_info_page)
 		shared_info_page = (struct shared_info *)
-			extend_brk(PAGE_SIZE, PAGE_SIZE);
+cs			extend_brk(PAGE_SIZE, PAGE_SIZE);
 	xatp.domid = DOMID_SELF;
 	xatp.idx = 0;
 	xatp.space = XENMAPSPACE_shared_info;

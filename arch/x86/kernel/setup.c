@@ -964,9 +964,12 @@ void __init setup_arch(char **cmdline_p)
 	 */
 	reserve_brk();
 
-	cleanup_highmap();
+	cleanup_highmap();	/* 커널영역 제외 초기화 */
 
-	memblock.current_limit = get_max_mapped();
+	memblock.current_limit = get_max_mapped(); /* memblock의 한계를 세팅 (물리메모리?) */
+	/* e820의 정보(RAM, KERN)를 memblock의 사용가능(memory)한 쪽에 더하고 체크한뒤
+	 * debug 옵션이 켜있으면 memblock 정보를 출력한다.
+	 */
 	memblock_x86_fill();
 
 	/*
@@ -980,6 +983,7 @@ void __init setup_arch(char **cmdline_p)
 	early_reserve_e820_mpc_new();
 
 #ifdef CONFIG_X86_CHECK_BIOS_CORRUPTION
+	/* 바이오스의 커럽션 체크하는걸 셋업한다. */
 	setup_bios_corruption_check();
 #endif
 

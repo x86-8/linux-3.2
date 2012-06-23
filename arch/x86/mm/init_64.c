@@ -300,20 +300,28 @@ void __init init_extra_mapping_uc(unsigned long phys, unsigned long size)
  * is rounded up to the 2MB boundary. This catches the invalid pmds as
  * well, as they are located before _text:
  */
+/* 커널영역중 커널이 사용중이 영역 이외의 부분을 0으로 초기화한다. */
 void __init cleanup_highmap(void)
 {
-	unsigned long vaddr = __START_KERNEL_map; /* 커널 코드 영역 */
-	/* 커널영역 크기(512M) 를 더한것 */
+	/* 커널 text mapping 영역 */
+	unsigned long vaddr = __START_KERNEL_map;
+	/* 커널영역 시작 + 커널 영역 최대  크기
+	 * 이 값은 512M or limit값인데 지금은 최대값인 512M 일 것이다. */
 	unsigned long vaddr_end = __START_KERNEL_map + (max_pfn_mapped << PAGE_SHIFT);
-	/* brk_end를 PMD_SIZE단위로 올림 */
+	/* brk_end를 PMD_SIZE단위로 올림 (2M boundary) */
 	unsigned long end = roundup((unsigned long)_brk_end, PMD_SIZE) - 1;
-	pmd_t *pmd = level2_kernel_pgt; /* 설정한 커널 페이지 테이블에서 가져온다. */
-
+	/* 설정한 커널 pmd 테이블 주소를 가져온다. */
+	pmd_t *pmd = level2_kernel_pgt;
+	/* 커널 영역의(0xfff...800...) 끝까지 pmd 엔트리를 하나씩 탐색한다. */
 	for (; vaddr + PMD_SIZE - 1 < vaddr_end; pmd++, vaddr += PMD_SIZE) {
-		if (pmd_none(*pmd))
+		if (pmd_none(*pmd)) /* pmd 엔트리가 연결안되었으면 패스 */
 			continue;
+		/* vaddr부터 16M이하의 메모리(_text)와 커널이 사용중인 영역끝(brk_end)의
+		 * 엔트리를 0으로 초기화한다
+		 * 캐스팅을 안하면 메모리 주소가 음수가 되기 때문에 unsigned long으로 캐스팅
+		 */
 		if (vaddr < (unsigned long) _text || vaddr > end)
-			set_pmd(pmd, __pmd(0));
+			set_pmd(pmd, __pmd(0)); /* 0인 pmd 엔트리로 현재 pmd를 세팅 */
 	}
 }
 

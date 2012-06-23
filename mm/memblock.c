@@ -435,6 +435,7 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 	/* The array is full ? Try to resize it. If that fails, we undo
 	 * our allocation and return an error
 	 */
+	/* 메모리 블럭이 한계치를 초과하면 두배로 확장 */
 	if (type->cnt == type->max && memblock_double_array(type)) {
 		BUG_ON(slot < 0);
 		memblock_remove_region(type, slot);
@@ -786,9 +787,10 @@ static void __init_memblock memblock_dump(struct memblock_type *region, char *na
 		    name, i, base, base + size - 1, size);
 	}
 }
-
+/* memblock 정보를 출력 */
 void __init_memblock memblock_dump_all(void)
 {
+	/* 이 변수가 켜있어야 출력한다. */
 	if (!memblock_debug)
 		return;
 
@@ -798,20 +800,20 @@ void __init_memblock memblock_dump_all(void)
 	memblock_dump(&memblock.memory, "memory");
 	memblock_dump(&memblock.reserved, "reserved");
 }
-
+/* INACTIVE 검사, memblock 크기의 합을 구한다. */
 void __init memblock_analyze(void)
 {
 	int i;
 
 	/* Check marker in the unused last array entry */
-	/* INACTIVE 값이 맞는지 확인한다. */
+	/* 배열의 가장 끝에 넣어놨던 INACTIVE 값이 동일하면 경고한다. */
 	WARN_ON(memblock_memory_init_regions[INIT_MEMBLOCK_REGIONS].base
 		!= MEMBLOCK_INACTIVE);
 	WARN_ON(memblock_reserved_init_regions[INIT_MEMBLOCK_REGIONS].base
 		!= MEMBLOCK_INACTIVE);
 
 	memblock.memory_size = 0;
-
+	/* 사용가능한 메모리블럭을 돌면서 크기를 더한다. */
 	for (i = 0; i < memblock.memory.cnt; i++)
 		memblock.memory_size += memblock.memory.regions[i].size;
 

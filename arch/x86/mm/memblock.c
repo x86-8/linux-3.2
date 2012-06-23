@@ -8,6 +8,7 @@
 #include <linux/range.h>
 
 /* Check for already reserved areas */
+/* memblock에서 검색하는 영역(addr~last)이 예약할수(reserved) 없는지 체크 */
 bool __init memblock_x86_check_reserved_size(u64 *addrp, u64 *sizep, u64 align)
 {
 	struct memblock_region *r;
@@ -17,24 +18,29 @@ bool __init memblock_x86_check_reserved_size(u64 *addrp, u64 *sizep, u64 align)
 
 again:
 	last = addr + size;
-	for_each_memblock(reserved, r) {
+	for_each_memblock(reserved, r) { /* 빙빙돈다. */
+		/* 체크하려는 영역(addr~last)의 뒤에 memblock이 겹치는 경우 해당영역 삭제 */
 		if (last > r->base && addr < r->base) {
 			size = r->base - addr;
 			changed = true;
 			goto again;
 		}
+		/* 체크하려는 블럭의 앞에 memblock이 겹치는 경우 짤라준다. */
 		if (last > (r->base + r->size) && addr < (r->base + r->size)) {
 			addr = round_up(r->base + r->size, align);
 			size = last - addr;
 			changed = true;
 			goto again;
 		}
+		/* 체크하려는 블럭이 memblock에 포함되는 경우
+		 * 사이즈를 0으로 만들어서 예약 불가능하게 만든다.
+		 */
 		if (last <= (r->base + r->size) && addr >= r->base) {
 			*sizep = 0;
 			return false;
 		}
 	}
-	if (changed) {
+	if (changed) {		/* 변했으면 다시 대입 */
 		*addrp = addr;
 		*sizep = size;
 	}
@@ -44,6 +50,9 @@ again:
 /*
  * Find next free range after start, and size is returned in *sizep
  */
+/* start부터 연속적으로 할당 가능한 메모리 크기를 구해넣고
+ * align된 시작주소를 반환한다.
+ */
 u64 __init memblock_x86_find_in_range_size(u64 start, u64 *sizep, u64 align)
 {
 	struct memblock_region *r;
@@ -52,18 +61,21 @@ u64 __init memblock_x86_find_in_range_size(u64 start, u64 *sizep, u64 align)
 		u64 ei_start = r->base;
 		u64 ei_last = ei_start + r->size;
 		u64 addr;
-
+		/* align 올림 한다. */
 		addr = round_up(ei_start, align);
 		if (addr < start)
 			addr = round_up(start, align);
+		/* 겹치지 않으면 패스 */
 		if (addr >= ei_last)
 			continue;
+		/* 이 memblock에서 할당가능한 크기 */
 		*sizep = ei_last - addr;
+		/* reserved 되어있는지 체크 */
 		while (memblock_x86_check_reserved_size(&addr, sizep, align))
 			;
 
 		if (*sizep)
-			return addr;
+			return addr; /* 시작주소 리턴 */
 	}
 
 	return MEMBLOCK_ERROR;

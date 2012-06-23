@@ -840,8 +840,10 @@ early_param("alloc_mptable", parse_alloc_mptable_opt);
 
 void __init early_reserve_e820_mpc_new(void)
 {
+	/* 해당 변수가 켜있는가? */
 	if (enable_update_mptable && alloc_mptable) {
 		u64 startt = 0;
+		/* mpc_new_phys에 미리 메모리를 할당한다. */
 		mpc_new_phys = early_reserve_e820(startt, mpc_new_length, 4);
 	}
 }

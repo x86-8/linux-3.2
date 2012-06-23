@@ -84,15 +84,19 @@ int __init e820_all_mapped(u64 start, u64 end, unsigned type)
 
 	for (i = 0; i < e820.nr_map; i++) {
 		struct e820entry *ei = &e820.map[i];
-
+		/* 찾는 타입만 검사 */
 		if (type && ei->type != type)
 			continue;
 		/* is the region (part) in overlap with the current region ?*/
+		/* 겹치지 않으면 패스 */
 		if (ei->addr >= end || ei->addr + ei->size <= start)
 			continue;
 
 		/* if the region is at the beginning of <start,end> we move
 		 * start to the end of the region since it's ok until there
+		 */
+		/* 조금이라도 빈 공간이 생기면 이 조건에 부합되지 않는다.
+		 * 연속적으로 같은 타입의 e820블럭이 start-end 블럭을 포함해야 한다.
 		 */
 		if (ei->addr <= start)
 			start = ei->addr + ei->size;
@@ -101,9 +105,9 @@ int __init e820_all_mapped(u64 start, u64 end, unsigned type)
 		 * coverage
 		 */
 		if (start >= end)
-			return 1;
+			return 1; /* 완전하게 겹쳐야 한다. */
 	}
-	return 0;
+	return 0;		/* 부분적으로 겹치거나 안 겹치면 0 */
 }
 
 /*
@@ -650,7 +654,7 @@ void __init update_e820(void)
 static void __init update_e820_saved(void)
 {
 	u32 nr_map;
-
+	/* update 되었으니 sanitize 한다. */
 	nr_map = e820_saved.nr_map;
 	if (sanitize_e820_map(e820_saved.map, ARRAY_SIZE(e820_saved.map), &nr_map))
 		return;
@@ -811,29 +815,31 @@ u64 __init early_reserve_e820(u64 startt, u64 sizet, u64 align)
 	u64 start;
 
 	for (start = startt; ; start += size) {
+		/* 할당가능한지 체크 */
 		start = memblock_x86_find_in_range_size(start, &size, align);
-		if (start == MEMBLOCK_ERROR)
+		if (start == MEMBLOCK_ERROR) 
 			return 0;
-		if (size >= sizet)
+		if (size >= sizet) /* 원하는 만큼 할당 가능하면 break */
 			break;
 	}
 
 #ifdef CONFIG_X86_32
+	/* 32비트 머신에서는 최대 메모리 크기를 벗어나는지 체크 */
 	if (start >= MAXMEM)
 		return 0;
 	if (start + size > MAXMEM)
 		size = MAXMEM - start;
 #endif
-
+	/* 사용가능한 메모리 블럭 뒤쪽에서 원하는크기(sizet)로 align 내림한다. */
 	addr = round_down(start + size - sizet, align);
-	if (addr < start)
+	if (addr < start)	/* 예외처리 */
 		return 0;
-	memblock_x86_reserve_range(addr, addr + sizet, "new next");
-	e820_update_range_saved(addr, sizet, E820_RAM, E820_RESERVED);
+	memblock_x86_reserve_range(addr, addr + sizet, "new next"); /* 예약한다. */
+	e820_update_range_saved(addr, sizet, E820_RAM, E820_RESERVED); /* 해당 영역을 예약됨으로 표시 */
 	printk(KERN_INFO "update e820_saved for early_reserve_e820\n");
-	update_e820_saved();
+	update_e820_saved();	/* update한다. */
 
-	return addr;
+	return addr;		/* 예약한 주소 */
 }
 
 #ifdef CONFIG_X86_32
@@ -1174,17 +1180,17 @@ void __init memblock_x86_fill(void)
 	 * is rather later for x86
 	 */
 	memblock_can_resize = 1;
-
+	/* e820 엔트리를 모두 찾는다. e820에서 특정 영역을 memblock에 더한다.  */
 	for (i = 0; i < e820.nr_map; i++) {
 		struct e820entry *ei = &e820.map[i];
 
 		end = ei->addr + ei->size;
-		if (end != (resource_size_t)end)
+		if (end != (resource_size_t)end) /* 크기에 따른 값이 같지 않으면 패스 */
 			continue;
-
+		/* 사용가능 혹은 커널이 예약중인 영역만 체크 */
 		if (ei->type != E820_RAM && ei->type != E820_RESERVED_KERN)
 			continue;
-
+		/* 위에 해당하면 add */
 		memblock_add(ei->addr, ei->size);
 	}
 
