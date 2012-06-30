@@ -56,6 +56,7 @@ EXPORT_SYMBOL(panic_blink);
  *	Display a message, then perform cleanups.
  *
  *	This function never returns.
+ *      봤음.
  */
 NORET_TYPE void panic(const char * fmt, ...)
 {

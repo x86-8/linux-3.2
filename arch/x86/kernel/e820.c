@@ -855,6 +855,7 @@ u64 __init early_reserve_e820(u64 startt, u64 sizet, u64 align)
 /*
  * Find the highest page frame number we have available
  */
+/* 특정 타입의 e820 max값 혹은 아키텍쳐 limit를 구한다. */
 static unsigned long __init e820_end_pfn(unsigned long limit_pfn, unsigned type)
 {
 	int i;
@@ -893,12 +894,12 @@ static unsigned long __init e820_end_pfn(unsigned long limit_pfn, unsigned type)
 			 last_pfn, max_arch_pfn);
 	return last_pfn;
 }
-/* 가용 e820의 최대 페이지 넘버 값을 구한다. */
+/* 가용 e820의 최대 페이지 넘버 값을 구한다. MAX는 아키텍쳐값 */
 unsigned long __init e820_end_of_ram_pfn(void)
 {
 	return e820_end_pfn(MAX_ARCH_PFN, E820_RAM);
 }
-/* 1G이하에서 최대 페이지 넘버를 구한다. */
+/* 4G이하에서 최대 페이지 넘버를 구한다. */
 unsigned long __init e820_end_of_low_ram_pfn(void)
 {
 	return e820_end_pfn(1UL<<(32 - PAGE_SHIFT), E820_RAM);

@@ -600,6 +600,7 @@ static inline void load_sp0(struct tss_struct *tss,
  */
 extern unsigned long		mmu_cr4_features;
 
+/* CR4에서 특정 플래그를 on */
 static inline void set_in_cr4(unsigned long mask)
 {
 	unsigned long cr4;

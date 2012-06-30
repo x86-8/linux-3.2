@@ -291,6 +291,7 @@ void * __init extend_brk(size_t size, size_t align)
 #ifdef CONFIG_X86_64
 static void __init init_gbpages(void)
 {
+	/* 1GB 페이징이 가능하면 출력 */
 	if (direct_gbpages && cpu_has_gbpages)
 		printk(KERN_INFO "Using GB pages for direct mapping\n");
 	else
@@ -941,11 +942,11 @@ void __init setup_arch(char **cmdline_p)
 
 	/* How many end-of-memory variables you have, grandma! */
 	/* need this before calling reserve_initrd */
-	/* 1G보다 max_pfn이 크면 e820, 즉 low는 최대 1G이다. */
+	/* 메모리크기가 4G보다 크면 e820, 즉 low는 최대 4G이다. */
 	if (max_pfn > (1UL<<(32 - PAGE_SHIFT)))
-		max_low_pfn = e820_end_of_low_ram_pfn(); /* 1G 이하의 PFN 최대값 */
+		max_low_pfn = e820_end_of_low_ram_pfn(); /* max_low_pfn은 max가 4G */
 	else
-		max_low_pfn = max_pfn; /* 1G 이하면 1G 이하의 PFN 최대값 */
+		max_low_pfn = max_pfn; /* 4G 이하면 그냥 PFN 최대값 */
 	/* 가용 메모리 주소 (가상주소) 끝을 high_memory로 둔다. */
 	high_memory = (void *)__va(max_pfn * PAGE_SIZE - 1) + 1;
 #endif
@@ -990,20 +991,22 @@ void __init setup_arch(char **cmdline_p)
 	printk(KERN_DEBUG "initial memory mapped : 0 - %08lx\n",
 			max_pfn_mapped<<PAGE_SHIFT);
 
-	setup_trampolines();
+	setup_trampolines();	/* trampoline코드를 1M이하로 복사 */
 
-	init_gbpages();
+	init_gbpages();		/* 1GB 페이징이 가능한지 체크 */
 
 	/* max_pfn_mapped is updated here */
+	/* 4G까지의 메모리 매핑 초기화 */
 	max_low_pfn_mapped = init_memory_mapping(0, max_low_pfn<<PAGE_SHIFT);
 	max_pfn_mapped = max_low_pfn_mapped;
 
 #ifdef CONFIG_X86_64
+	/* 64비트 이상이고 메모리가 4G이상이면 해당 영역을 초기화 */
 	if (max_pfn > max_low_pfn) {
 		max_pfn_mapped = init_memory_mapping(1UL<<32,
 						     max_pfn<<PAGE_SHIFT);
 		/* can we preseve max_low_pfn ?*/
-		max_low_pfn = max_pfn;
+		max_low_pfn = max_pfn; /* 64비트는 결국 max_low와 max가 동일하다 */
 	}
 #endif
 	memblock.current_limit = get_max_mapped();
