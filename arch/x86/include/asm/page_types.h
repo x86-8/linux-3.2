@@ -17,6 +17,7 @@
 /* Cast PAGE_MASK to a signed type so that it is sign-extended if
    virtual addresses are 32-bits but physical addresses are larger
    (ie, 32-bit PAE). */
+/* PAGE 마스크는 아래 12비트를 떼고 PHYSICAL 마크크는 48번 비트 이상을 버린다 */
 #define PHYSICAL_PAGE_MASK	(((signed long)PAGE_MASK) & __PHYSICAL_MASK)
 
  /* 2M = PMD 하나의 크기 */

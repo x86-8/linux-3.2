@@ -62,6 +62,7 @@ bool __read_mostly __vmalloc_start_set = false;
 
 static __init void *alloc_low_page(void)
 {
+	/* 한 페이지 할당 */
 	unsigned long pfn = pgt_buf_end++;
 	void *adr;
 
@@ -70,7 +71,9 @@ static __init void *alloc_low_page(void)
 
 	adr = __va(pfn * PAGE_SIZE);
 	clear_page(adr);
+	/* 이번에 사용할 페이지 가상 주소 리턴 */
 	return adr;
+
 }
 
 /*

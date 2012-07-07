@@ -184,6 +184,7 @@
 #include <linux/types.h>
 
 /* PTE_PFN_MASK extracts the PFN from a (pte|pmd|pud|pgd)val_t */
+/* 주석 그대로 PTE index부터 pgd 까지의 값 (13번째~48번째) */
 #define PTE_PFN_MASK		((pteval_t)PHYSICAL_PAGE_MASK)
 
 /* PTE_FLAGS_MASK extracts the flags from a (pte|pmd|pud|pgd)val_t */

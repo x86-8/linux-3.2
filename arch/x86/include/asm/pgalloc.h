@@ -58,7 +58,7 @@ static inline void __pte_free_tlb(struct mmu_gather *tlb, struct page *pte,
 {
 	___pte_free_tlb(tlb, pte);
 }
-
+/* 일반적인 페이지로 set */
 static inline void pmd_populate_kernel(struct mm_struct *mm,
 				       pmd_t *pmd, pte_t *pte)
 {
@@ -108,6 +108,7 @@ static inline void pud_populate(struct mm_struct *mm, pud_t *pud, pmd_t *pmd)
 #endif	/* CONFIG_X86_PAE */
 
 #if PAGETABLE_LEVELS > 3
+/* 역시 일반적인 페이지 세팅 */
 static inline void pgd_populate(struct mm_struct *mm, pgd_t *pgd, pud_t *pud)
 {
 	paravirt_alloc_pud(mm, __pa(pud) >> PAGE_SHIFT);

@@ -70,3 +70,4 @@ Study history (날짜:인원:내용)
 61. 2012/06/16:04:*init/main.c* - setup_arch - cleanup_highmap
 62. 2012/06/23:05:*init/main.c* - setup_arch - setup_trampolines
 63. 2012/06/30:09:*init/main.c* - setup_arch - init_memory_mapping
+64. 2012/07/07:07:*init/main.c* - setup_arch - init_memory_mapping

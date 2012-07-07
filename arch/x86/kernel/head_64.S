@@ -359,7 +359,11 @@ ENTRY(name)
  * 페이지 테이블 크기로 정렬후 심볼 지정(NEXT_PAGE)
  * 내부는 다음 레벨의 페이지 테이블 내용을 담고 있다.
 */
-/* linux-x86-8/Documentation/x86/x86_64/mm.txt 참조 */
+/* linux-x86-8/Documentation/x86/x86_64/mm.txt 참조
+ * init_level4_pgt는 direct mapping된 가상주소공간이다.
+ * 때문에 페이지 엔트리에서 물리주소를 쓸때는 0xfff...8000을 빼준다.
+ * C 포인터에 init_level... 심볼을 대입하면 바로 접근이 가능하다.
+ */
 NEXT_PAGE(init_level4_pgt)	  /* 오프셋에 __START_KERNEL_map을 빼주는 이유는 오프셋이 VMA로 계산되기 때문인것 같다. */
 	.quad	level3_ident_pgt - __START_KERNEL_map + _KERNPG_TABLE /* level3_ident_pgt의 상대주소 */
 	.org	init_level4_pgt + L4_PAGE_OFFSET*8, 0 /* 0xffff8800.. 의 LV4 인덱스 */

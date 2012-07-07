@@ -15,7 +15,7 @@
 #include <asm/tlbflush.h>
 #include <asm/tlb.h>
 #include <asm/proto.h>
-
+/* 페이징할때 할당할 페이지 번호 */
 unsigned long __initdata pgt_buf_start;
 unsigned long __meminitdata pgt_buf_end;
 unsigned long __meminitdata pgt_buf_top;
@@ -27,7 +27,7 @@ int direct_gbpages
 				= 1
 #endif
 ;
-
+/* 커널 매핑에 필요한 테이블을 pgt_... 변수들에 할당 */
 static void __init find_early_table_space(unsigned long end, int use_pse,
 					  int use_gbpages)
 {
@@ -60,19 +60,23 @@ static void __init find_early_table_space(unsigned long end, int use_pse,
 		ptes = (extra + PAGE_SIZE - 1) >> PAGE_SHIFT;
 	} else
 		ptes = (end + PAGE_SIZE - 1) >> PAGE_SHIFT;
-	/* 테이블은 페이지로 차지할 메모리 공간이다. 계속 더해준다 */
+	/* 테이블은 페이지를 할당할 메모리 공간이다. 계속 더해준다 */
 	tables += roundup(ptes * sizeof(pte_t), PAGE_SIZE);
 
 #ifdef CONFIG_X86_32
 	/* for fixmap */
+	/* 32비트는 fixed address를 위한 영역도 할당 */
 	tables += roundup(__end_of_fixed_addresses * sizeof(pte_t), PAGE_SIZE);
 #endif
 	good_end = max_pfn_mapped << PAGE_SHIFT;
-
+	/* 커널 영역(0~max_pfn_mapped) 중 할당할 tables 크기만큼 할당 */
 	base = memblock_find_in_range(start, good_end, tables, PAGE_SIZE);
 	if (base == MEMBLOCK_ERROR)
 		panic("Cannot find space for the kernel page tables");
-
+	/* 전역변수에 주소를 대입
+	 * 이 주소들은 테이블을 할당할 페이지 번호다.
+	 * start부터 end 까지는 사용한 값, top은 제한 크기.
+	 */
 	pgt_buf_start = base >> PAGE_SHIFT;
 	pgt_buf_end = pgt_buf_start;
 	pgt_buf_top = pgt_buf_start + (tables >> PAGE_SHIFT);
@@ -295,7 +299,7 @@ unsigned long __init_refok init_memory_mapping(unsigned long start,
 	 */
 	/* 초기화되지 않았으면 실행된다. */
 	if (!after_bootmem)
-		find_early_table_space(end, use_pse, use_gbpages);
+		find_early_table_space(end, use_pse, use_gbpages); /* 커널 메모리 테이블 주소 할당 */
 
 	for (i = 0; i < nr_range; i++)
 		ret = kernel_physical_mapping_init(mr[i].start, mr[i].end,

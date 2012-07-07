@@ -54,7 +54,7 @@ static DEFINE_SPINLOCK(cpa_lock);
 
 #ifdef CONFIG_PROC_FS
 static unsigned long direct_pages_count[PG_LEVEL_NUM];
-
+/* 업데이트한 해당 페이지의 배열 count를 증가 */
 void update_page_count(int level, unsigned long pages)
 {
 	/* Protect against CPA */

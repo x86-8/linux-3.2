@@ -35,7 +35,7 @@ static inline void copy_page(void *to, void *from)
 }
 #else  /* !CONFIG_X86_USE_3DNOW */
 #include <linux/string.h>
-
+/* 페이지를 초기화 */
 static inline void clear_page(void *page)
 {
 	memset(page, 0, PAGE_SIZE);

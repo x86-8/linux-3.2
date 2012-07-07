@@ -109,7 +109,7 @@ void sync_global_pgds(unsigned long start, unsigned long end)
 	for (address = start; address <= end; address += PGDIR_SIZE) {
 		const pgd_t *pgd_ref = pgd_offset_k(address);
 		struct page *page;
-
+		/* pgd가 없으면 continue */
 		if (pgd_none(*pgd_ref))
 			continue;
 
@@ -345,7 +345,7 @@ static __ref void *alloc_low_page(unsigned long *phys)
 	*phys  = pfn * PAGE_SIZE;
 	return adr;
 }
-
+/* __va한 가상주소를 물리주소로 바꿔 remap하고 그 가상주소를 리턴한다. */
 static __ref void *map_low_page(void *virt)
 {
 	void *adr;
@@ -353,10 +353,13 @@ static __ref void *map_low_page(void *virt)
 
 	if (after_bootmem)
 		return virt;
-
+	/* direct mapping 된 것의 물리주소 */
 	phys = __pa(virt);
+	/* left는 페이지의 오프셋 혹은 플래그 */
 	left = phys & (PAGE_SIZE - 1);
+	/* 하위 12비트를 버린 phys(물리주소)를 fixed_addr의 가상주소로 remap 한다. */
 	adr = early_memremap(phys & PAGE_MASK, PAGE_SIZE);
+	/* 매핑한 가상주소에 오프셋을 더해준다. */
 	adr = (void *)(((unsigned long)adr) | left);
 
 	return adr;
@@ -381,7 +384,7 @@ phys_pte_init(pte_t *pte_page, unsigned long addr, unsigned long end,
 	pte_t *pte = pte_page + pte_index(addr);
 
 	for(i = pte_index(addr); i < PTRS_PER_PTE; i++, addr += PAGE_SIZE, pte++) {
-
+		/* 할당할 주소를 넘어가면 초기화 */
 		if (addr >= end) {
 			if (!after_bootmem) {
 				for(; i < PTRS_PER_PTE; i++, pte++)
@@ -396,6 +399,7 @@ phys_pte_init(pte_t *pte_page, unsigned long addr, unsigned long end,
 		 * pagetable pages as RO. So assume someone who pre-setup
 		 * these mappings are more intelligent.
 		 */
+		/* 값이 있으면 패스, 기존 매핑을 그대로 쓴다. */
 		if (pte_val(*pte)) {
 			pages++;
 			continue;
@@ -404,14 +408,16 @@ phys_pte_init(pte_t *pte_page, unsigned long addr, unsigned long end,
 		if (0)
 			printk("   pte=%p addr=%lx pte=%016lx\n",
 			       pte, addr, pfn_pte(addr >> PAGE_SHIFT, PAGE_KERNEL).pte);
+		/* 값이 없다면 매핑할 주소를 속성(prot)와 함께 엔트리에 넣는다. */
 		pages++;
 		set_pte(pte, pfn_pte(addr >> PAGE_SHIFT, prot));
+		/* 마지막 매핑 값을 증가시킨다. */
 		last_map_addr = (addr & PAGE_MASK) + PAGE_SIZE;
 	}
 
-	update_page_count(PG_LEVEL_4K, pages);
+	update_page_count(PG_LEVEL_4K, pages); /* 업데이트한 페이지 수 업데이트 */
 
-	return last_map_addr;
+	return last_map_addr;	/* 마지막 주소 증가 */
 }
 
 static unsigned long __meminit
@@ -436,11 +442,12 @@ phys_pmd_init(pmd_t *pmd_page, unsigned long address, unsigned long end,
 			}
 			break;
 		}
-
+		/* PMD가 null이면 락걸고 매핑하고 할당 */
 		if (pmd_val(*pmd)) {
 			if (!pmd_large(*pmd)) {
 				spin_lock(&init_mm.page_table_lock);
 				pte = map_low_page((pte_t *)pmd_page_vaddr(*pmd));
+				/* 물리주소 초기화 혹은 그대로 쓴다.  */
 				last_map_addr = phys_pte_init(pte, address,
 								end, prot);
 				unmap_low_page(pte);
@@ -459,13 +466,16 @@ phys_pmd_init(pmd_t *pmd_page, unsigned long address, unsigned long end,
 			 * not differ with respect to page frame and
 			 * attributes.
 			 */
+			/* PTE가 없으면 page 카운트 증가 */
 			if (page_size_mask & (1 << PG_LEVEL_2M)) {
 				pages++;
 				continue;
 			}
 			new_prot = pte_pgprot(pte_clrhuge(*(pte_t *)pmd));
 		}
-
+		/* 2MB 페이징이면 PMD가 끝이기 때문에 할당할 필요가 없다.
+		 * 물리주소 대입만 한다.
+		 */
 		if (page_size_mask & (1<<PG_LEVEL_2M)) {
 			pages++;
 			spin_lock(&init_mm.page_table_lock);
@@ -476,44 +486,51 @@ phys_pmd_init(pmd_t *pmd_page, unsigned long address, unsigned long end,
 			last_map_addr = (address & PMD_MASK) + PMD_SIZE;
 			continue;
 		}
-
+		/* 4KB면 페이징에 사용할 페이지 할당. */
 		pte = alloc_low_page(&pte_phys);
+		/* 초기화 후 last 값 증가 */
 		last_map_addr = phys_pte_init(pte, address, end, new_prot);
 		unmap_low_page(pte);
 
 		spin_lock(&init_mm.page_table_lock);
+		/* 일반적인 모양의 set pmd  */
 		pmd_populate_kernel(&init_mm, pmd, __va(pte_phys));
 		spin_unlock(&init_mm.page_table_lock);
 	}
-	update_page_count(PG_LEVEL_2M, pages);
+	update_page_count(PG_LEVEL_2M, pages); /* 카운트 증가 */
 	return last_map_addr;
 }
-
+/* pud 페이지의 포인터를 받아서  */
 static unsigned long __meminit
 phys_pud_init(pud_t *pud_page, unsigned long addr, unsigned long end,
 			 unsigned long page_size_mask)
 {
 	unsigned long pages = 0;
 	unsigned long last_map_addr = end;
+	/* 시작주소의 pud 인덱스 */
 	int i = pud_index(addr);
-
+	/* PUD 수만큼 반복
+	 * pud index(i) 증가, PUD 이상 addr만 남기고 1 PUD 주소 증가
+	 */
 	for (; i < PTRS_PER_PUD; i++, addr = (addr & PUD_MASK) + PUD_SIZE) {
 		unsigned long pmd_phys;
 		pud_t *pud = pud_page + pud_index(addr);
 		pmd_t *pmd;
 		pgprot_t prot = PAGE_KERNEL;
-
+		/* 끝났으면 break! */
 		if (addr >= end)
 			break;
-
+		/* bootmem이 안되었고 해당 주소가 type 0 이 아니면 pud 엔트리 초기화 */
 		if (!after_bootmem &&
 				!e820_any_mapped(addr, addr+PUD_SIZE, 0)) {
+			/* 해당 pud 엔트리 초기화 */
 			set_pud(pud, __pud(0));
 			continue;
 		}
-
+		/* PUD 값이 NULL이면 */
 		if (pud_val(*pud)) {
 			if (!pud_large(*pud)) {
+				/* pmd를 매핑 한다. */
 				pmd = map_low_page(pmd_offset(pud, 0));
 				last_map_addr = phys_pmd_init(pmd, addr, end,
 							 page_size_mask, prot);
@@ -533,13 +550,14 @@ phys_pud_init(pud_t *pud_page, unsigned long addr, unsigned long end,
 			 * not differ with respect to page frame and
 			 * attributes.
 			 */
+			/* 1G면 패스 */
 			if (page_size_mask & (1 << PG_LEVEL_1G)) {
 				pages++;
 				continue;
 			}
 			prot = pte_pgprot(pte_clrhuge(*(pte_t *)pud));
 		}
-
+		/* 역시 1G 페이징이면 이곳이 마지막이라 할당하지 않는다. */
 		if (page_size_mask & (1<<PG_LEVEL_1G)) {
 			pages++;
 			spin_lock(&init_mm.page_table_lock);
@@ -549,18 +567,20 @@ phys_pud_init(pud_t *pud_page, unsigned long addr, unsigned long end,
 			last_map_addr = (addr & PUD_MASK) + PUD_SIZE;
 			continue;
 		}
-
+		/* pmd를 위해 페이지 할당 */
 		pmd = alloc_low_page(&pmd_phys);
+		/* PMD 엔트리들 초기화 */
 		last_map_addr = phys_pmd_init(pmd, addr, end, page_size_mask,
 					      prot);
 		unmap_low_page(pmd);
 
 		spin_lock(&init_mm.page_table_lock);
+		/* 흔한 페이징 */
 		pud_populate(&init_mm, pud, __va(pmd_phys));
 		spin_unlock(&init_mm.page_table_lock);
 	}
 	__flush_tlb_all();
-
+	/* 1G 페이징 카운트 */
 	update_page_count(PG_LEVEL_1G, pages);
 
 	return last_map_addr;
@@ -580,22 +600,25 @@ kernel_physical_mapping_init(unsigned long start,
 	addr = start;
 
 	for (; start < end; start = next) {
+		/* 커널의 해당 pgd 오프셋을 구한다. */
 		pgd_t *pgd = pgd_offset_k(start);
 		unsigned long pud_phys;
 		pud_t *pud;
-
+		/* PGD단위로(512G) 증가 (나머지 버림) */
 		next = (start + PGDIR_SIZE) & PGDIR_MASK;
+		/* 다음 엔트리 크기가 end값보다 크면 end */
 		if (next > end)
 			next = end;
-
+		/* 해당 엔트리 값(pud)이 있으면 그대로 쓴다. */
 		if (pgd_val(*pgd)) {
+			/* pud 엔트리들이 있는 물리 메모리를 mapping 한다. */
 			pud = map_low_page((pud_t *)pgd_page_vaddr(*pgd));
 			last_map_addr = phys_pud_init(pud, __pa(start),
 						 __pa(end), page_size_mask);
 			unmap_low_page(pud);
 			continue;
 		}
-
+		/* 페이지가 없으면 pgt_buffer로 할당 */
 		pud = alloc_low_page(&pud_phys);
 		last_map_addr = phys_pud_init(pud, __pa(start), __pa(next),
 						 page_size_mask);

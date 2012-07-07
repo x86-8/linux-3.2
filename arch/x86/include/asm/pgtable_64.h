@@ -21,6 +21,9 @@ extern pmd_t level2_fixmap_pgt[512];
 extern pmd_t level2_ident_pgt[512];
 extern pgd_t init_level4_pgt[];
 
+/* swapper_pg_dir는 direct mapping 된 가상주소이다.
+ * 포인터에 대입해서 물리주소같이 사용가능
+ */
 #define swapper_pg_dir init_level4_pgt
 
 extern void paging_init(void);

@@ -40,7 +40,7 @@ static inline void native_set_pmd(pmd_t *pmdp, pmd_t pmd)
 {
 	set_64bit((unsigned long long *)(pmdp), native_pmd_val(pmd));
 }
-
+/* pud에 값을 대입 */
 static inline void native_set_pud(pud_t *pudp, pud_t pud)
 {
 	set_64bit((unsigned long long *)(pudp), native_pud_val(pud));
