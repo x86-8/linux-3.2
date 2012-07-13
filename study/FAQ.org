@@ -52,9 +52,9 @@
 
 * Int 0x15 AX=0xe980, Intel speed step 인터럽트는 어떤 기능을 하는가?
 
-- eax, ebx, ecx, edx에 값을 리턴한다. bx의 입력값은 0은 ownership, 0은 get, 1은 set 기능이다. (GET_SPEEDSTEP_STATE)
+- eax, ebx, ecx, edx에 값을 리턴한다. bx의 입력값은 0은 ownership, 0은 get, 1은 set 기능이다. (=GET_SPEEDSTEP_STATE=)
 
-* query_MCA에서 MCA(micro channel architecture) 정보는 무엇이고 왜 가져오는가?
+* =query_MCA= 에서 MCA(micro channel architecture) 정보는 무엇이고 왜 가져오는가?
 
 - IBM의 ISA 후속 규격. EISA에 밀려 대중적이지는 않았던걸로 보인다. ah=0xc0, int 0x15는 시스템의 정보를 읽어오는것으로 보인다.
 
