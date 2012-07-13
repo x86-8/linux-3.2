@@ -22,7 +22,8 @@
 \title{Linux x86\_64 부팅과정 분석\\
 Version: 3.2\\}
 \author{
-\and{\email{simplenfast@gmail.com} 천승환}
+%\and{\email{} x86-8}
+\and{iamroot x86 8차 초급}
 }
 \date{}
 
@@ -183,13 +184,14 @@ x86\_64\_start\_kernel는 head64.c에 있다.
 \tikzstyle{line} = [draw, -latex']
 \tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm,
     minimum height=2em]
-    
+
+% 순서도용 tikz    
 \begin{tikzpicture}[node distance = 2cm, auto]
     % Place nodes
     \node [block] (init) {initialize model};
     \node [cloud, left of=init] (expert) {expert};
     \node [cloud, right of=init] (system) {system};
-    \node [block, below of=init] (identify) {하악하악 identify candidate models};
+    \node [block, below of=init] (identify) {identify candidate models};
     \node [block, below of=identify] (evaluate) {evaluate candidate models};
     \node [block, left of=evaluate, node distance=3cm] (update) {update model};
     \node [decision, below of=evaluate] (decide) {is best candidate better?};
