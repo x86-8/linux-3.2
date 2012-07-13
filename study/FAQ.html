@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
                "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-lang="ko" xml:lang="ko">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko">
 <head>
 <title>Linux kernel 분석 FAQ</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="title" content="Linux kernel 분석 FAQ"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2012-05-20 16:02:18 KST"/>
+<meta name="generated" content="2012-07-14 08:34:13 KST"/>
 <meta name="author" content="Chun SH"/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -21,6 +21,9 @@ lang="ko" xml:lang="ko">
   .target { }
   .timestamp { color: #bebebe; }
   .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
   p.verse { margin-left: 3% }
   pre {
 	border: 1pt solid #AEBDCC;
@@ -31,10 +34,23 @@ lang="ko" xml:lang="ko">
         overflow:auto;
   }
   table { border-collapse: collapse; }
-  td, th { vertical-align: top; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
   dt { font-weight: bold; }
   div.figure { padding: 0.5em; }
   div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
   .linenr { font-size:smaller }
   .code-highlighted {background-color:#ffff00;}
   .org-info-js_info-navigation { border-style:none; }
@@ -66,10 +82,15 @@ lang="ko" xml:lang="ko">
  }
 /*]]>*///-->
 </script>
+
 </head>
 <body>
-<div id="content">
 
+<div id="preamble">
+
+</div>
+
+<div id="content">
 <h1 class="title">Linux kernel 분석 FAQ</h1>
 
 
@@ -77,371 +98,369 @@ lang="ko" xml:lang="ko">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 리눅스 부팅과정 파일 순서 </a></li>
-<li><a href="#sec-2">2 리눅스는 파라미터를 어떻게 전달받는가? </a></li>
-<li><a href="#sec-3">3 GAS 어셈에서 1f, 1b가 의미하는 바는? </a></li>
-<li><a href="#sec-4">4 상수 뒤에 붙는 ULL과 LL은 무엇인가? </a></li>
-<li><a href="#sec-5">5 x86 커널이 함수를 호출할때 사용하는 함수 호출 규약은? </a></li>
-<li><a href="#sec-6">6 (rdmsr) MSR의 0xc0010015의 15번 비트를 0으로 하는건 어떤 의미인가? </a></li>
-<li><a href="#sec-7">7 int 0x15 AX=0xec00, BX=2로 Long mode Taget을 지정하는건 어떠한 의미인가? </a></li>
-<li><a href="#sec-8">8 inline 어셈에서 output, input쪽에 있는 "=" "+" "&amp;"는 무엇인가? </a></li>
-<li><a href="#sec-9">9 Int 0x15 AX=0xe980, Intel speed step 인터럽트는 어떤 기능을 하는가? </a></li>
-<li><a href="#sec-10">10 query<sub>MCA에서</sub> MCA(micro channel architecture) 정보는 무엇이고 왜 가져오는가? </a></li>
-<li><a href="#sec-11">11 return a=x; 이 리턴하는 것은 x인가 true 인가? </a></li>
-<li><a href="#sec-12">12 비디오카드에서 dac란 무엇인가? </a></li>
-<li><a href="#sec-13">13 *%eax에서 *를 왜 넣는가? </a></li>
-<li><a href="#sec-14">14 offsetof란?????? </a></li>
-<li><a href="#sec-15">15 kbuild.h에서 -&gt;의 의미 </a></li>
-<li><a href="#sec-16">16 세그먼트에 32비트값을 넣을수 있는가? </a></li>
-<li><a href="#sec-17">17 32모드에서 call할때의 크기 </a></li>
-<li><a href="#sec-18">18 <code>MSR_IA32_MISC_ENABLE</code> </a></li>
-<li><a href="#sec-19">19 PAE의 크기가 어떻게 36비트를 쓰는가? </a></li>
-<li><a href="#sec-20">20 RIP 상대 주소 지정방법 (RIP-relative addressing) </a></li>
-<li><a href="#sec-21">21 GOT? </a></li>
-<li><a href="#sec-22">22 <code>__builtin_constant_p</code> </a></li>
-<li><a href="#sec-23">23 <code>MSR_GS_BASE</code> </a></li>
-<li><a href="#sec-24">24 do { } while (0) 이 많이 쓰이는 이유 </a></li>
-<li><a href="#sec-25">25 inline 어셈에서 세번째 : 필드(list of clobbered registers)에서 "memory"와 "cc"의 의미 </a></li>
-<li><a href="#sec-26">26 inline 어셈에서 %h0, %b0 오퍼렌드의 의미 </a></li>
-<li><a href="#sec-27">27 inline 어셈에서 output, input 필드에 붙는 제약 ex) "=a" </a></li>
-<li><a href="#sec-28">28 #define <code>__percpu_arg(x)</code>             <code>__percpu_prefix</code> "%P" #x </a></li>
-<li><a href="#sec-29">29 #define # ## </a></li>
-<li><a href="#sec-30">30 cgroup이란? </a></li>
-<li><a href="#sec-31">31 <code>css_set</code> </a></li>
-<li><a href="#sec-32">32 응용프로그램에서 LMA와 VMA를 다르게 하면? </a></li>
-<li><a href="#sec-33">33 매크로 함수의 리턴값 </a></li>
-<li><a href="#sec-34">34 RCU </a></li>
-<li><a href="#sec-35">35 sparse란 무엇인가? </a></li>
-<li><a href="#sec-36">36 <code>__force_order</code> </a></li>
-<li><a href="#sec-37">37 as의 .pushsection, .popsection, .previous </a></li>
-<li><a href="#sec-38">38 const struct <code>cpu_dev</code> *const *cdev </a></li>
-<li><a href="#sec-39">39 const int와 int *const의 차이 </a></li>
-<li><a href="#sec-40">40 intel vt 에서 ldtr을 세팅하면 intel vt가 happy한 이유는? </a></li>
-<li><a href="#sec-41">41 cpu family 값 </a></li>
-<li><a href="#sec-42">42 <code>native_read_msr</code> 의 <code>EAX_EDX_VAL</code> 매크로에서 32/64비트를 "a" "d", "A"를 나눠놓은 이유 </a></li>
-<li><a href="#sec-43">43 <code>atomic_set</code> 에서 mov에는 왜 lock prefix가 안붙는가? </a></li>
-<li><a href="#sec-44">44 <code>__this_fixmap_does_not_exist</code> 함수는 선언이 안되있는 이유? </a></li>
-<li><a href="#sec-45">45 44c9e71b 값은? poison.h </a></li>
+<li><a href="#sec-1">1 리눅스 부팅과정 파일 순서</a></li>
+<li><a href="#sec-2">2 리눅스는 파라미터를 어떻게 전달받는가?</a></li>
+<li><a href="#sec-3">3 GAS 어셈에서 1f, 1b가 의미하는 바는?</a></li>
+<li><a href="#sec-4">4 상수 뒤에 붙는 ULL과 LL은 무엇인가?</a></li>
+<li><a href="#sec-5">5 x86 커널이 함수를 호출할때 사용하는 함수 호출 규약은?</a></li>
+<li><a href="#sec-6">6 (rdmsr) MSR의 0xc0010015의 15번 비트를 0으로 하는건 어떤 의미인가?</a></li>
+<li><a href="#sec-7">7 int 0x15 AX=0xec00, BX=2로 Long mode Taget을 지정하는건 어떠한 의미인가?</a></li>
+<li><a href="#sec-8">8 inline 어셈에서 output, input쪽에 있는 "=" "+" "&amp;"는 무엇인가?</a></li>
+<li><a href="#sec-9">9 Int 0x15 AX=0xe980, Intel speed step 인터럽트는 어떤 기능을 하는가?</a></li>
+<li><a href="#sec-10">10 <code>query_MCA</code> 에서 MCA(micro channel architecture) 정보는 무엇이고 왜 가져오는가?</a></li>
+<li><a href="#sec-11">11 return a=x; 이 리턴하는 것은 x인가 true 인가?</a></li>
+<li><a href="#sec-12">12 비디오카드에서 dac란 무엇인가?</a></li>
+<li><a href="#sec-13">13 *%eax에서 *를 왜 넣는가?</a></li>
+<li><a href="#sec-14">14 offsetof란??????</a></li>
+<li><a href="#sec-15">15 kbuild.h에서 -&gt;의 의미</a></li>
+<li><a href="#sec-16">16 세그먼트에 32비트값을 넣을수 있는가?</a></li>
+<li><a href="#sec-17">17 32모드에서 call할때의 크기</a></li>
+<li><a href="#sec-18">18 <code>MSR_IA32_MISC_ENABLE</code></a></li>
+<li><a href="#sec-19">19 PAE의 크기가 어떻게 36비트를 쓰는가?</a></li>
+<li><a href="#sec-20">20 RIP 상대 주소 지정방법 (RIP-relative addressing)</a></li>
+<li><a href="#sec-21">21 GOT?</a></li>
+<li><a href="#sec-22">22 <code>__builtin_constant_p</code></a></li>
+<li><a href="#sec-23">23 <code>MSR_GS_BASE</code></a></li>
+<li><a href="#sec-24">24 do { } while (0) 이 많이 쓰이는 이유</a></li>
+<li><a href="#sec-25">25 inline 어셈에서 세번째 : 필드(list of clobbered registers)에서 "memory"와 "cc"의 의미</a></li>
+<li><a href="#sec-26">26 inline 어셈에서 %h0, %b0 오퍼렌드의 의미</a></li>
+<li><a href="#sec-27">27 inline 어셈에서 output, input 필드에 붙는 제약 ex) "=a"</a></li>
+<li><a href="#sec-28">28 #define <code>__percpu_arg(x)</code>             <code>__percpu_prefix</code> "%P" #x</a></li>
+<li><a href="#sec-29">29 #define # ##</a></li>
+<li><a href="#sec-30">30 cgroup이란?</a></li>
+<li><a href="#sec-31">31 <code>css_set</code></a></li>
+<li><a href="#sec-32">32 응용프로그램에서 LMA와 VMA를 다르게 하면?</a></li>
+<li><a href="#sec-33">33 매크로 함수의 리턴값</a></li>
+<li><a href="#sec-34">34 RCU</a></li>
+<li><a href="#sec-35">35 sparse란 무엇인가?</a></li>
+<li><a href="#sec-36">36 <code>__force_order</code></a></li>
+<li><a href="#sec-37">37 as의 .pushsection, .popsection, .previous</a></li>
+<li><a href="#sec-38">38 const struct <code>cpu_dev</code> *const *cdev</a></li>
+<li><a href="#sec-39">39 const int와 int *const의 차이</a></li>
+<li><a href="#sec-40">40 intel vt 에서 ldtr을 세팅하면 intel vt가 happy한 이유는?</a></li>
+<li><a href="#sec-41">41 cpu family 값</a></li>
+<li><a href="#sec-42">42 <code>native_read_msr</code> 의 <code>EAX_EDX_VAL</code> 매크로에서 32/64비트를 "a" "d", "A"를 나눠놓은 이유</a></li>
+<li><a href="#sec-43">43 <code>atomic_set</code> 에서 mov에는 왜 lock prefix가 안붙는가?</a></li>
+<li><a href="#sec-44">44 <code>__this_fixmap_does_not_exist</code> 함수는 선언이 안되있는 이유?</a></li>
+<li><a href="#sec-45">45 Write combining이란?</a></li>
 </ul>
 </div>
 </div>
 
 <div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> 리눅스 부팅과정 파일 순서 </h2>
+<h2 id="sec-1"><span class="section-number-2">1</span> 리눅스 부팅과정 파일 순서</h2>
 <div class="outline-text-2" id="text-1">
 
 <ul>
-<li>
-SETUP : <a href="../arch/x86/boot/header.S">boot/header.S</a> - <a href="../arch/x86/boot/main.c">boot/main.c</a> - <a href="../arch/x86/boot/pm.c">boot/pm.c</a> - <a href="../arch/x86/boot/pmjump.S">boot/pmjump.S</a>
+<li>SETUP : <a href="../arch/x86/boot/header.S#globl-_start">boot/header.S</a> - <a href="../arch/x86/boot/main.c#void-main-void">boot/main.c</a> - <a href="../arch/x86/boot/pm.c#void-go_to_protected_mode-void">boot/pm.c</a> - <a href="../arch/x86/boot/pmjump.S#GLOBAL-protected_mode_jump">boot/pmjump.S</a>
 </li>
-<li>
-COMPRESSED : <a href="../arch/x86/boot/compressed/head_64.S">compressed/head<sub>64</sub>.S</a>
+<li>COMPRESSED : <a href="../arch/x86/boot/compressed/head_64.S#ENTRY-startup_32">compressed/head<sub>64</sub>.S</a>
 </li>
-<li>
-KERNEL : <a href="../arch/x86/kernel/head_64.S">kernel/head<sub>64</sub>.S</a> - <a href="../arch/x86/kernel/head64.c">kernel/head64.c</a> - <a href="../init/main.c">init/main.c</a>
-
+<li>KERNEL : <a href="../arch/x86/kernel/head_64.S#startup_64">kernel/head<sub>64</sub>.S</a> - <a href="../arch/x86/kernel/head64.c#void-__init-x86_64_start_kernel-char-real_mode_data">kernel/head64.c</a> - <a href="../init/main.c#asmlinkage-void-__init-start_kernel-void">init/main.c</a>
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-2" class="outline-2">
-<h2 id="sec-2"><span class="section-number-2">2</span> 리눅스는 파라미터를 어떻게 전달받는가? </h2>
+<h2 id="sec-2"><span class="section-number-2">2</span> 리눅스는 파라미터를 어떻게 전달받는가?</h2>
 <div class="outline-text-2" id="text-2">
 
 
 <ul>
-<li>
-boot loader로부터 커널의 header에 위치한 BOOT PROTOCOL 정보를 통해 전달받는다.
-
+<li>boot loader로부터 커널의 header에 위치한 BOOT PROTOCOL 정보를 통해 전달받는다.
 </li>
 </ul>
 
-<p><a href="../arch/x86/boot/header.S">header.s</a> 
+
+<p>
+<a href="../arch/x86/boot/header.S#section-header-a">header.s</a> 
 </p>
 <p>
-<a href="../Documentation/x86/boot.txt">boot protocol</a>
+<a href="../Documentation/x86/boot.txt#The-header-looks-like">boot protocol</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-3" class="outline-2">
-<h2 id="sec-3"><span class="section-number-2">3</span> GAS 어셈에서 1f, 1b가 의미하는 바는? </h2>
+<h2 id="sec-3"><span class="section-number-2">3</span> GAS 어셈에서 1f, 1b가 의미하는 바는?</h2>
 <div class="outline-text-2" id="text-3">
 
 
 <ul>
-<li>
-앞의 숫자는 임시 레이블, f는 앞, b는 뒤쪽에서 가장 가까운 레이블 주소를 나타낸다.
-
+<li>앞의 숫자는 임시 레이블, f는 앞, b는 뒤쪽에서 가장 가까운 레이블 주소를 나타낸다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-4" class="outline-2">
-<h2 id="sec-4"><span class="section-number-2">4</span> 상수 뒤에 붙는 ULL과 LL은 무엇인가? </h2>
+<h2 id="sec-4"><span class="section-number-2">4</span> 상수 뒤에 붙는 ULL과 LL은 무엇인가?</h2>
 <div class="outline-text-2" id="text-4">
 
 
 <ul>
-<li>
-unsigned long long integer, long long integer (C의 64bits) 로 데이터형을 명시한다.
-
+<li>unsigned long long integer, long long integer (C의 64bits) 로 데이터형을 명시한다.
 </li>
 </ul>
 
-<p><a href="http://www.cinsk.org/cfaqs/html/">C FAQS 한글 번역</a>
+
+<p>
+<a href="http://www.cinsk.org/cfaqs/html/">C FAQS 한글 번역</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-5" class="outline-2">
-<h2 id="sec-5"><span class="section-number-2">5</span> x86 커널이 함수를 호출할때 사용하는 함수 호출 규약은? </h2>
+<h2 id="sec-5"><span class="section-number-2">5</span> x86 커널이 함수를 호출할때 사용하는 함수 호출 규약은?</h2>
 <div class="outline-text-2" id="text-5">
 
 
 <ul>
-<li>
-regparm으로 정의한다. gcc 32비트 코드에서 regparm=3 이면 EAX, EDX, ECX를 인자전달에 사용한다.
-
+<li>regparm으로 정의한다. gcc 32비트 코드에서 regparm=3 이면 EAX, EDX, ECX를 인자전달에 사용한다.
 </li>
 </ul>
 
-<p><a href="../arch/x86/include/asm/calling.h">calling convention</a>
+
+<p>
+<a href="../arch/x86/include/asm/calling.h">calling convention</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-6" class="outline-2">
-<h2 id="sec-6"><span class="section-number-2">6</span> (rdmsr) MSR의 0xc0010015의 15번 비트를 0으로 하는건 어떤 의미인가? </h2>
+<h2 id="sec-6"><span class="section-number-2">6</span> (rdmsr) MSR의 0xc0010015의 15번 비트를 0으로 하는건 어떤 의미인가?</h2>
 <div class="outline-text-2" id="text-6">
 
 
 <ul>
-<li>
-MSR은 CPU에 따른 정보를 변경/저장하는 레지스터로 AMD의 0xC0010015는 HWCR(Hardware Configuration Register)이다. 15번 비트가 0이면 SSE instruction을 켠다.
-
+<li>MSR은 CPU에 따른 정보를 변경/저장하는 레지스터로 AMD의 0xC0010015는 HWCR(Hardware Configuration Register)이다. 15번 비트가 0이면 SSE instruction을 켠다.
 </li>
 </ul>
 
-<p><a href="http://support.amd.com/us/Processor_TechDocs/26094.PDF">BIOS and Kernel Developer's Guid for AMD Athlon 64</a>
+
+<p>
+<a href="http://support.amd.com/us/Processor_TechDocs/26094.PDF">BIOS and Kernel Developer's Guid for AMD Athlon 64</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-7" class="outline-2">
-<h2 id="sec-7"><span class="section-number-2">7</span> int 0x15 AX=0xec00, BX=2로 Long mode Taget을 지정하는건 어떠한 의미인가? </h2>
+<h2 id="sec-7"><span class="section-number-2">7</span> int 0x15 AX=0xec00, BX=2로 Long mode Taget을 지정하는건 어떠한 의미인가?</h2>
 <div class="outline-text-2" id="text-7">
 
 
 <ul>
-<li>
-BIOS에 앞으로 Long mode(64bits)로 동작할것을 알려준다. Long mode로 변환하기 전에 BSP에 의해 한번만 실행된다.
-
+<li>BIOS에 앞으로 Long mode(64bits)로 동작할것을 알려준다. Long mode로 변환하기 전에 BSP에 의해 한번만 실행된다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-8" class="outline-2">
-<h2 id="sec-8"><span class="section-number-2">8</span> inline 어셈에서 output, input쪽에 있는 "=" "+" "&amp;"는 무엇인가? </h2>
+<h2 id="sec-8"><span class="section-number-2">8</span> inline 어셈에서 output, input쪽에 있는 "=" "+" "&amp;"는 무엇인가?</h2>
 <div class="outline-text-2" id="text-8">
 
 
 <ul>
-<li>
-"="는 write-only, "+"는 read-write, "&amp;"는 early clobber(값이 바뀔수 있음을 알려준다.)
-
+<li>"="는 write-only, "+"는 read-write, "&amp;"는 early clobber(값이 바뀔수 있음을 알려준다.)
 </li>
 </ul>
 
-<p><i>&lt;info:gcc:Modifiers&gt;</i>
+
+<p>
+<i>&lt;info:gcc:Modifiers&gt;</i>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-9" class="outline-2">
-<h2 id="sec-9"><span class="section-number-2">9</span> Int 0x15 AX=0xe980, Intel speed step 인터럽트는 어떤 기능을 하는가? </h2>
+<h2 id="sec-9"><span class="section-number-2">9</span> Int 0x15 AX=0xe980, Intel speed step 인터럽트는 어떤 기능을 하는가?</h2>
 <div class="outline-text-2" id="text-9">
 
 
 <ul>
-<li>
-eax, ebx, ecx, edx에 값을 리턴한다. bx의 입력값은 0은 ownership, 0은 get, 1은 set 기능이다. (GET<sub>SPEEDSTEP</sub><sub>STATE</sub>)
-
+<li>eax, ebx, ecx, edx에 값을 리턴한다. bx의 입력값은 0은 ownership, 0은 get, 1은 set 기능이다. (<code>GET_SPEEDSTEP_STATE</code>)
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-10" class="outline-2">
-<h2 id="sec-10"><span class="section-number-2">10</span> query<sub>MCA에서</sub> MCA(micro channel architecture) 정보는 무엇이고 왜 가져오는가? </h2>
+<h2 id="sec-10"><span class="section-number-2">10</span> <code>query_MCA</code> 에서 MCA(micro channel architecture) 정보는 무엇이고 왜 가져오는가?</h2>
 <div class="outline-text-2" id="text-10">
 
 
 <ul>
-<li>
-IBM의 ISA 후속 규격. EISA에 밀려 대중적이지는 않았던걸로 보인다. ah=0xc0, int 0x15는 시스템의 정보를 읽어오는것으로 보인다.
-
+<li>IBM의 ISA 후속 규격. EISA에 밀려 대중적이지는 않았던걸로 보인다. ah=0xc0, int 0x15는 시스템의 정보를 읽어오는것으로 보인다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-11" class="outline-2">
-<h2 id="sec-11"><span class="section-number-2">11</span> return a=x; 이 리턴하는 것은 x인가 true 인가? </h2>
+<h2 id="sec-11"><span class="section-number-2">11</span> return a=x; 이 리턴하는 것은 x인가 true 인가?</h2>
 <div class="outline-text-2" id="text-11">
 
 
 <ul>
-<li>
-x
-
+<li>x
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-12" class="outline-2">
-<h2 id="sec-12"><span class="section-number-2">12</span> 비디오카드에서 dac란 무엇인가? </h2>
+<h2 id="sec-12"><span class="section-number-2">12</span> 비디오카드에서 dac란 무엇인가?</h2>
 <div class="outline-text-2" id="text-12">
 
 
 <ul>
-<li>
-digital-to-analog 변환. D-sub등 아날로그 출력에서 필요한 과정으로 보인다.
-
+<li>digital-to-analog 변환. D-sub등 아날로그 출력에서 필요한 과정으로 보인다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-13" class="outline-2">
-<h2 id="sec-13"><span class="section-number-2">13</span> *%eax에서 *를 왜 넣는가? </h2>
+<h2 id="sec-13"><span class="section-number-2">13</span> *%eax에서 *를 왜 넣는가?</h2>
 <div class="outline-text-2" id="text-13">
 
 
 <ul>
-<li>
-절대주소를 쓸때 * 접두사를 붙여야한다. 기본은 상대주소를 사용한다.
-
+<li>절대주소를 쓸때 * 접두사를 붙여야한다. 기본은 상대주소를 사용한다.
 </li>
 </ul>
 
-<p><a href="http://wiki.osdev.org/Opcode_syntax">Opcode syntax</a>
+
+<p>
+<a href="http://wiki.osdev.org/Opcode_syntax">Opcode syntax</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-14" class="outline-2">
-<h2 id="sec-14"><span class="section-number-2">14</span> offsetof란?????? </h2>
+<h2 id="sec-14"><span class="section-number-2">14</span> offsetof란??????</h2>
 <div class="outline-text-2" id="text-14">
 
 
 <ul>
-<li>
-offsetof(a,b) 일때 a 구조체 내부의 b의 오프셋을 구하는 매크로
-
+<li>offsetof(a,b) 일때 a 구조체 내부의 b의 오프셋을 구하는 매크로
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-15" class="outline-2">
-<h2 id="sec-15"><span class="section-number-2">15</span> kbuild.h에서 -&gt;의 의미 </h2>
+<h2 id="sec-15"><span class="section-number-2">15</span> kbuild.h에서 -&gt;의 의미</h2>
 <div class="outline-text-2" id="text-15">
 
 
 <ul>
-<li>
--&gt;로 시작하는 부분을 sed를 사용해 define으로 치환한다. (ex. -&gt; a b c 는 #define a b <i>* c *</i> 로 변환된다.)
-
+<li>-&gt;로 시작하는 부분을 sed를 사용해 define으로 치환한다. (ex. -&gt; a b c 는 #define a b <i>* c *</i> 로 변환된다.)
 </li>
 </ul>
 
-<p><a href="../Kbuild">kbuild</a>
+
+<p>
+<a href="../Kbuild#define-sed-y">kbuild</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-16" class="outline-2">
-<h2 id="sec-16"><span class="section-number-2">16</span> 세그먼트에 32비트값을 넣을수 있는가? </h2>
+<h2 id="sec-16"><span class="section-number-2">16</span> 세그먼트에 32비트값을 넣을수 있는가?</h2>
 <div class="outline-text-2" id="text-16">
 
 
 <ul>
-<li>
-mov ds,cx와 mov ds,ecx를 컴파일 했을때의 기계어 코드는 같다. segment selector의 크기는 16비트기 때문에 같은 결과가 들어가는 것으로 보인다.
-
+<li>mov ds,cx와 mov ds,ecx를 컴파일 했을때의 기계어 코드는 같다. segment selector의 크기는 16비트기 때문에 같은 결과가 들어가는 것으로 보인다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-17" class="outline-2">
-<h2 id="sec-17"><span class="section-number-2">17</span> 32모드에서 call할때의 크기 </h2>
+<h2 id="sec-17"><span class="section-number-2">17</span> 32모드에서 call할때의 크기</h2>
 <div class="outline-text-2" id="text-17">
 
 
 <ul>
-<li>
-기본적으로 memory operand는 32비트다. 일반 호출시 스택에 증감되는 값도 32비트일 것이다.
-
+<li>기본적으로 memory operand는 32비트다. 일반 호출시 스택에 증감되는 값도 32비트일 것이다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-18" class="outline-2">
-<h2 id="sec-18"><span class="section-number-2">18</span> <code>MSR_IA32_MISC_ENABLE</code> </h2>
+<h2 id="sec-18"><span class="section-number-2">18</span> <code>MSR_IA32_MISC_ENABLE</code></h2>
 <div class="outline-text-2" id="text-18">
 
 
 <ul>
-<li>
-x87 FPU 명령어 지원여부 P4에서 지원한다. 최근에는 지원하지 않는것 같다.
-
+<li>x87 FPU 명령어 지원여부 P4에서 지원한다. 최근에는 지원하지 않는것 같다.
 </li>
 </ul>
 
-<p><a href="http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel manual Vol3, Table B-13</a>
+
+<p>
+<a href="http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel manual Vol3, Table B-13</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-19" class="outline-2">
-<h2 id="sec-19"><span class="section-number-2">19</span> PAE의 크기가 어떻게 36비트를 쓰는가? </h2>
+<h2 id="sec-19"><span class="section-number-2">19</span> PAE의 크기가 어떻게 36비트를 쓰는가?</h2>
 <div class="outline-text-2" id="text-19">
 
 
 <ul>
-<li>
-PAE의 엔트리의 물리 메모리 크기 제한(bits)은 아키텍쳐에 따라 가변적이다. Pentium pro에서부터 36비트를 지원하고 최대 52비트다. (테이블 크기가 4K라면 정렬로 엔트리에는 40비트 사용) 
-CPUID.80000008H:EAX[7:0]의 MAXPHYADDR로 크기를 얻을수 있다.
-
+<li>PAE의 엔트리의 물리 메모리 크기 제한(bits)은 아키텍쳐에 따라 가변적이다. Pentium pro에서부터 36비트를 지원하고 최대 52비트다. (테이블 크기가 4K라면 정렬로 엔트리에는 40비트 사용) 
+   CPUID.80000008H:EAX[7:0]의 MAXPHYADDR로 크기를 얻을수 있다.
 </li>
 </ul>
 
-<p><a href="http://msdn.microsoft.com/en-us/windows/hardware/gg487512">msdn</a> 
+
+<p>
+<a href="http://msdn.microsoft.com/en-us/windows/hardware/gg487512">msdn</a> 
 </p>
 <p>
 <a href="http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html">Intel manual Vol.3 4.1.4, 4.4</a>
@@ -451,95 +470,94 @@ CPUID.80000008H:EAX[7:0]의 MAXPHYADDR로 크기를 얻을수 있다.
 </div>
 
 <div id="outline-container-20" class="outline-2">
-<h2 id="sec-20"><span class="section-number-2">20</span> RIP 상대 주소 지정방법 (RIP-relative addressing) </h2>
+<h2 id="sec-20"><span class="section-number-2">20</span> RIP 상대 주소 지정방법 (RIP-relative addressing)</h2>
 <div class="outline-text-2" id="text-20">
 
 
 <ul>
-<li>
-64비트 모드는 기본 오퍼렌드 크기가 32, 어드레스 크기는 64라서 다음 명령어 위치와 상대적인 주소지정법이 생겼다.
-
+<li>64비트 모드는 기본 오퍼렌드 크기가 32, 어드레스 크기는 64라서 다음 명령어 위치와 상대적인 주소지정법이 생겼다.
 </li>
 </ul>
 
-<p><a href="http://kkamagui.tistory.com/781">64비트 멀티코어 OS 원리와 구조, p.87</a>
+
+<p>
+<a href="http://kkamagui.tistory.com/781">64비트 멀티코어 OS 원리와 구조, p.87</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-21" class="outline-2">
-<h2 id="sec-21"><span class="section-number-2">21</span> GOT? </h2>
+<h2 id="sec-21"><span class="section-number-2">21</span> GOT?</h2>
 <div class="outline-text-2" id="text-21">
 
 
 <ul>
-<li>
-ELF포맷의 영역중 하나. global offset table. 자매품 plt(procedure linkage table)도 있다.
-
+<li>ELF포맷의 영역중 하나. global offset table. 자매품 plt(procedure linkage table)도 있다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-22" class="outline-2">
-<h2 id="sec-22"><span class="section-number-2">22</span> <code>__builtin_constant_p</code> </h2>
+<h2 id="sec-22"><span class="section-number-2">22</span> <code>__builtin_constant_p</code></h2>
 <div class="outline-text-2" id="text-22">
 
 
 <ul>
-<li>
-상수면 1을 반환한다. (define&hellip;)
-
+<li>상수면 1을 반환한다. (define&hellip;)
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-23" class="outline-2">
-<h2 id="sec-23"><span class="section-number-2">23</span> <code>MSR_GS_BASE</code> </h2>
+<h2 id="sec-23"><span class="section-number-2">23</span> <code>MSR_GS_BASE</code></h2>
 <div class="outline-text-2" id="text-23">
 
 
 <ul>
-<li>
-Long mode에서 세그먼트 레지스터의 base, limit는 무시된다. 하지만 예외적으로 MSR을 통해 fs와 gs의 base 주소를 변경할수 있다. (FS.base (C000<sub>0100h</sub>), GS.base (C000<sub>0101h</sub>)
-
+<li>Long mode에서 세그먼트 레지스터의 base, limit는 무시된다. 하지만 예외적으로 MSR을 통해 fs와 gs의 base 주소를 변경할수 있다. (FS.base (C000<sub>0100h</sub>), GS.base (C000<sub>0101h</sub>)
 </li>
 </ul>
 
-<p><a href="http://wiki.osdev.org/X86-64">osdev - x86-64</a>
+
+<p>
+<a href="http://wiki.osdev.org/X86-64">osdev - x86-64</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-24" class="outline-2">
-<h2 id="sec-24"><span class="section-number-2">24</span> do { } while (0) 이 많이 쓰이는 이유 </h2>
+<h2 id="sec-24"><span class="section-number-2">24</span> do { } while (0) 이 많이 쓰이는 이유</h2>
 <div class="outline-text-2" id="text-24">
 
 
 <ul>
-<li>
-복잡한 형태의 매크로를 사용가능하게 해주고 if else 문에서 ;이 와도 깨지는걸 방지한다.
+<li>복잡한 형태의 매크로를 사용가능하게 해주고 if else 문에서 ;이 와도 깨지는걸 방지한다.
 
 </li>
-<li>
-링크의 예제에서 gcc에서 사용가능한 ({..})의 마지막 라인의 lcl; 은 리턴값이 된다.
+<li>링크의 예제에서 gcc에서 사용가능한 ({..})의 마지막 라인의 lcl; 은 리턴값이 된다.
 
 <p>
-#define FOO(arg) ({         \
-typeof(arg) lcl;     \
-lcl = bar(arg);       \
-lcl;                      \
-})
-</p>
-</li>
+    #define FOO(arg) ({         \
+               typeof(arg) lcl;     \
+               lcl = bar(arg);       \
+               lcl;                      \
+        })
+</p></li>
 </ul>
 
-<p><a href="http://taehyo.egloos.com/4131598">리눅스 커널에서 do while(0)을 쓰는 이유</a>
+
+<p>
+<a href="http://taehyo.egloos.com/4131598">리눅스 커널에서 do while(0)을 쓰는 이유</a>
 </p>
 <p>
 <a href="http://gcc.gnu.org/onlinedocs/gcc-4.1.1/gcc/Statement-Exprs.html#Statement-Exprs">Statements and Declarations in Expressions</a>
@@ -549,18 +567,18 @@ lcl;                      \
 </div>
 
 <div id="outline-container-25" class="outline-2">
-<h2 id="sec-25"><span class="section-number-2">25</span> inline 어셈에서 세번째 : 필드(list of clobbered registers)에서 "memory"와 "cc"의 의미 </h2>
+<h2 id="sec-25"><span class="section-number-2">25</span> inline 어셈에서 세번째 : 필드(list of clobbered registers)에서 "memory"와 "cc"의 의미</h2>
 <div class="outline-text-2" id="text-25">
 
 
 <ul>
-<li>
-"memory"는 메모리, "cc"는 condition code register(FLAGS register)가 변경되었음을 뜻한다.
-
+<li>"memory"는 메모리, "cc"는 condition code register(FLAGS register)가 변경되었음을 뜻한다.
 </li>
 </ul>
 
-<p><a href="http://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html">GCC:Extended ASM</a>
+
+<p>
+<a href="http://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html">GCC:Extended ASM</a>
 </p>
 <p>
 <a href="http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html">GCC-inline ASM HOWTO</a>
@@ -570,84 +588,62 @@ lcl;                      \
 </div>
 
 <div id="outline-container-26" class="outline-2">
-<h2 id="sec-26"><span class="section-number-2">26</span> inline 어셈에서 %h0, %b0 오퍼렌드의 의미 </h2>
+<h2 id="sec-26"><span class="section-number-2">26</span> inline 어셈에서 %h0, %b0 오퍼렌드의 의미</h2>
 <div class="outline-text-2" id="text-26">
 
 
 <ul>
-<li>
-   %a0 - memory addressed by register operand 0
+<li>%a0 - memory addressed by register operand 0
 </li>
-<li>
-   %A0 - operand 0 with a "*" prefix
+<li>%A0 - operand 0 with a "*" prefix
 </li>
-<li>
-   %b0 - 8bit form of register operand 0 (al)
+<li>%b0 - 8bit form of register operand 0 (al)
 </li>
-<li>
-   %B0 - gives "b"
+<li>%B0 - gives "b"
 </li>
-<li>
-   %c0 - operand 0, without $ prefix
+<li>%c0 - operand 0, without $ prefix
 </li>
-<li>
-   %h0 - high 8 bit form of register operand 0 (ah)
+<li>%h0 - high 8 bit form of register operand 0 (ah)
 </li>
-<li>
-   %k0 - 32bit form of register operand 0 (eax)
+<li>%k0 - 32bit form of register operand 0 (eax)
 </li>
-<li>
-   %l0 - operand 0 as label
+<li>%l0 - operand 0 as label
 </li>
-<li>
-   %L0 - gives "l"
+<li>%L0 - gives "l"
 </li>
-<li>
-   %n0 - negate operand 0 without $ prefix
+<li>%n0 - negate operand 0 without $ prefix
 </li>
-<li>
-   %O0 - nothing
+<li>%O0 - nothing
 </li>
-<li>
-   %P0 - same as %c0
+<li>%P0 - same as %c0
 </li>
-<li>
-   %q0 - 64bit form of register operand 0 (rax)
+<li>%q0 - 64bit form of register operand 0 (rax)
 </li>
-<li>
-   %Q0 - gives "l"
+<li>%Q0 - gives "l"
 </li>
-<li>
-   %s0 - operand 0 with a comma appended
+<li>%s0 - operand 0 with a comma appended
 </li>
-<li>
-   %S0 - gives "s"
+<li>%S0 - gives "s"
 </li>
-<li>
-   %t0 - only usable on immediate operands, does nothing?
+<li>%t0 - only usable on immediate operands, does nothing?
 </li>
-<li>
-   %T0 - gives "t"
+<li>%T0 - gives "t"
 </li>
-<li>
-   %w0 - 16 bit form of register operand 0 (ax)
+<li>%w0 - 16 bit form of register operand 0 (ax)
 </li>
-<li>
-   %W0 - gives "w"
+<li>%W0 - gives "w"
 </li>
-<li>
-   %x0 - same as %w0
+<li>%x0 - same as %w0
 </li>
-<li>
-   %y0 - same as %k0
+<li>%y0 - same as %k0
 </li>
-<li>
-   %z0 - Opcode suffix based on operand 0 size (b, w, l), example asm ("mov%z1 %1, %0" : "=r"(ret) : "r"(val));
-
+<li>%z0 - Opcode suffix based on operand 0 size (b, w, l), example asm ("mov%z1 %1, %0" : "=r"(ret) : "r"(val));
 </li>
 </ul>
 
-<p><a href="http://non-null.blogspot.com/2009/01/operands-in-gcc-inline-assembly.html">Operands in gcc inline assembly</a>
+
+<p>
+<a href="http://non-null.blogspot.com/2009/01/operands-in-gcc-inline-assembly.html">Operands in gcc inline assembly</a>
 </p>
 <p>
 <a href="http://www.osdever.net/tutorials/view/a-brief-tutorial-on-gcc-inline-asm?the_id=68">A brief tutorial on GCC inline asm (x86 biased)</a>
@@ -657,70 +653,53 @@ lcl;                      \
 </div>
 
 <div id="outline-container-27" class="outline-2">
-<h2 id="sec-27"><span class="section-number-2">27</span> inline 어셈에서 output, input 필드에 붙는 제약 ex) "=a" </h2>
+<h2 id="sec-27"><span class="section-number-2">27</span> inline 어셈에서 output, input 필드에 붙는 제약 ex) "=a"</h2>
 <div class="outline-text-2" id="text-27">
 
 
 <ul>
-<li>
-   "m" : A memory operand is allowed, with any kind of address that the machine supports in general.
+<li>"m" : A memory operand is allowed, with any kind of address that the machine supports in general.
 </li>
-<li>
-   "o" : A memory operand is allowed, but only if the address is offsettable. ie, adding a small offset to the address gives a valid address.
+<li>"o" : A memory operand is allowed, but only if the address is offsettable. ie, adding a small offset to the address gives a valid address.
 </li>
-<li>
-   "V" : A memory operand that is not offsettable. In other words, anything that would fit the `m’ constraint but not the `o’constraint.
+<li>"V" : A memory operand that is not offsettable. In other words, anything that would fit the `m’ constraint but not the `o’constraint.
 </li>
-<li>
-   "i" : An immediate integer operand (one with constant value) is allowed. This includes symbolic constants whose values will be known only at assembly time.
+<li>"i" : An immediate integer operand (one with constant value) is allowed. This includes symbolic constants whose values will be known only at assembly time.
 </li>
-<li>
-   "n" : An immediate integer operand with a known numeric value is allowed. Many systems cannot support assembly-time constants for operands less than a word wide. Constraints for these operands should use ’n’ rather than ’i’.
+<li>"n" : An immediate integer operand with a known numeric value is allowed. Many systems cannot support assembly-time constants for operands less than a word wide. Constraints for these operands should use ’n’ rather than ’i’.
 </li>
-<li>
-   "g" : Any register, memory or immediate integer operand is allowed, except for registers that are not general registers.
+<li>"g" : Any register, memory or immediate integer operand is allowed, except for registers that are not general registers.
 
 </li>
-<li>
-   "r" : Register operand constraint, look table given above.
+<li>"r" : Register operand constraint, look table given above.
 </li>
-<li>
-   "q" : Registers a, b, c or d.
+<li>"q" : Registers a, b, c or d.
 </li>
-<li>
-   "I" : Constant in range 0 to 31 (for 32-bit shifts).
+<li>"I" : Constant in range 0 to 31 (for 32-bit shifts).
 </li>
-<li>
-   "J" : Constant in range 0 to 63 (for 64-bit shifts).
+<li>"J" : Constant in range 0 to 63 (for 64-bit shifts).
 </li>
-<li>
-   "K" : 0xff.
+<li>"K" : 0xff.
 </li>
-<li>
-   "L" : 0xffff.
+<li>"L" : 0xffff.
 </li>
-<li>
-   "M" : 0, 1, 2, or 3 (shifts for lea instruction).
+<li>"M" : 0, 1, 2, or 3 (shifts for lea instruction).
 </li>
-<li>
-   "N" : Constant in range 0 to 255 (for out instruction).
+<li>"N" : Constant in range 0 to 255 (for out instruction).
 </li>
-<li>
-   "f" : Floating point register
+<li>"f" : Floating point register
 </li>
-<li>
-   "t" : First (top of stack) floating point register
+<li>"t" : First (top of stack) floating point register
 </li>
-<li>
-   "u" : Second floating point register
+<li>"u" : Second floating point register
 </li>
-<li>
-   "A" : Specifies the `a’ or `d’ registers. This is primarily useful for 64-bit integer values intended to be returned with the `d’ register holding the most significant bits and the `a’ register holding the least significant bits.
-
+<li>"A" : Specifies the `a’ or `d’ registers. This is primarily useful for 64-bit integer values intended to be returned with the `d’ register holding the most significant bits and the `a’ register holding the least significant bits.
 </li>
 </ul>
 
-<p><a href="http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html#s6">GCC-inline asm HOWTO</a>
+
+<p>
+<a href="http://ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html#s6">GCC-inline asm HOWTO</a>
 </p>
 <p>
 <i>&lt;info:gcc:Simple Constraints&gt;</i>
@@ -733,7 +712,7 @@ lcl;                      \
 </div>
 
 <div id="outline-container-28" class="outline-2">
-<h2 id="sec-28"><span class="section-number-2">28</span> #define <code>__percpu_arg(x)</code>             <code>__percpu_prefix</code> "%P" #x </h2>
+<h2 id="sec-28"><span class="section-number-2">28</span> #define <code>__percpu_arg(x)</code>             <code>__percpu_prefix</code> "%P" #x</h2>
 <div class="outline-text-2" id="text-28">
 
 
@@ -742,17 +721,19 @@ lcl;                      \
 </pre>
 
 <ul>
-<li>
-<code>__percpu_prefix</code> 는 percpu 자료구조가 있는 gs의 segment prefix다. "%P" #x 는 operand 숫자를 뜻한다. %P는 i386에 종속적인 지시자로 추측한다.
-
+<li><code>__percpu_prefix</code> 는 percpu 자료구조가 있는 gs의 segment prefix다. "%P" #x 는 operand 숫자를 뜻한다. %P는 i386에 종속적인 지시자로 추측한다.
 </li>
 </ul>
 
-<p>실제 예를 들면
+
+<p>
+실제 예를 들면
 </p>
 <ul>
-<li>
-<code>#define percpu_to_op(op, var, val)</code> 의 경우는 오퍼랜드 크기에 따라 바이트,워드등으로 변환하는데
+<li><code>#define percpu_to_op(op, var, val)</code> 의 경우는 오퍼랜드 크기에 따라 바이트,워드등으로 변환하는데
+</li>
+</ul>
+
 
 <pre class="example">
               asm(op "b %1,"__percpu_arg(0)           \
@@ -761,10 +742,8 @@ lcl;                      \
 </pre>
 
 
-</li>
-</ul>
-
-<p>op는 mov등의 명령어가 넘어오고 <code>__percpu_arg(0)</code> 은 인자 %0과 같다.
+<p>
+op는 mov등의 명령어가 넘어오고 <code>__percpu_arg(0)</code> 은 인자 %0과 같다.
 </p>
 <p>
 <code>percpu_xx_op</code> 의 인자는 (명령어, dest,src)로 인텔 어셈과 유사하다.
@@ -777,7 +756,7 @@ case로 처리를 해줘서 오퍼랜드 크기등에 신경쓸 필요 없다.
 </div>
 
 <div id="outline-container-29" class="outline-2">
-<h2 id="sec-29"><span class="section-number-2">29</span> #define # ## </h2>
+<h2 id="sec-29"><span class="section-number-2">29</span> #define # ##</h2>
 <div class="outline-text-2" id="text-29">
 
 
@@ -788,31 +767,31 @@ case로 처리를 해줘서 오퍼랜드 크기등에 신경쓸 필요 없다.
 
 
 <ul>
-<li>
-#는 string으로 결합한다. onesharp("hello",world) == "helloworld"
-- ##는 변수명으로 결합한다. twosharp(my,precious) == myprecious
-
+<li>#는 string으로 결합한다. onesharp("hello",world) == "helloworld"
+</li>
+<li>##는 변수명으로 결합한다. twosharp(my,precious) == myprecious
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-30" class="outline-2">
-<h2 id="sec-30"><span class="section-number-2">30</span> cgroup이란? </h2>
+<h2 id="sec-30"><span class="section-number-2">30</span> cgroup이란?</h2>
 <div class="outline-text-2" id="text-30">
 
 <ul>
-<li>
-cpu, 메모리, 네트워크등 다양한 자원을 마운트해서 그룹별로 제한 가능하다. (Control groups)
+<li>cpu, 메모리, 네트워크등 다양한 자원을 마운트해서 그룹별로 제한 가능하다. (Control groups)
 </li>
-<li>
-init/main.c에서 root cgroups와 css<sub>set을</sub> 초기화한다.
-
+<li>init/main.c에서 root cgroups와 css<sub>set을</sub> 초기화한다.
 </li>
 </ul>
 
-<p><a href="http://www.kernel.org/doc/Documentation/cgroups/cgroups.txt">cgroups kernel document</a>
+
+<p>
+<a href="http://www.kernel.org/doc/Documentation/cgroups/cgroups.txt">cgroups kernel document</a>
 <a href="http://en.wikipedia.org/wiki/Cgroups">cgroups - wikipedia</a>
 </p>
 </div>
@@ -820,68 +799,66 @@ init/main.c에서 root cgroups와 css<sub>set을</sub> 초기화한다.
 </div>
 
 <div id="outline-container-31" class="outline-2">
-<h2 id="sec-31"><span class="section-number-2">31</span> <code>css_set</code> </h2>
+<h2 id="sec-31"><span class="section-number-2">31</span> <code>css_set</code></h2>
 <div class="outline-text-2" id="text-31">
 
 <ul>
-<li>
-cgroups subsystem state
+<li>cgroups subsystem state
 </li>
-<li>
-cgroups에는 자원별 subsystem이 있는데 이를 관리하기 위한 자료구조로 추측. (좀 더 봐야함)
-
+<li>cgroups에는 자원별 subsystem이 있는데 이를 관리하기 위한 자료구조로 추측. (좀 더 봐야함)
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-32" class="outline-2">
-<h2 id="sec-32"><span class="section-number-2">32</span> 응용프로그램에서 LMA와 VMA를 다르게 하면? </h2>
+<h2 id="sec-32"><span class="section-number-2">32</span> 응용프로그램에서 LMA와 VMA를 다르게 하면?</h2>
 <div class="outline-text-2" id="text-32">
 
 <ul>
-<li>
-LMA(물리메모리)는 무시될 것이다.
-
+<li>LMA(물리메모리)는 무시될 것이다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-33" class="outline-2">
-<h2 id="sec-33"><span class="section-number-2">33</span> 매크로 함수의 리턴값 </h2>
+<h2 id="sec-33"><span class="section-number-2">33</span> 매크로 함수의 리턴값</h2>
 <div class="outline-text-2" id="text-33">
 
 <ul>
-<li>
-링크를 요약하면 마지막 문장이 일반 함수에서의 리턴값과 의미가 비슷하나 C++에서는 사용을 자제하는게 좋다. ({ &hellip; })는 gcc의 확장기능이다.
-
+<li>링크를 요약하면 마지막 문장이 일반 함수에서의 리턴값과 의미가 비슷하나 C++에서는 사용을 자제하는게 좋다. ({ &hellip; })는 gcc의 확장기능이다.
 </li>
 </ul>
 
-<p><a href="http://kldp.org/node/58409">http://kldp.org/node/58409</a>
+
+<p>
+<a href="http://kldp.org/node/58409">http://kldp.org/node/58409</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-34" class="outline-2">
-<h2 id="sec-34"><span class="section-number-2">34</span> RCU </h2>
+<h2 id="sec-34"><span class="section-number-2">34</span> RCU</h2>
 <div class="outline-text-2" id="text-34">
 
 <ul>
-<li>
-RCU(read-copy-update)란 리스트나 트리구조에서 자료를 보호하기 위한 락킹이다.
+<li>RCU(read-copy-update)란 리스트나 트리구조에서 자료를 보호하기 위한 락킹이다.
 </li>
-<li>
-자료구조를 읽는동안 쓰려고 하면 복제및 링크를 변경해 보호하고 복사본이 원본이 되고 원본은 적절한 시점에 제거한다.
-
+<li>자료구조를 읽는동안 쓰려고 하면 복제및 링크를 변경해 보호하고 복사본이 원본이 되고 원본은 적절한 시점에 제거한다.
 </li>
 </ul>
 
-<p><a href="http://en.wikipedia.org/wiki/Read-copy-update">RCU wiki</a>
+
+<p>
+<a href="http://en.wikipedia.org/wiki/Read-copy-update">RCU wiki</a>
 </p>
 <p>
 <a href="http://onestep.tistory.com/32">http://onestep.tistory.com/32</a>
@@ -891,26 +868,25 @@ RCU(read-copy-update)란 리스트나 트리구조에서 자료를 보호하기 
 </div>
 
 <div id="outline-container-35" class="outline-2">
-<h2 id="sec-35"><span class="section-number-2">35</span> sparse란 무엇인가? </h2>
+<h2 id="sec-35"><span class="section-number-2">35</span> sparse란 무엇인가?</h2>
 <div class="outline-text-2" id="text-35">
 
 <ul>
-<li>
-sparse는 리눅스 커널을 위해 만든 코드 체크용 툴이다. 아래와 같이 사용한다.
+<li>sparse는 리눅스 커널을 위해 만든 코드 체크용 툴이다. 아래와 같이 사용한다.
+</li>
+</ul>
+
 
 <pre class="example">
 __attribute__((address_space(num)))
 </pre>
 
 
-</li>
-</ul>
-
-<p>[[file:../include/linux/compiler.h::define%20_<sub>kernel</sub>%20_<sub>attribute</sub>__%20address<sub>space</sub>%200][compiler.h]
+<p>
+[[file:../include/linux/compiler.h::define%20_<sub>kernel</sub>%20_<sub>attribute</sub>__%20address<sub>space</sub>%200][compiler.h]
 </p>
 <ul>
-<li>
-sparse는 메모리 모델중 하나이다. 메모리 섹션이 나누어져 있어 특정 섹션을 online, offline 시킬수 있다.
+<li>sparse는 메모리 모델중 하나이다. 메모리 섹션이 나누어져 있어 특정 섹션을 online, offline 시킬수 있다.
 </li>
 </ul>
 
@@ -921,67 +897,63 @@ sparse는 메모리 모델중 하나이다. 메모리 섹션이 나누어져 있
 </div>
 
 <div id="outline-container-36" class="outline-2">
-<h2 id="sec-36"><span class="section-number-2">36</span> <code>__force_order</code> </h2>
+<h2 id="sec-36"><span class="section-number-2">36</span> <code>__force_order</code></h2>
 <div class="outline-text-2" id="text-36">
 
 <ul>
-<li>
-clobber의 "memory" 표시는 성능을 저해하고 volatile만으로 컴파일러 reordering을 막기엔 부족하다.
+<li>clobber의 "memory" 표시는 성능을 저해하고 volatile만으로 컴파일러 reordering을 막기엔 부족하다.
 </li>
-<li>
-arch/x86/include/asm/system.h 주석 참조
-
+<li>arch/x86/include/asm/system.h 주석 참조
 </li>
 </ul>
 
-<p><a href="../arch/x86/include/asm/system.h">_<sub>force</sub><sub>order</sub> 사용이유</a>
+
+<p>
+<a href="../arch/x86/include/asm/system.h#use-a-variable-and-mimic-reads-and-writes-to-it-to-enforce-serialization">_<sub>force</sub><sub>order</sub> 사용이유</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-37" class="outline-2">
-<h2 id="sec-37"><span class="section-number-2">37</span> as의 .pushsection, .popsection, .previous </h2>
+<h2 id="sec-37"><span class="section-number-2">37</span> as의 .pushsection, .popsection, .previous</h2>
 <div class="outline-text-2" id="text-37">
 
 <ul>
-<li>
-.pushsection은 현재 섹션을 스택에 넣고 현재 섹션을 뒤에오는 section,subsection으로 바꾼다.
+<li>.pushsection은 현재 섹션을 스택에 넣고 현재 섹션을 뒤에오는 section,subsection으로 바꾼다.
 </li>
-<li>
-.popsection은 스택에서 마지막 섹션을 빼서 현재 섹션에 넣는다.
+<li>.popsection은 스택에서 마지막 섹션을 빼서 현재 섹션에 넣는다.
 </li>
-<li>
-.previous는 가장 최근의 section/subsection으로 바꾼다.
-
+<li>.previous는 가장 최근의 section/subsection으로 바꾼다.
 </li>
 </ul>
 
-<p><a href="http://sourceware.org/binutils/docs/as/Pseudo-Ops.html#Pseudo-Ops">as 메뉴얼</a>
+
+<p>
+<a href="http://sourceware.org/binutils/docs/as/Pseudo-Ops.html#Pseudo-Ops">as 메뉴얼</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-38" class="outline-2">
-<h2 id="sec-38"><span class="section-number-2">38</span> const struct <code>cpu_dev</code> *const *cdev </h2>
+<h2 id="sec-38"><span class="section-number-2">38</span> const struct <code>cpu_dev</code> *const *cdev</h2>
 <div class="outline-text-2" id="text-38">
 
 <ul>
-<li>
-a pointer to const pointer to const struct
+<li>a pointer to const pointer to const struct
 </li>
-<li>
-cdev 포인터만 바꿀수 있다. *cdev와 **cdev등은 const
-
+<li>cdev 포인터만 바꿀수 있다. *cdev와 **cdev등은 const
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-39" class="outline-2">
-<h2 id="sec-39"><span class="section-number-2">39</span> const int와 int *const의 차이 </h2>
+<h2 id="sec-39"><span class="section-number-2">39</span> const int와 int *const의 차이</h2>
 <div class="outline-text-2" id="text-39">
 
 
@@ -1010,44 +982,42 @@ cdev 포인터만 바꿀수 있다. *cdev와 **cdev등은 const
 </div>
 
 <div id="outline-container-40" class="outline-2">
-<h2 id="sec-40"><span class="section-number-2">40</span> intel vt 에서 ldtr을 세팅하면 intel vt가 happy한 이유는? </h2>
+<h2 id="sec-40"><span class="section-number-2">40</span> intel vt 에서 ldtr을 세팅하면 intel vt가 happy한 이유는?</h2>
 <div class="outline-text-2" id="text-40">
 
 
 <ul>
-<li>
-intel vt는 인텔의 가상화 기술이다. 보호모드 일때 intel vt는 완전한 초기화가 이루어지지 않는 상황을 싫어한다. 그래서 ldt와 tr는 잘 사용하지 않는데도 0과 더미값으로 초기화시켜준다. 
-
+<li>intel vt는 인텔의 가상화 기술이다. 보호모드 일때 intel vt는 완전한 초기화가 이루어지지 않는 상황을 싫어한다. 그래서 ldt와 tr는 잘 사용하지 않는데도 0과 더미값으로 초기화시켜준다. 
 </li>
 </ul>
 
-<p><a href="http://git.et.redhat.com/?p=kernel-kraxel.git;a=commitdiff_plain;h=88089519f302f1296b4739be45699f06f728ec31">Subject: x86 setup: initialize LDTR and TR to make life easier to Intel VT</a>
+
+<p>
+<a href="http://git.et.redhat.com/?p=kernel-kraxel.git;a=commitdiff_plain;h=88089519f302f1296b4739be45699f06f728ec31">Subject: x86 setup: initialize LDTR and TR to make life easier to Intel VT</a>
 </p>
 <p>
-<a href="/home/sh/linux-x86-8/arch/x86/boot/pmjump.S">pmjump.S</a>
+<a href="file:///home/sh/linux-x86-8/arch/x86/boot/pmjump.S#Set-up-TR-to-make-Intel-VT-happy">pmjump.S</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-41" class="outline-2">
-<h2 id="sec-41"><span class="section-number-2">41</span> cpu family 값 </h2>
+<h2 id="sec-41"><span class="section-number-2">41</span> cpu family 값</h2>
 <div class="outline-text-2" id="text-41">
 
 <ul>
-<li>
-CPUID EAX=1은 cpu의 tfms(type, family, model, stepping)값을 반환한다.
+<li>CPUID EAX=1은 cpu의 tfms(type, family, model, stepping)값을 반환한다.
 </li>
-<li>
-Intel은 486=4, Pentium=5, Pentium Pro/II/III=6, P4(netburst)=15, 이후 core microarchitecture부터는 6값으로 회귀했다. 아이테니엄은 7, 16, 17이다.
+<li>Intel은 486=4, Pentium=5, Pentium Pro/II/III=6, P4(netburst)=15, 이후 core microarchitecture부터는 6값으로 회귀했다. 아이테니엄은 7, 16, 17이다.
 </li>
-<li>
-AMD는 Am5x86=4, K5/6=5, Athlon(K7)=6, Athlon64(K8)=15, K10=16, Bobcat=20, Bulldozer=21
-
+<li>AMD는 Am5x86=4, K5/6=5, Athlon(K7)=6, Athlon64(K8)=15, K10=16, Bobcat=20, Bulldozer=21
 </li>
 </ul>
 
-<p><a href="http://en.wikipedia.org/wiki/List_of_AMD_CPU_microarchitectures">AMD CPU list</a>
+
+<p>
+<a href="http://en.wikipedia.org/wiki/List_of_AMD_CPU_microarchitectures">AMD CPU list</a>
 </p>
 <p>
 <a href="http://www.pagetable.com/?p=18">Intel cpu family ID</a>
@@ -1063,61 +1033,70 @@ AMD는 Am5x86=4, K5/6=5, Athlon(K7)=6, Athlon64(K8)=15, K10=16, Bobcat=20, Bulld
 </div>
 
 <div id="outline-container-42" class="outline-2">
-<h2 id="sec-42"><span class="section-number-2">42</span> <code>native_read_msr</code> 의 <code>EAX_EDX_VAL</code> 매크로에서 32/64비트를 "a" "d", "A"를 나눠놓은 이유 </h2>
+<h2 id="sec-42"><span class="section-number-2">42</span> <code>native_read_msr</code> 의 <code>EAX_EDX_VAL</code> 매크로에서 32/64비트를 "a" "d", "A"를 나눠놓은 이유</h2>
 <div class="outline-text-2" id="text-42">
 
 <ul>
-<li>
-x86의 일부 명령어는 edx:eax 레지스터를 사용한다. gcc 인라인 어셈의 output/input 필드에서 "A" 는 32비트에서는 edx:eax를 나타내지만 64비트에서는 rdx 또는 rax를 나타내기 때문에 제대로 동작하지 않는다.
+<li>x86의 일부 명령어는 edx:eax 레지스터를 사용한다. gcc 인라인 어셈의 output/input 필드에서 "A" 는 32비트에서는 edx:eax를 나타내지만 64비트에서는 rdx 또는 rax를 나타내기 때문에 제대로 동작하지 않는다.
 </li>
-<li>
-"a"와 "d"를 나눠서 처리하는 것보다 "A"로 알려주는게 변수할당이나 소스 길이(속도)등에서 이득이다.
-
+<li>"a"와 "d"를 나눠서 처리하는 것보다 "A"로 알려주는게 변수할당이나 소스 길이(속도)등에서 이득이다.
 </li>
 </ul>
 
-<p><a href="/home/sh/linux-x86-8/arch/x86/include/asm/msr.h">msr.h</a>
+
+<p>
+<a href="file:///home/sh/linux-x86-8/arch/x86/include/asm/msr.h#define-EAX_EDX_VAL-val-low-high-low-u64-high-32">msr.h</a>
 </p>
 </div>
 
 </div>
 
 <div id="outline-container-43" class="outline-2">
-<h2 id="sec-43"><span class="section-number-2">43</span> <code>atomic_set</code> 에서 mov에는 왜 lock prefix가 안붙는가? </h2>
+<h2 id="sec-43"><span class="section-number-2">43</span> <code>atomic_set</code> 에서 mov에는 왜 lock prefix가 안붙는가?</h2>
 <div class="outline-text-2" id="text-43">
 
 <ul>
-<li>
-아키텍쳐에서 load/store와 레지스터끼리의 연산은 원자성을 보장한다.
-
+<li>아키텍쳐에서 load/store와 레지스터끼리의 연산은 원자성을 보장한다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-44" class="outline-2">
-<h2 id="sec-44"><span class="section-number-2">44</span> <code>__this_fixmap_does_not_exist</code> 함수는 선언이 안되있는 이유? </h2>
+<h2 id="sec-44"><span class="section-number-2">44</span> <code>__this_fixmap_does_not_exist</code> 함수는 선언이 안되있는 이유?</h2>
 <div class="outline-text-2" id="text-44">
 
 <ul>
-<li>
-인자가 상수값으로 들어오면 최적화 옵션을 주면 에러를 내지 않는다. 혹은 함수 내부에서 둘 다 상수를 사용하면 최적화 옵션을 주지 않아도 에러를 내지 않는다.
-
+<li>인자가 상수값으로 들어오면 최적화 옵션을 주면 에러를 내지 않는다. 혹은 함수 내부에서 둘 다 상수를 사용하면 최적화 옵션을 주지 않아도 에러를 내지 않는다.
 </li>
 </ul>
+
+
 </div>
 
 </div>
 
 <div id="outline-container-45" class="outline-2">
-<h2 id="sec-45"><span class="section-number-2">45</span> 44c9e71b 값은? poison.h </h2>
+<h2 id="sec-45"><span class="section-number-2">45</span> Write combining이란?</h2>
 <div class="outline-text-2" id="text-45">
 
+<ul>
+<li>x86의 캐시정책중 하나이다. x86<sub>64</sub> 아키텍쳐에는 UC, WT, WP, WC, WB의 다섯가지 캐시정책이 있고 MTRR(memory type range registers)와 PAT(Page attribute table)로 메모리의 캐시정책을 결정한다.
+</li>
+</ul>
+
+<p>이중 WC는 순차적인 쓰기에서 뛰어난 성능을 보인다.
+</p>
 </div>
 </div>
+</div>
+
 <div id="postamble">
-</div>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
 </div>
 </body>
 </html>
