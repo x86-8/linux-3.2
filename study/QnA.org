@@ -1,11 +1,11 @@
-#+TITLE: Linux kernel 분석 FAQ
+#+TITLE: Linux kernel 분석 QnA
 #+AUTHOR: Chun SH
 #+EMAIL: simplenfast@gmail.com
 #+LANGUAGE: ko
 #+OPTIONS: author:nil timestamp:nil
 #+OPTIONS: H:3 \n:nil @:t ::t |:t ^:t -:t f:t *:tl creator:nil
 
-* 리눅스 부팅과정 파일 순서
+* linux 3.2 커널 부팅과정 순서 (파일)
 - SETUP : [[file:../arch/x86/boot/header.S::globl%20_start][boot/header.S]] - [[file:../arch/x86/boot/main.c::void%20main%20void][boot/main.c]] - [[file:../arch/x86/boot/pm.c::void%20go_to_protected_mode%20void][boot/pm.c]] - [[file:../arch/x86/boot/pmjump.S::GLOBAL%20protected_mode_jump][boot/pmjump.S]]
 - COMPRESSED : [[file:../arch/x86/boot/compressed/head_64.S::ENTRY%20startup_32][compressed/head_64.S]]
 - KERNEL : [[file:../arch/x86/kernel/head_64.S::startup_64][kernel/head_64.S]] - [[file:../arch/x86/kernel/head64.c::void%20__init%20x86_64_start_kernel%20char%20real_mode_data][kernel/head64.c]] - [[file:../init/main.c::asmlinkage%20void%20__init%20start_kernel%20void][init/main.c]]
@@ -22,15 +22,17 @@
 
 - 앞의 숫자는 임시 레이블, f는 앞, b는 뒤쪽에서 가장 가까운 레이블 주소를 나타낸다.
 
+[[http://sourceware.org/binutils/docs-2.22/as/Symbol-Names.html#Symbol-Names][GAS Symbol names]]
+
 * 상수 뒤에 붙는 ULL과 LL은 무엇인가?
 
-- unsigned long long integer, long long integer (C의 64bits) 로 데이터형을 명시한다.
+- unsigned long long integer, long long integer (최소 64bit) 로 데이터형을 명시한다.
 
-[[http://www.cinsk.org/cfaqs/html/][C FAQS 한글 번역]]
+[[http://www.cinsk.org/cfaqs/html/node3.html#SECTION00310000000000000000][C FAQS 한글 번역-Basic type]]
 
 * x86 커널이 함수를 호출할때 사용하는 함수 호출 규약은?
 
-- regparm으로 정의한다. gcc 32비트 코드에서 regparm=3 이면 EAX, EDX, ECX를 인자전달에 사용한다.
+- regparm으로 정의한다. gcc 32비트에서 regparm=3 이면 EAX, EDX, ECX를 인자전달에 사용한다.
 
 [[file:../arch/x86/include/asm/calling.h][calling convention]]
 
@@ -62,7 +64,7 @@
 
 - x
 
-* 비디오카드에서 dac란 무엇인가?
+* 비디오카드에서 DAC란 무엇인가?
 
 - digital-to-analog 변환. D-sub등 아날로그 출력에서 필요한 과정으로 보인다.
 
@@ -107,11 +109,11 @@
 
 * RIP 상대 주소 지정방법 (RIP-relative addressing)
 
-- 64비트 모드는 기본 오퍼렌드 크기가 32, 어드레스 크기는 64라서 다음 명령어 위치와 상대적인 주소지정법이 생겼다.
+- 64비트 모드는 기본 오퍼렌드 크기가 32, 어드레스 크기는 64이기 때문에 다음 명령어 위치에 상대적인 주소지정법인 RIP 지정법이 생겼다.
 
 [[http://kkamagui.tistory.com/781][64비트 멀티코어 OS 원리와 구조, p.87]]
 
-* GOT?
+* GOT란?
 
 - ELF포맷의 영역중 하나. global offset table. 자매품 plt(procedure linkage table)도 있다.
 
@@ -266,7 +268,7 @@ http://onestep.tistory.com/32
 
 : __attribute__((address_space(num)))
 
-[[file:../include/linux/compiler.h::define%20__kernel%20__attribute__%20address_space%200][compiler.h]
+[[file:../include/linux/compiler.h::define%20__kernel%20__attribute__%20address_space%200][compiler.h]]
 
 - sparse는 메모리 모델중 하나이다. 메모리 섹션이 나누어져 있어 특정 섹션을 online, offline 시킬수 있다.
 [[http://www.iamroot.org/xe/13649][iamroot sparse memory 관련 질답]]
@@ -275,14 +277,14 @@ http://onestep.tistory.com/32
 - clobber의 "memory" 표시는 성능을 저해하고 volatile만으로 컴파일러 reordering을 막기엔 부족하다.
 - arch/x86/include/asm/system.h 주석 참조
 
-[[file:../arch/x86/include/asm/system.h::use%20a%20variable%20and%20mimic%20reads%20and%20writes%20to%20it%20to%20enforce%20serialization][__force_order 사용이유]]
+[[file:../arch/x86/include/asm/system.h::use%20a%20variable%20and%20mimic%20reads%20and%20writes%20to%20it%20to%20enforce%20serialization][force order 사용이유]]
 
 * as의 .pushsection, .popsection, .previous
 - .pushsection은 현재 섹션을 스택에 넣고 현재 섹션을 뒤에오는 section,subsection으로 바꾼다.
 - .popsection은 스택에서 마지막 섹션을 빼서 현재 섹션에 넣는다.
 - .previous는 가장 최근의 section/subsection으로 바꾼다.
 
-[[http://sourceware.org/binutils/docs/as/Pseudo-Ops.html#Pseudo-Ops][as 메뉴얼]]
+[[http://sourceware.org/binutils/docs/as/Pseudo-Ops.html#Pseudo-Ops][GAS - assembler directive]]
 
 * const struct =cpu_dev= *const *cdev
 - a pointer to const pointer to const struct

@@ -3,11 +3,11 @@
                "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko">
 <head>
-<title>Linux kernel 분석 FAQ</title>
+<title>Linux kernel 분석 QnA</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-<meta name="title" content="Linux kernel 분석 FAQ"/>
+<meta name="title" content="Linux kernel 분석 QnA"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2012-07-14 08:34:13 KST"/>
+<meta name="generated" content="2012-07-15 01:56:28 KST"/>
 <meta name="author" content="Chun SH"/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -91,14 +91,14 @@
 </div>
 
 <div id="content">
-<h1 class="title">Linux kernel 분석 FAQ</h1>
+<h1 class="title">Linux kernel 분석 QnA</h1>
 
 
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 리눅스 부팅과정 파일 순서</a></li>
+<li><a href="#sec-1">1 linux 3.2 커널 부팅과정 순서 (파일)</a></li>
 <li><a href="#sec-2">2 리눅스는 파라미터를 어떻게 전달받는가?</a></li>
 <li><a href="#sec-3">3 GAS 어셈에서 1f, 1b가 의미하는 바는?</a></li>
 <li><a href="#sec-4">4 상수 뒤에 붙는 ULL과 LL은 무엇인가?</a></li>
@@ -109,7 +109,7 @@
 <li><a href="#sec-9">9 Int 0x15 AX=0xe980, Intel speed step 인터럽트는 어떤 기능을 하는가?</a></li>
 <li><a href="#sec-10">10 <code>query_MCA</code> 에서 MCA(micro channel architecture) 정보는 무엇이고 왜 가져오는가?</a></li>
 <li><a href="#sec-11">11 return a=x; 이 리턴하는 것은 x인가 true 인가?</a></li>
-<li><a href="#sec-12">12 비디오카드에서 dac란 무엇인가?</a></li>
+<li><a href="#sec-12">12 비디오카드에서 DAC란 무엇인가?</a></li>
 <li><a href="#sec-13">13 *%eax에서 *를 왜 넣는가?</a></li>
 <li><a href="#sec-14">14 offsetof란??????</a></li>
 <li><a href="#sec-15">15 kbuild.h에서 -&gt;의 의미</a></li>
@@ -118,7 +118,7 @@
 <li><a href="#sec-18">18 <code>MSR_IA32_MISC_ENABLE</code></a></li>
 <li><a href="#sec-19">19 PAE의 크기가 어떻게 36비트를 쓰는가?</a></li>
 <li><a href="#sec-20">20 RIP 상대 주소 지정방법 (RIP-relative addressing)</a></li>
-<li><a href="#sec-21">21 GOT?</a></li>
+<li><a href="#sec-21">21 GOT란?</a></li>
 <li><a href="#sec-22">22 <code>__builtin_constant_p</code></a></li>
 <li><a href="#sec-23">23 <code>MSR_GS_BASE</code></a></li>
 <li><a href="#sec-24">24 do { } while (0) 이 많이 쓰이는 이유</a></li>
@@ -148,7 +148,7 @@
 </div>
 
 <div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> 리눅스 부팅과정 파일 순서</h2>
+<h2 id="sec-1"><span class="section-number-2">1</span> linux 3.2 커널 부팅과정 순서 (파일)</h2>
 <div class="outline-text-2" id="text-1">
 
 <ul>
@@ -197,6 +197,9 @@
 </ul>
 
 
+<p>
+<a href="http://sourceware.org/binutils/docs-2.22/as/Symbol-Names.html#Symbol-Names">GAS Symbol names</a>
+</p>
 </div>
 
 </div>
@@ -207,13 +210,13 @@
 
 
 <ul>
-<li>unsigned long long integer, long long integer (C의 64bits) 로 데이터형을 명시한다.
+<li>unsigned long long integer, long long integer (최소 64bit) 로 데이터형을 명시한다.
 </li>
 </ul>
 
 
 <p>
-<a href="http://www.cinsk.org/cfaqs/html/">C FAQS 한글 번역</a>
+<a href="http://www.cinsk.org/cfaqs/html/node3.html#SECTION00310000000000000000">C FAQS 한글 번역-Basic type</a>
 </p>
 </div>
 
@@ -225,7 +228,7 @@
 
 
 <ul>
-<li>regparm으로 정의한다. gcc 32비트 코드에서 regparm=3 이면 EAX, EDX, ECX를 인자전달에 사용한다.
+<li>regparm으로 정의한다. gcc 32비트에서 regparm=3 이면 EAX, EDX, ECX를 인자전달에 사용한다.
 </li>
 </ul>
 
@@ -334,7 +337,7 @@
 </div>
 
 <div id="outline-container-12" class="outline-2">
-<h2 id="sec-12"><span class="section-number-2">12</span> 비디오카드에서 dac란 무엇인가?</h2>
+<h2 id="sec-12"><span class="section-number-2">12</span> 비디오카드에서 DAC란 무엇인가?</h2>
 <div class="outline-text-2" id="text-12">
 
 
@@ -475,7 +478,7 @@
 
 
 <ul>
-<li>64비트 모드는 기본 오퍼렌드 크기가 32, 어드레스 크기는 64라서 다음 명령어 위치와 상대적인 주소지정법이 생겼다.
+<li>64비트 모드는 기본 오퍼렌드 크기가 32, 어드레스 크기는 64이기 때문에 다음 명령어 위치에 상대적인 주소지정법인 RIP 지정법이 생겼다.
 </li>
 </ul>
 
@@ -488,7 +491,7 @@
 </div>
 
 <div id="outline-container-21" class="outline-2">
-<h2 id="sec-21"><span class="section-number-2">21</span> GOT?</h2>
+<h2 id="sec-21"><span class="section-number-2">21</span> GOT란?</h2>
 <div class="outline-text-2" id="text-21">
 
 
@@ -883,7 +886,7 @@ __attribute__((address_space(num)))
 
 
 <p>
-[[file:../include/linux/compiler.h::define%20_<sub>kernel</sub>%20_<sub>attribute</sub>__%20address<sub>space</sub>%200][compiler.h]
+<a href="../include/linux/compiler.h#define-__kernel-__attribute__-address_space-0">compiler.h</a>
 </p>
 <ul>
 <li>sparse는 메모리 모델중 하나이다. 메모리 섹션이 나누어져 있어 특정 섹션을 online, offline 시킬수 있다.
@@ -909,7 +912,7 @@ __attribute__((address_space(num)))
 
 
 <p>
-<a href="../arch/x86/include/asm/system.h#use-a-variable-and-mimic-reads-and-writes-to-it-to-enforce-serialization">_<sub>force</sub><sub>order</sub> 사용이유</a>
+<a href="../arch/x86/include/asm/system.h#use-a-variable-and-mimic-reads-and-writes-to-it-to-enforce-serialization">force order 사용이유</a>
 </p>
 </div>
 
@@ -930,7 +933,7 @@ __attribute__((address_space(num)))
 
 
 <p>
-<a href="http://sourceware.org/binutils/docs/as/Pseudo-Ops.html#Pseudo-Ops">as 메뉴얼</a>
+<a href="http://sourceware.org/binutils/docs/as/Pseudo-Ops.html#Pseudo-Ops">GAS - assembler directive</a>
 </p>
 </div>
 
