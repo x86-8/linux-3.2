@@ -121,17 +121,17 @@ EXPORT_SYMBOL(_mmx_memcpy);
  *	The K7 has streaming cache bypass load/store. The Cyrix III, K6 and
  *	other MMX using processors do not.
  */
-
+/* 매우 빠르게 초기화 */
 static void fast_clear_page(void *page)
 {
 	int i;
 
 	kernel_fpu_begin();
-
+	/* xor로 mm0레지스터를 0으로 한다. */
 	__asm__ __volatile__ (
 		"  pxor %%mm0, %%mm0\n" : :
 	);
-
+	/* mmx를 지원하면 빠르게 8바이트씩 쓴다. */
 	for (i = 0; i < 4096/64; i++) {
 		__asm__ __volatile__ (
 		"  movntq %%mm0, (%0)\n"
@@ -333,6 +333,7 @@ static void fast_copy_page(void *to, void *from)
 /*
  * Favour MMX for page clear and copy:
  */
+/* 32비트 일반 레지스터를 써서 초기화 */
 static void slow_zero_page(void *page)
 {
 	int d0, d1;

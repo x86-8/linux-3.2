@@ -176,6 +176,7 @@ static struct termios orig_term;
  * threads and so we need to make sure that changes visible to the Guest happen
  * in precise order.
  */
+/* 메모리 배리어. 최적화 장벽이다. */
 #define wmb() __asm__ __volatile__("" : : : "memory")
 #define mb() __asm__ __volatile__("" : : : "memory")
 

@@ -202,7 +202,7 @@ static inline unsigned long get_limit(unsigned long segment)
 	asm("lsll %1,%0" : "=r" (__limit) : "r" (segment));
 	return __limit + 1;
 }
-
+/* task switched 비트를 clear(0)한다. */
 static inline void native_clts(void)
 {
 	asm volatile("clts");
@@ -421,6 +421,9 @@ void stop_this_cpu(void *dummy);
 #define rmb() alternative("lock; addl $0,0(%%esp)", "lfence", X86_FEATURE_XMM2)
 #define wmb() alternative("lock; addl $0,0(%%esp)", "sfence", X86_FEATURE_XMM)
 #else
+/* 메모리 장벽 64비트는 cpu와 컴파일러 모두에게 메모리 장벽을 만든다.
+ * write=store, load=read
+ */
 #define mb() 	asm volatile("mfence":::"memory")
 #define rmb()	asm volatile("lfence":::"memory")
 #define wmb()	asm volatile("sfence" ::: "memory")

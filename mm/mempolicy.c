@@ -1900,10 +1900,10 @@ struct page *alloc_pages_current(gfp_t gfp, unsigned order)
 {
 	struct mempolicy *pol = current->mempolicy;
 	struct page *page;
-
-	if (!pol || in_interrupt() || (gfp & __GFP_THISNODE))
+	/* 정책 결정이 안되있으면 기본으로 */
+	If (!pol || in_interrupt() || (gfp & __GFP_THISNODE))
 		pol = &default_policy;
-
+	/* current의 mems_allowed_change_disable를 증가 */
 	get_mems_allowed();
 	/*
 	 * No reference counting needed for current->mempolicy

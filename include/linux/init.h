@@ -55,7 +55,7 @@
  * For exit sections the same issue exists.
  *
  * The following markers are used for the cases where the reference to
- * the *init / *exit section (code or data) is valid and will teach
+  * the *init / *exit section (code or data) is valid and will teach
  * modpost not to issue a warning.  Intended semantics is that a code or
  * data tagged __ref* can reference code or data from init section without
  * producing a warning (of course, no warning does not mean code is

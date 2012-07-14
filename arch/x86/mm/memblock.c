@@ -251,7 +251,7 @@ u64 __init memblock_x86_memory_in_range(u64 addr, u64 limit)
 {
 	return __memblock_x86_memory_in_range(addr, limit, false);
 }
-
+/* start부터 end까지 영역을 name의 스트링으로 예약한다. */
 void __init memblock_x86_reserve_range(u64 start, u64 end, char *name)
 {
 	if (start == end)	/* 크기가 0이면 리턴 */

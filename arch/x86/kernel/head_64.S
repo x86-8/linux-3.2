@@ -270,7 +270,10 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	ENTRY(initial_gs)
 	.quad	INIT_PER_CPU_VAR(irq_stack_union)
 
-	ENTRY(stack_start)			/* 스택은 .ref.data 섹션을 가리키고 있다. */
+	/* 스택은 .ref.data 섹션을 가리키고 있다.
+	 * 기본 thread_info와 task_struct가 이곳에 설정되어 있다.
+	*/
+	ENTRY(stack_start)
 	.quad  init_thread_union+THREAD_SIZE-8
 	.word  0
 	__FINITDATA

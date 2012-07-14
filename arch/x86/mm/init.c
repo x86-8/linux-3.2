@@ -75,7 +75,7 @@ static void __init find_early_table_space(unsigned long end, int use_pse,
 		panic("Cannot find space for the kernel page tables");
 	/* 전역변수에 주소를 대입
 	 * 이 주소들은 테이블을 할당할 페이지 번호다.
-	 * start부터 end 까지는 사용한 값, top은 제한 크기.
+	 * start부터 end 까지는 사용한 값, top은 최대 (제한된) 테이블 크기.
 	 */
 	pgt_buf_start = base >> PAGE_SHIFT;
 	pgt_buf_end = pgt_buf_start;
@@ -328,10 +328,13 @@ unsigned long __init_refok init_memory_mapping(unsigned long start,
 	 * RO all the pagetable pages, including the ones that are beyond
 	 * pgt_buf_end at that time.
 	 */
+	/* 처음이고 end가 start보다 작은 정상 상태이면 */
 	if (!after_bootmem && pgt_buf_end > pgt_buf_start)
+		/* "PGTABLE" 로 table로 사용한 영역을 예약한다. */
 		x86_init.mapping.pagetable_reserve(PFN_PHYS(pgt_buf_start),
 				PFN_PHYS(pgt_buf_end));
 
+	/* 처음이라면 메모리 테스트를 한다. */
 	if (!after_bootmem)
 		early_memtest(start, end);
 

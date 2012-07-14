@@ -7,7 +7,7 @@
 #include <linux/init.h>
 #include <linux/pfn.h>
 #include <linux/memblock.h>
-
+/* 체크할 패턴 */
 static u64 patterns[] __initdata = {
 	0,
 	0xffffffffffffffffULL,
@@ -49,10 +49,10 @@ static void __init memtest(u64 pattern, u64 start_phys, u64 size)
 	end = start + (size - (start_phys_aligned - start_phys)) / incr;
 	start_bad = 0;
 	last_bad = 0;
-
+	/* pattern을 넣어준다. */
 	for (p = start; p < end; p++)
 		*p = pattern;
-
+	/* pattern 체크 */
 	for (p = start; p < end; p++, start_phys_aligned += incr) {
 		if (*p == pattern)
 			continue;
@@ -67,12 +67,13 @@ static void __init memtest(u64 pattern, u64 start_phys, u64 size)
 	if (start_bad)
 		reserve_bad_mem(pattern, start_bad, last_bad + incr);
 }
-
+/* pattern으로 채워넣고 체크하면서 메모리 테스트를 한다. */
 static void __init do_one_pass(u64 pattern, u64 start, u64 end)
 {
 	u64 size = 0;
 
 	while (start < end) {
+		/* 필요한 메모리 시작주소를 리턴 */
 		start = memblock_x86_find_in_range_size(start, &size, 1);
 
 		/* done ? */

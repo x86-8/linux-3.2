@@ -104,6 +104,7 @@ static inline void get_mems_allowed(void)
 	 * and knows the read-side task is reading mems_allowed or mempolicy,
 	 * so it will clear old bits lazily.
 	 */
+	/* smp의 메모리 장벽 */
 	smp_mb();
 }
 

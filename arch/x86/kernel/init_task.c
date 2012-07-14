@@ -20,6 +20,9 @@ static struct sighand_struct init_sighand = INIT_SIGHAND(init_sighand);
  * way process stacks are handled. This is done by having a special
  * "init_task" linker map entry..
  */
+/* 초기화 될때 커널의 thread_info다.
+ * task_struct는 init_task이다.
+ */
 union thread_union init_thread_union __init_task_data =
 	{ INIT_THREAD_INFO(init_task) };
 

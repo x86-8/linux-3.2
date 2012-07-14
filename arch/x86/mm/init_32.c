@@ -59,7 +59,7 @@ unsigned long highstart_pfn, highend_pfn;
 static noinline int do_test_wp_bit(void);
 
 bool __read_mostly __vmalloc_start_set = false;
-
+/* 한 페이지만 할당 */
 static __init void *alloc_low_page(void)
 {
 	/* 한 페이지 할당 */

@@ -42,7 +42,9 @@ struct thread_info {
 #endif
 	int			uaccess_err;
 };
-
+/* 처음 초기화 될때의 thread_info current() 관련 함수가 오면 참조된다.
+ * 이 것은 esp에서 8KB로 mask된 부분에위치한다.
+ */
 #define INIT_THREAD_INFO(tsk)			\
 {						\
 	.task		= &tsk,			\
@@ -185,10 +187,12 @@ struct thread_info {
 register unsigned long current_stack_pointer asm("esp") __used; /* __used는 define된  attribute 지시자로 참조되지 않아도 알리지 않는다. */
 
 /* how to get the thread information struct from C */
+/* 현재스택(esp)의 8kb로 정렬된  */
 static inline struct thread_info *current_thread_info(void)
 {
+	/* 스택포인터(esp) 를 쓰레드 크기 단위로 마스크(아래버림) , 쓰레드 크기는 8KB */
 	return (struct thread_info *)
-		(current_stack_pointer & ~(THREAD_SIZE - 1)); /* 스택포인터(esp) 를 쓰레드 크기 단위로 마스크 , 쓰레드 크기는 8KB */
+		(current_stack_pointer & ~(THREAD_SIZE - 1));
 }
 
 #else /* !__ASSEMBLY__ */

@@ -327,20 +327,22 @@ void __init cleanup_highmap(void)
 
 static __ref void *alloc_low_page(unsigned long *phys)
 {
+	/* pfn= 이번에 할당할 페이지 번호 */
 	unsigned long pfn = pgt_buf_end++;
 	void *adr;
-
+	/* bootmem이 1이면 */
 	if (after_bootmem) {
 		adr = (void *)get_zeroed_page(GFP_ATOMIC | __GFP_NOTRACK);
 		*phys = __pa(adr);
 
 		return adr;
 	}
-
+	/* 처음엔 이쪽으로 물리메모리와 ioremap으로 연결 */
 	if (pfn >= pgt_buf_top)
 		panic("alloc_low_page: ran out of memory");
-
+	/* pfn이 가리키는 가상 메모리와 매핑해준다. */
 	adr = early_memremap(pfn * PAGE_SIZE, PAGE_SIZE);
+	/* 할당받은 페이지 클리어 */
 	clear_page(adr);
 	*phys  = pfn * PAGE_SIZE;
 	return adr;
@@ -364,7 +366,7 @@ static __ref void *map_low_page(void *virt)
 
 	return adr;
 }
-
+/* unmap 하고 슬롯을 discard 한다. */
 static __ref void unmap_low_page(void *adr)
 {
 	if (after_bootmem)
@@ -585,7 +587,7 @@ phys_pud_init(pud_t *pud_page, unsigned long addr, unsigned long end,
 
 	return last_map_addr;
 }
-
+/* pgd부터 순회 방문 하면서 테이블을 초기화하고 필요하면 테이블을 할당한다. */
 unsigned long __meminit
 kernel_physical_mapping_init(unsigned long start,
 			     unsigned long end,
@@ -594,7 +596,6 @@ kernel_physical_mapping_init(unsigned long start,
 	bool pgd_changed = false;
 	unsigned long next, last_map_addr = end;
 	unsigned long addr;
-
 	start = (unsigned long)__va(start);
 	end = (unsigned long)__va(end);
 	addr = start;

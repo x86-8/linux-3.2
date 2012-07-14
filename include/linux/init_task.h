@@ -132,6 +132,7 @@ extern struct cred init_cred;
  *  INIT_TASK is used to set up the first task table, touch at
  * your own risk!. Base=0, limit=0x1fffff (=2MB)
  */
+/* 커널이 기본으로 쓰는 task_struct이다. */
 #define INIT_TASK(tsk)	\
 {									\
 	.state		= 0,						\

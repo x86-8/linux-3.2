@@ -311,6 +311,7 @@ static inline void kernel_fpu_begin(void)
 {
 	struct thread_info *me = current_thread_info();
 	preempt_disable();
+	/* thread_info의 status에서 TS_USEDFPU 비트가 켜있으면 */
 	if (me->status & TS_USEDFPU)
 		__save_init_fpu(me->task);
 	else
