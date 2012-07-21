@@ -245,6 +245,7 @@ static inline void __init init_ohci1394_reset_and_init_dma(struct ohci *ohci)
  * init_ohci1394_controller - Map the registers of the controller and init DMA
  * This maps the registers of the specified controller and initializes it
  */
+/*  Open Host Controller Interface 의 firewire(ieee1394) 장치 탐색 */
 static inline void __init init_ohci1394_controller(int num, int slot, int func)
 {
 	unsigned long ohci_base;
@@ -252,14 +253,16 @@ static inline void __init init_ohci1394_controller(int num, int slot, int func)
 
 	printk(KERN_INFO "init_ohci1394_dma: initializing OHCI-1394"
 			 " at %02x:%02x.%x\n", num, slot, func);
-
+	/* 아마도 ohci의 base 물리주소를 반환할 것이다. */
 	ohci_base = read_pci_config(num, slot, func, PCI_BASE_ADDRESS_0+(0<<2))
 						   & PCI_BASE_ADDRESS_MEM_MASK;
-
+	/* fixed_addresses의 FIX_OHCI1394_BASE 페이지를
+	 * 받아온 ohci_base로 pte를 세팅한다.
+	 */
 	set_fixmap_nocache(FIX_OHCI1394_BASE, ohci_base);
-
+	/* 레지스터 변수의 포인터 설정 */
 	ohci.registers = (void __iomem *)fix_to_virt(FIX_OHCI1394_BASE);
-
+	/* ohci 장치 초기화 */
 	init_ohci1394_reset_and_init_dma(&ohci);
 }
 
@@ -286,7 +289,7 @@ void __init init_ohci1394_dma_on_all_controllers(void)
 
 				if (class>>8 != PCI_CLASS_SERIAL_FIREWIRE_OHCI)
 					continue; /* Not an OHCI-1394 device */
-
+				/* 장치를 초기화한다. */
 				init_ohci1394_controller(num, slot, func);
 				break; /* Assume one controller per device */
 			}

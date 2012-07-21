@@ -62,7 +62,7 @@ extern struct mm_struct *pgd_page_get_mm(struct page *page);
 #define pte_update_defer(mm, addr, ptep)        do { } while (0)
 #define pmd_update(mm, addr, ptep)              do { } while (0)
 #define pmd_update_defer(mm, addr, ptep)        do { } while (0)
-
+/* pgd 구조체의 값을 구한다. */
 #define pgd_val(x)	native_pgd_val(x)
 #define __pgd(x)	native_make_pgd(x)
 
@@ -488,6 +488,7 @@ static inline unsigned long pages_to_mb(unsigned long npg)
 	remap_pfn_range(vma, vaddr, pfn, size, prot)
 
 #if PAGETABLE_LEVELS > 2
+/* 비어있으면(NULL)이면 참 */
 static inline int pud_none(pud_t pud)
 {
 	return native_pud_val(pud) == 0;
@@ -537,7 +538,7 @@ static inline int pgd_present(pgd_t pgd)
 {
 	return pgd_flags(pgd) & _PAGE_PRESENT;
 }
-	/* pgd 값에서 PTE~PGD 영역만 남긴다. */
+/* pgd 값에서 PTE~PGD 영역만 남긴다. */
 static inline unsigned long pgd_page_vaddr(pgd_t pgd)
 {
 	return (unsigned long)__va((unsigned long)pgd_val(pgd) & PTE_PFN_MASK);
@@ -550,6 +551,7 @@ static inline unsigned long pgd_page_vaddr(pgd_t pgd)
 #define pgd_page(pgd)		pfn_to_page(pgd_val(pgd) >> PAGE_SHIFT)
 
 /* to find an entry in a page-table-directory. */
+/* PUD 엔트리를 구한다. */
 static inline unsigned long pud_index(unsigned long address)
 {
 	return (address >> PUD_SHIFT) & (PTRS_PER_PUD - 1);
@@ -579,21 +581,22 @@ static inline int pgd_none(pgd_t pgd)
  * this macro returns the index of the entry in the pgd page which would
  * control the given virtual address
  */
-/* pgd의 index를 구한다. */
+/* pgd의 index(몇번째 엔트리인지)를 구한다. */
 #define pgd_index(address) (((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
 
 /*
  * pgd_offset() returns a (pgd_t *)
  * pgd_index() is used get the offset into the pgd page's array of pgd_t's;
  */
-/* pgd 시작주소 + (index*pgd size) 해서 해당 index의 주소를 얻는다. */
+/* pgd 시작주소 + index(엔트리 1개는 8바이트) 해서 해당 index의 값(물리주소)를 얻는다. */
 #define pgd_offset(mm, address) ((mm)->pgd + pgd_index((address)))
 /*
  * a shortcut which implies the use of the kernel's pgd, instead
  * of a process's
  */
-/* 커널 pgd의 address가 속하는 index의 시작 오프셋을 얻는다.
- * 이 매크로는 직접 매핑된 가상주소를 돌려준다. (init_mm은 가상주소)
+/* 커널 pgd의 address가 속하는 엔트리(index)의 주소를 얻는다.
+ * init_mm에 해당하는 swapper_pg_dir의 VMA는 direct mapping 구간이기 때문에
+ * 이 매크로는 물리주소 -> direct mapping로 매핑된 가상주소를 돌려준다.
  */
 #define pgd_offset_k(address) pgd_offset(&init_mm, (address))
 

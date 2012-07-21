@@ -1369,12 +1369,14 @@ int __init parse_crashkernel(char 		 *cmdline,
 	*crash_base = 0;
 
 	/* find crashkernel and use the last one if there are more */
+	/* 해당 cmdline 포인터 */
 	p = strstr(p, "crashkernel=");
+	/* 가장 마지막 것을 쓴다. */
 	while (p) {
 		ck_cmdline = p;
 		p = strstr(p+1, "crashkernel=");
 	}
-
+	/* crashkernel=이 없으면 에러 */
 	if (!ck_cmdline)
 		return -EINVAL;
 

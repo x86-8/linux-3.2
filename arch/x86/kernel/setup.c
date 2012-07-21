@@ -332,6 +332,7 @@ static void __init relocate_initrd(void)
 	char *p, *q;
 
 	/* We need to move the initrd down into lowmem */
+	/* 새로 옮길 영역 */
 	ramdisk_here = memblock_find_in_range(0, end_of_lowmem, area_size,
 					 PAGE_SIZE);
 
@@ -341,6 +342,7 @@ static void __init relocate_initrd(void)
 
 	/* Note: this includes all the lowmem currently occupied by
 	   the initrd, we rely on that fact to keep the data intact. */
+	/* 새 ramdisk 영역을 예약 */
 	memblock_x86_reserve_range(ramdisk_here, ramdisk_here + area_size, "NEW RAMDISK");
 	initrd_start = ramdisk_here + PAGE_OFFSET;
 	initrd_end   = initrd_start + ramdisk_size;
@@ -350,7 +352,9 @@ static void __init relocate_initrd(void)
 	q = (char *)initrd_start;
 
 	/* Copy any lowmem portion of the initrd */
+	/* 메모리 끝이 아니면 끝으로 옮긴다.  */
 	if (ramdisk_image < end_of_lowmem) {
+
 		clen = end_of_lowmem - ramdisk_image;
 		p = (char *)__va(ramdisk_image);
 		memcpy(q, p, clen);
@@ -361,6 +365,7 @@ static void __init relocate_initrd(void)
 
 	/* Copy the highmem portion of the initrd */
 	while (ramdisk_size) {
+		/* slop은 아래 12비트 */
 		slop = ramdisk_image & ~PAGE_MASK;
 		clen = ramdisk_size;
 		if (clen > MAX_MAP_CHUNK-slop)
@@ -389,14 +394,15 @@ static void __init reserve_initrd(void)
 	u64 ramdisk_size  = boot_params.hdr.ramdisk_size;
 	u64 ramdisk_end   = PAGE_ALIGN(ramdisk_image + ramdisk_size);
 	u64 end_of_lowmem = max_low_pfn_mapped << PAGE_SHIFT;
-
+	/* Type, Version 이 한바이트에 들어가기 때문에 0이 되지 않는다. */
 	if (!boot_params.hdr.type_of_loader ||
 	    !ramdisk_image || !ramdisk_size)
 		return;		/* No initrd provided by bootloader */
 
 	initrd_start = 0;
-
+	/* 물리 메모리 크기는 램디스크 크기의 2배이상이어야 한다. */
 	if (ramdisk_size >= (end_of_lowmem>>1)) {
+		/* ramdisk 이미지 영역이 memblock에서 겹치면 제거 */
 		memblock_x86_free_range(ramdisk_image, ramdisk_end);
 		printk(KERN_ERR "initrd too large to handle, "
 		       "disabling initrd\n");
@@ -406,13 +412,16 @@ static void __init reserve_initrd(void)
 	printk(KERN_INFO "RAMDISK: %08llx - %08llx\n", ramdisk_image,
 			ramdisk_end);
 
-
+	/* 별일 없으면 가상주소 세팅
+	 * 아마 나중에 initrd_start를 로딩할것
+	 */
 	if (ramdisk_end <= end_of_lowmem) {
 		/* All in lowmem, easy case */
 		/*
 		 * don't need to reserve again, already reserved early
 		 * in i386_start_kernel
 		 */
+		/* ramdisk의 물리주소를 나타낸 가상주소 */
 		initrd_start = ramdisk_image + PAGE_OFFSET;
 		initrd_end = initrd_start + ramdisk_size;
 		return;
@@ -527,7 +536,7 @@ static void __init memblock_x86_reserve_range_setup_data(void)
  */
 
 #ifdef CONFIG_KEXEC
-
+/* 최대 메모리를 구한다. */
 static inline unsigned long long get_total_mem(void)
 {
 	unsigned long long total;
@@ -546,6 +555,7 @@ static inline unsigned long long get_total_mem(void)
 #ifdef CONFIG_X86_32
 # define CRASH_KERNEL_ADDR_MAX	(512 << 20)
 #else
+/* crash kernel의 위치는 896M을 넘으면 안된다(64bit) */
 # define CRASH_KERNEL_ADDR_MAX	(896 << 20)
 #endif
 
@@ -554,21 +564,24 @@ static void __init reserve_crashkernel(void)
 	unsigned long long total_mem;
 	unsigned long long crash_size, crash_base;
 	int ret;
-
+	/* 최대 메모리 */
 	total_mem = get_total_mem();
 
 	ret = parse_crashkernel(boot_command_line, total_mem,
 			&crash_size, &crash_base);
+	/* 값을 못얻어왔다면 (실패) 리턴 */
 	if (ret != 0 || crash_size <= 0)
 		return;
-
+	/* cmdline에 crashkernel이 있다면 예약 */
 	/* 0 means: find the address automatically */
 	if (crash_base <= 0) {
+		/* 자동으로 찾는다. */
 		const unsigned long long alignment = 16<<20;	/* 16M */
 
 		/*
 		 *  kexec want bzImage is below CRASH_KERNEL_ADDR_MAX
 		 */
+		/* 해당 크기의 메모리를 찾는다. */
 		crash_base = memblock_find_in_range(alignment,
 			       CRASH_KERNEL_ADDR_MAX, crash_size, alignment);
 
@@ -578,14 +591,16 @@ static void __init reserve_crashkernel(void)
 		}
 	} else {
 		unsigned long long start;
-
+		/* 해당 블럭이 사용가능해야한다. */
 		start = memblock_find_in_range(crash_base,
 				 crash_base + crash_size, crash_size, 1<<20);
 		if (start != crash_base) {
+			/* 실패하면 사용중 표시 */
 			pr_info("crashkernel reservation failed - memory is in use.\n");
 			return;
 		}
 	}
+	/* CRASH kernel용으로 메모리 영역 예약 */
 	memblock_x86_reserve_range(crash_base, crash_base + crash_size, "CRASH KERNEL");
 
 	printk(KERN_INFO "Reserving %ldMB of memory at %ldMB "
@@ -942,7 +957,7 @@ void __init setup_arch(char **cmdline_p)
 
 	/* How many end-of-memory variables you have, grandma! */
 	/* need this before calling reserve_initrd */
-	/* 메모리크기가 4G보다 크면 e820, 즉 low는 최대 4G이다. */
+	/* 64비트에서 메모리크기가 4G보다 크면 low는 최대 4G이다. */
 	if (max_pfn > (1UL<<(32 - PAGE_SHIFT)))
 		max_low_pfn = e820_end_of_low_ram_pfn(); /* max_low_pfn은 max가 4G */
 	else
@@ -987,7 +1002,7 @@ void __init setup_arch(char **cmdline_p)
 	/* 바이오스의 커럽션 체크하는걸 셋업한다. */
 	setup_bios_corruption_check();
 #endif
-
+	/* 여기서는 max_pfn이512M이다.  */
 	printk(KERN_DEBUG "initial memory mapped : 0 - %08lx\n",
 			max_pfn_mapped<<PAGE_SHIFT);
 
@@ -996,19 +1011,24 @@ void __init setup_arch(char **cmdline_p)
 	init_gbpages();		/* 1GB 페이징이 가능한지 체크 */
 
 	/* max_pfn_mapped is updated here */
-	/* 4G까지의 메모리 매핑 초기화 */
+	/* 4G까지의 메모리 최대 크기 */
 	max_low_pfn_mapped = init_memory_mapping(0, max_low_pfn<<PAGE_SHIFT);
+	/* max_pfn을 재지정한다. low(메모리크기,4G) */
 	max_pfn_mapped = max_low_pfn_mapped;
 
 #ifdef CONFIG_X86_64
-	/* 64비트 이상이고 메모리가 4G이상이면 해당 영역을 초기화 */
+	/* 64비트 이상이고 물리 메모리가 4G보다 크면 4G 윗부분 역시 초기화 한다.
+	 * max_pfn_mapped와 low_pfn 역시 같은 값이 된다.
+	 */
 	if (max_pfn > max_low_pfn) {
+		/* max_pfn 역시 최대값으로 갱신된다. */
 		max_pfn_mapped = init_memory_mapping(1UL<<32,
 						     max_pfn<<PAGE_SHIFT);
 		/* can we preseve max_low_pfn ?*/
-		max_low_pfn = max_pfn; /* 64비트는 결국 max_low와 max가 동일하다 */
+		max_low_pfn = max_pfn; /* 64비트는 결국 low와 max(실제메모리 크기)가 동일하다 */
 	}
-#endif
+#endif.
+	/* current_limit = 메모리 크기 */
 	memblock.current_limit = get_max_mapped();
 
 	/*
@@ -1016,16 +1036,18 @@ void __init setup_arch(char **cmdline_p)
 	 */
 
 #ifdef CONFIG_PROVIDE_OHCI1394_DMA_INIT
+	/* firewire 탐색 & 초기화 */
 	if (init_ohci1394_dma_early)
 		init_ohci1394_dma_on_all_controllers();
 #endif
 	/* Allocate bigger log buffer */
+	/* cmdline에 로그 버퍼가 설정되어있으면 메모리 할당하고 복사  */
 	setup_log_buf(1);
-
+	/* initrd 영역을 체크하고 이동 */
 	reserve_initrd();
-
+	/* crash kernel 체크 & 예약 */
 	reserve_crashkernel();
-
+	/* vSMP 초기화 */
 	vsmp_init();
 
 	io_delay_init();
@@ -1039,6 +1061,7 @@ void __init setup_arch(char **cmdline_p)
 
 	initmem_init();
 	memblock_find_dma_reserve();
+
 
 #ifdef CONFIG_KVM_CLOCK
 	kvmclock_init();

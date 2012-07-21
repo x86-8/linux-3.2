@@ -193,6 +193,7 @@ static unsigned long __meminitdata dma_reserve;
     /* Allow an architecture to set MAX_ACTIVE_REGIONS to save memory */
     #define MAX_ACTIVE_REGIONS CONFIG_MAX_ACTIVE_REGIONS
   #else
+/* 64비트는 3200개이다. */
     #if MAX_NUMNODES >= 32
       /* If there can be many nodes, allow up to 50 holes per node */
       #define MAX_ACTIVE_REGIONS (MAX_NUMNODES*50)
@@ -3859,6 +3860,9 @@ static int __meminit last_active_region_index_in_nid(int nid)
 	int i;
 
 	for (i = nr_nodemap_entries - 1; i >= 0; i--)
+		/* node 엔트리가 최대값이거나
+		 * early_node_map에서 해당 엔트리를 찾으면 리턴한다.
+		 */
 		if (nid == MAX_NUMNODES || early_node_map[i].nid == nid)
 			return i;
 

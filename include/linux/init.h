@@ -236,10 +236,11 @@ struct obs_kernel_param {
  * Force the alignment so the compiler doesn't space elements of the
  * obs_kernel_param "array" too far apart in .init.setup.
  */
-/* initconst로 .init.rodata에 넣어주고
-* .init.setup에는 포인터와 값들을 넣어준다.
-* .init.setup은 파라미터를 함수로 연결시킨다.
-*/
+/* 파라미터가 호출되면 해당 함수 역시 호출된다.
+ * initconst로 .init.rodata에 넣어주고
+ * .init.setup에는 포인터와 값들을 넣어준다.
+ * .init.setup은 파라미터를 함수로 연결시킨다.
+ */
 #define __setup_param(str, unique_id, fn, early)			\
 	static const char __setup_str_##unique_id[] __initconst	\
 		__aligned(1) = str; \

@@ -264,9 +264,10 @@ void __init memblock_x86_reserve_range(u64 start, u64 end, char *name)
 
 	memblock_reserve(start, end - start);
 }
-
+/* 해당 영역을 reserve에서 제거 */
 void __init memblock_x86_free_range(u64 start, u64 end)
 {
+	/* 0이면 나간다 */
 	if (start == end)
 		return;
 

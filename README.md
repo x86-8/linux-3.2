@@ -72,3 +72,4 @@ Study history (날짜:인원:내용)
 63. 2012/06/30:09:*init/main.c* - setup_arch - init_memory_mapping
 64. 2012/07/07:07:*init/main.c* - setup_arch - init_memory_mapping
 65. 2012/07/14:05:*init/main.c* - setup_arch - get_max_mapped
+66. 2012/07/21:06:*init/main.c* - setup_arch - io_delay_init

@@ -185,6 +185,7 @@ static int __init log_buf_len_setup(char *str)
 }
 early_param("log_buf_len", log_buf_len_setup);
 
+/* 이 함수는 cmdline에서 log_buf_len이 설정되어야 호출된다. */
 void __init setup_log_buf(int early)
 {
 	unsigned long flags;
@@ -194,7 +195,7 @@ void __init setup_log_buf(int early)
 
 	if (!new_log_buf_len)
 		return;
-
+	/* 메모리 할당 */
 	if (early) {
 		unsigned long mem;
 
@@ -220,6 +221,7 @@ void __init setup_log_buf(int early)
 
 	offset = start = min(con_start, log_start);
 	dest_idx = 0;
+	/* log를 복사 */
 	while (start != log_end) {
 		unsigned log_idx_mask = start & (__LOG_BUF_LEN - 1);
 

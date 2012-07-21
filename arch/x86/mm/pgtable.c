@@ -430,12 +430,14 @@ int fixmaps_set;
 
 void __native_set_fixmap(enum fixed_addresses idx, pte_t pte)
 {
+	/* 인자로 받은 fix 페이지 값을 가상주소로 바꾼다. */
 	unsigned long address = __fix_to_virt(idx);
-
+	/* fixed 주소의 최대값을 넘기면 에러 */
 	if (idx >= __end_of_fixed_addresses) {
 		BUG();
 		return;
 	}
+	/* pte 세팅 */
 	set_pte_vaddr(address, pte);
 	fixmaps_set++;
 }

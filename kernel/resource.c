@@ -610,7 +610,7 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
 			break;
 	}
 
-	/* 삽입할 블럭(new)이 더 크거나 같으면 브레이크크크 */
+	/* 삽입할 블럭(new)이 더 크거나 같으면 브레이크 */
 	for (next = first; ; next = next->sibling) {
 		/* Partial overlap? Bad, and unfixable */
 		/* 부분적으로 겹치는 경우는 conflict된 상태 */
@@ -673,6 +673,7 @@ struct resource *insert_resource_conflict(struct resource *parent, struct resour
  *
  * Returns 0 on success, -EBUSY if the resource can't be inserted.
  */
+/* 해당 리소스를 삽입한다. */
 int insert_resource(struct resource *parent, struct resource *new)
 {
 	struct resource *conflict;

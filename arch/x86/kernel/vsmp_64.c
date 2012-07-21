@@ -117,6 +117,7 @@ static void __init set_vsmp_pv_ops(void)
 #ifdef CONFIG_PCI
 static int is_vsmp = -1;
 
+/* scaleMP 장치 검색 */
 static void __init detect_vsmp_box(void)
 {
 	is_vsmp = 0;
@@ -125,6 +126,7 @@ static void __init detect_vsmp_box(void)
 		return;
 
 	/* Check if we are running on a ScaleMP vSMPowered box */
+	/* 해당 PCI 포트에서 읽어서 확인 */
 	if (read_pci_config(0, 0x1f, 0, PCI_VENDOR_ID) ==
 	     (PCI_VENDOR_ID_SCALEMP | (PCI_DEVICE_ID_SCALEMP_VSMP_CTL << 16)))
 		is_vsmp = 1;
@@ -149,6 +151,8 @@ int is_vsmp_box(void)
 	return 0;
 }
 #endif
+/* vsmp를 체크, vSMP는 여러개의 물리 SMP를 하나의 로직으로 합친다.
+ */
 void __init vsmp_init(void)
 {
 	detect_vsmp_box();

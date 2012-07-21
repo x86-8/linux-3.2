@@ -45,6 +45,7 @@ extern struct memblock memblock;
 extern int memblock_debug;
 extern int memblock_can_resize;
 
+/* memblock_debug가 켜있으면 메세지 출력 */
 #define memblock_dbg(fmt, ...) \
 	if (memblock_debug) printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
 

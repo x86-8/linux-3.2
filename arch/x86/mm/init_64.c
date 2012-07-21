@@ -139,6 +139,7 @@ void sync_global_pgds(unsigned long start, unsigned long end)
  * NOTE: This function is marked __ref because it calls __init function
  * (alloc_bootmem_pages). It's safe to do it ONLY when after_bootmem == 0.
  */
+/* 64비트는 NO_BOOTMEM이다. 그래서 nobootmem.c를 참조(모두 include bootmem.h) */
 static __ref void *spp_getpage(void)
 {
 	void *ptr;
@@ -172,6 +173,9 @@ static pud_t *fill_pud(pgd_t *pgd, unsigned long vaddr)
 
 static pmd_t *fill_pmd(pud_t *pud, unsigned long vaddr)
 {
+	/* pud가 없으면 페이지 할당
+	 * pud가 있으면 그 값(주소)을 리턴한다.
+	 */
 	if (pud_none(*pud)) {
 		pmd_t *pmd = (pmd_t *) spp_getpage();
 		pud_populate(&init_mm, pud, pmd);
@@ -192,40 +196,48 @@ static pte_t *fill_pte(pmd_t *pmd, unsigned long vaddr)
 	}
 	return pte_offset_kernel(pmd, vaddr);
 }
-
+/* vaddr에 해당하는 pte 엔트리를 pud부터 찾아서 new_pte로 세팅한다. */
 void set_pte_vaddr_pud(pud_t *pud_page, unsigned long vaddr, pte_t new_pte)
 {
 	pud_t *pud;
 	pmd_t *pmd;
 	pte_t *pte;
-
+	/* 가상주소의 pud 주소를 구한다. */
 	pud = pud_page + pud_index(vaddr);
+	/* pud에서 vaddr의 pmd 엔트리를 가져온다.
+	 * 해당 엔트리가 비었으면 할당하지만 지금은 할당이 다 되어 있기 때문에
+	 * spp_getpage는 호출되지 않을 것이다.
+	 */
 	pmd = fill_pmd(pud, vaddr);
+	/* pte 엔트리 주소 역시 구한다. */
 	pte = fill_pte(pmd, vaddr);
-
+	/* 해당 pte 엔트리에 인자로 받은 new_pte를 넣는다. */
 	set_pte(pte, new_pte);
 
 	/*
 	 * It's enough to flush this one mapping.
 	 * (PGE mappings get flushed as well)
 	 */
+	/* TLB를 비운다. */
 	__flush_tlb_one(vaddr);
 }
-
+/* 가상주소의 pte에 해당하는 엔트리를 pteval로 세팅 */
 void set_pte_vaddr(unsigned long vaddr, pte_t pteval)
 {
 	pgd_t *pgd;
 	pud_t *pud_page;
 
 	pr_debug("set_pte_vaddr %lx to %lx\n", vaddr, native_pte_val(pteval));
-
+	/* 가상 주소에 해당하는 pgd 주소(direct mapping된 가상주소)를 구한다. */
 	pgd = pgd_offset_k(vaddr);
+	/* 해당 PGD가 비어있으면 에러 */
 	if (pgd_none(*pgd)) {
 		printk(KERN_ERR
 			"PGD FIXMAP MISSING, it should be setup in head.S!\n");
 		return;
 	}
 	pud_page = (pud_t*)pgd_page_vaddr(*pgd);
+	/* pteval 값으로 엔트리 세팅 */
 	set_pte_vaddr_pud(pud_page, vaddr, pteval);
 }
 

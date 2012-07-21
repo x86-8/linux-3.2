@@ -899,7 +899,9 @@ unsigned long __init e820_end_of_ram_pfn(void)
 {
 	return e820_end_pfn(MAX_ARCH_PFN, E820_RAM);
 }
-/* 4G이하에서 최대 페이지 넘버를 구한다. */
+/* 4G이하에서 최대 페이지 넘버를 구한다.
+ * 첫번째 인자(limit) 안에서 사용가능(RAM)한 끝을 구한다.
+ */
 unsigned long __init e820_end_of_low_ram_pfn(void)
 {
 	return e820_end_pfn(1UL<<(32 - PAGE_SHIFT), E820_RAM);

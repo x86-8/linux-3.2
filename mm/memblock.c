@@ -450,7 +450,7 @@ long __init_memblock memblock_add(phys_addr_t base, phys_addr_t size)
 	return memblock_add_region(&memblock.memory, base, size);
 
 }
-
+/* 이 함수는 블럭들을 탐색후 해당 영역을 제거한다. */
 static long __init_memblock __memblock_remove(struct memblock_type *type,
 					      phys_addr_t base, phys_addr_t size)
 {
@@ -458,8 +458,10 @@ static long __init_memblock __memblock_remove(struct memblock_type *type,
 	int i;
 
 	/* Walk through the array for collisions */
+	/* 카운트만큼 재빨리 반복 */
 	for (i = 0; i < type->cnt; i++) {
 		struct memblock_region *rgn = &type->regions[i];
+		/* 이 region의 끝부분 */
 		phys_addr_t rend = rgn->base + rgn->size;
 
 		/* Nothing more to do, exit */
@@ -467,6 +469,7 @@ static long __init_memblock __memblock_remove(struct memblock_type *type,
 			break;
 
 		/* If we fully enclose the block, drop it */
+		/* 지울 region이 이 영역을 완전히 포함하면 삭제하고 하나씩 당긴다. */
 		if (base <= rgn->base && end >= rend) {
 			memblock_remove_region(type, i--);
 			continue;
@@ -474,6 +477,9 @@ static long __init_memblock __memblock_remove(struct memblock_type *type,
 
 		/* If we are fully enclosed within a block
 		 * then we need to split it and we are done
+		 */
+		/* 지울 영역보다 검색된 영역이 더 크면 앞은 사이즈를 줄이고
+		 * 뒤는 새로 블럭을 추가한다.
 		 */
 		if (base > rgn->base && end < rend) {
 			rgn->size = base - rgn->base;
@@ -488,6 +494,9 @@ static long __init_memblock __memblock_remove(struct memblock_type *type,
 		}
 
 		/* Check if we need to trim the bottom of a block */
+		/* 검색된 영역이 지울 영역의 뒤로 겹치는 경우
+		 * 해당 영역을 제거한다.
+		 */
 		if (rgn->base < end && rend > end) {
 			rgn->size -= end - rgn->base;
 			rgn->base = end;
@@ -495,6 +504,7 @@ static long __init_memblock __memblock_remove(struct memblock_type *type,
 		}
 
 		/* And check if we need to trim the top of a block */
+		/* 검색된 영역(rend)의 뒤에 지울 영역이 겹치는 경우 조절 */
 		if (base < rend)
 			rgn->size -= rend - base;
 
@@ -506,7 +516,7 @@ long __init_memblock memblock_remove(phys_addr_t base, phys_addr_t size)
 {
 	return __memblock_remove(&memblock.memory, base, size);
 }
-
+/* reserved에서 해당 영역을 제거 */
 long __init_memblock memblock_free(phys_addr_t base, phys_addr_t size)
 {
 	return __memblock_remove(&memblock.reserved, base, size);

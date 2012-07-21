@@ -37,7 +37,7 @@ static void * __init __alloc_memory_core_early(int nid, u64 size, u64 align,
 {
 	void *ptr;
 	u64 addr;
-
+	/* limit는 현재 메모리의 한계 */
 	if (limit > memblock.current_limit)
 		limit = memblock.current_limit;
 
@@ -196,7 +196,7 @@ static void * __init ___alloc_bootmem_nopanic(unsigned long size,
 					unsigned long limit)
 {
 	void *ptr;
-
+	/* 슬랩이 가용하면 kzalloc */
 	if (WARN_ON_ONCE(slab_is_available()))
 		return kzalloc(size, GFP_NOWAIT);
 
