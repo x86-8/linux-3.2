@@ -170,6 +170,10 @@ head\_64는 startup\_32와 startup\_64가 있다.
 \item early\_gdt\_descr로 gdt 설정 & 세그먼트 초기화
 \item x86\_64\_start\_kernel로 점프
 \end{enumerate}
+
+여기서 스택을 재설정 하는데 나중에 current\_thread\_info 매크로로 이 커널 스택의 thread 정보를 얻을수 있다.
+8KB로 mask한 부분이 시작점이 되며 thread_info 구조체가 있다.
+
 \section{arch/x86/kernel/head64.c}
 x86\_64\_start\_kernel는 head64.c에 있다.
 \section{init/main.c}
@@ -185,7 +189,6 @@ x86\_64\_start\_kernel는 head64.c에 있다.
 \tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm,
     minimum height=2em]
 
-% 순서도용 tikz    
 \begin{tikzpicture}[node distance = 2cm, auto]
     % Place nodes
     \node [block] (init) {initialize model};
@@ -210,6 +213,18 @@ x86\_64\_start\_kernel는 head64.c에 있다.
 
 
 %\includegraphics{cpu_dev_struct.jpg}
+
+
+
+
+\subsection{.ref section}
+.ref 섹션. -> init으로 연결?
+
+\subsection{init\_memory\_mapping}
+특정 영역의 메모리를 초기화한다.
+find\_early\_table\_space로 메모리 블럭을 다섯개의 배열로 나눈뒤 합치고 kernel\_physical\_mapping\_init 함수가 PGD부터 테이블을 생성한다.
+커널이 쓰는 페이징 시작주소(cr3)는 swapper\_pg\_dir 로 연결되어 있으며 이전에 초기화한 테이블을 재사용 하기도 한다.
+
 
 \end{CJK}
 \end{document}
