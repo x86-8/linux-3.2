@@ -238,7 +238,7 @@ case로 처리를 해줘서 오퍼랜드 크기등에 신경쓸 필요 없다.
 
 * cgroup이란?
 - cpu, 메모리, 네트워크등 다양한 자원을 마운트해서 그룹별로 제한 가능하다. (Control groups)
-- init/main.c에서 root cgroups와 css_set을 초기화한다.
+- init/main.c에서 root cgroups와 =css_set=을 초기화한다.
 
 [[http://www.kernel.org/doc/Documentation/cgroups/cgroups.txt][cgroups kernel document]]
 [[http://en.wikipedia.org/wiki/Cgroups][cgroups - wikipedia]]
@@ -342,6 +342,6 @@ http://onestep.tistory.com/32
 - 인자가 상수값으로 들어오면 최적화 옵션을 주면 에러를 내지 않는다. 혹은 함수 내부에서 둘 다 상수를 사용하면 최적화 옵션을 주지 않아도 에러를 내지 않는다.
 
 * Write combining이란?
-- x86의 캐시정책중 하나이다. x86_64 아키텍쳐에는 UC, WT, WP, WC, WB의 다섯가지 캐시정책이 있고 MTRR(memory type range registers)와 PAT(Page attribute table)로 메모리의 캐시정책을 결정한다.
+- x86의 캐시정책중 하나이다. =x86_64= 아키텍쳐에는 UC, WT, WP, WC, WB의 다섯가지 캐시정책이 있고 MTRR(memory type range registers)와 PAT(Page attribute table)로 메모리의 캐시정책을 결정한다.
 이중 WC는 순차적인 쓰기에서 뛰어난 성능을 보인다.
 
