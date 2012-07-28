@@ -2514,6 +2514,9 @@ static inline int signal_pending_state(long state, struct task_struct *p)
 
 static inline int need_resched(void)
 {
+	/* current_thread_info에서 NEED_RESCHED비트를 체크한다.
+	 * 아마도 안켜져있을 것(unlikely)
+	 */
 	return unlikely(test_thread_flag(TIF_NEED_RESCHED));
 }
 

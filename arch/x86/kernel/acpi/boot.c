@@ -1303,7 +1303,7 @@ static int __init disable_acpi_irq(const struct dmi_system_id *d)
 	}
 	return 0;
 }
-
+/* acpi 금지 */
 static int __init disable_acpi_pci(const struct dmi_system_id *d)
 {
 	if (!acpi_force) {
@@ -1490,6 +1490,10 @@ static struct dmi_system_id __initdata acpi_dmi_table_late[] = {
 
 void __init acpi_boot_table_init(void)
 {
+
+	/* 특정 DMI 장치들을 확인 & 콜백 함수 호출
+	 * 특정 장치들(blacklist)의 예외처리
+	 */
 	dmi_check_system(acpi_dmi_table);
 
 	/*

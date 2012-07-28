@@ -43,9 +43,10 @@ void native_io_delay(void)
 	}
 }
 EXPORT_SYMBOL(native_io_delay);
-
+/* 특정 머신에서는 0x80포트를 delay 포트로 쓰지 않고 0xed를 사용한다. */
 static int __init dmi_io_delay_0xed_port(const struct dmi_system_id *id)
 {
+	/* 80과 타입이 같으면 기본 config에서는 ED 포트 사용  */
 	if (io_delay_type == CONFIG_IO_DELAY_TYPE_0X80) {
 		pr_notice("%s: using 0xed I/O delay port\n", id->ident);
 		io_delay_type = CONFIG_IO_DELAY_TYPE_0XED;
@@ -101,10 +102,12 @@ static struct dmi_system_id __initdata io_delay_0xed_port_dmi_table[] = {
 	},
 	{ }
 };
-
+/* io_delay 타입을 결정한다. */
 void __init io_delay_init(void)
 {
+	/* io_delay 파라미터가 세팅되지 않았다면 (기본으로) delay port로 ed를 등록 */
 	if (!io_delay_override)
+		/* 체크해서 특정 하드웨어에서는 0x80포트가 아닌 0xed 포트를 사용.  */
 		dmi_check_system(io_delay_0xed_port_dmi_table);
 }
 

@@ -16,6 +16,11 @@
  *
  * Atomically decrements @v and calls <fail_fn> if the result is negative.
  */
+/* mutex를 얻을 인자 : v
+ * 실패시 들어갈 함수 : fail_fn
+ * 일단 v와 fail_fn을 타입체크
+ * v--해서 0까지는 성공, -1부터는 실패다. (fail_fn 호출)
+ */
 #define __mutex_fastpath_lock(v, fail_fn)			\
 do {								\
 	unsigned long dummy;					\

@@ -5729,6 +5729,7 @@ SYSCALL_DEFINE0(sched_yield)
 
 static inline int should_resched(void)
 {
+	/* 선점에 안들어있고 need_resched 비트가 켜있으면 참 */
 	return need_resched() && !(preempt_count() & PREEMPT_ACTIVE);
 }
 

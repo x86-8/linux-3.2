@@ -92,6 +92,7 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 	test_and_set_ti_thread_flag(current_thread_info(), flag)
 #define test_and_clear_thread_flag(flag) \
 	test_and_clear_ti_thread_flag(current_thread_info(), flag)
+/* 현재 스레드에서 flag인자로 들어온 비트를 test한다.  */
 #define test_thread_flag(flag) \
 	test_ti_thread_flag(current_thread_info(), flag)
 

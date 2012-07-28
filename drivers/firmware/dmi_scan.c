@@ -493,22 +493,29 @@ void __init dmi_scan_machine(void)
  *	dmi_matches - check if dmi_system_id structure matches system DMI data
  *	@dmi: pointer to the dmi_system_id structure to check
  */
+/* 해당 dmi의 일치해야하는 정보들이 일치(match)하면 참이다.
+ * 예를 들면 VENDOR="IBM", NAME="3000" 이런식으로 모두 일치해야 한다.
+ */
 static bool dmi_matches(const struct dmi_system_id *dmi)
 {
 	int i;
 
 	WARN(!dmi_initialized, KERN_ERR "dmi check: not initialized yet.\n");
-
+	/* 배열 갯수만큼 */
 	for (i = 0; i < ARRAY_SIZE(dmi->matches); i++) {
 		int s = dmi->matches[i].slot;
+		/* 타입이 없으면 다음으로 */
 		if (s == DMI_NONE)
 			break;
+		/* 이 머신의 정보가 dmi_ident에 저장되어 있고 해당 타입의 스트링과 일치하면 패스 */
 		if (dmi_ident[s]
 		    && strstr(dmi_ident[s], dmi->matches[i].substr))
 			continue;
 		/* No match */
+		/* 하나라도 틀리면 false */
 		return false;
 	}
+	/* 모든 정보들이 일치하면 참 */
 	return true;
 }
 
@@ -534,18 +541,23 @@ static bool dmi_is_end_of_table(const struct dmi_system_id *dmi)
  *	returns non zero or we hit the end. Callback function is called for
  *	each successful match. Returns the number of matches.
  */
+/* dmi 체크후 일치하면 콜백 함수 호출
+ * 일치하는 갯수를 리턴
+ */
 int dmi_check_system(const struct dmi_system_id *list)
 {
 	int count = 0;
 	const struct dmi_system_id *d;
-
+	/* 검색할 dmi 구조체의 끝까지 검색 */
 	for (d = list; !dmi_is_end_of_table(d); d++)
+		/* DMI가 일치하면 callback에 등록된 함수를 실행한다. */
 		if (dmi_matches(d)) {
 			count++;
+			/* callback pointer가 NULL이 아니면 실행된다. */
 			if (d->callback && d->callback(d))
 				break;
 		}
-
+	/* 일치하는 갯수 */
 	return count;
 }
 EXPORT_SYMBOL(dmi_check_system);

@@ -400,6 +400,7 @@ EXPORT_SYMBOL(mutex_lock_killable);
 static __used noinline void __sched
 __mutex_lock_slowpath(atomic_t *lock_count)
 {
+	/* mutex 구조체의 시작 주소를 구한다. */
 	struct mutex *lock = container_of(lock_count, struct mutex, count);
 
 	__mutex_lock_common(lock, TASK_UNINTERRUPTIBLE, 0, NULL, _RET_IP_);

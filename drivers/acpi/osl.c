@@ -251,11 +251,15 @@ early_param("acpi_rsdp", setup_acpi_rsdp);
 acpi_physical_address __init acpi_os_get_root_pointer(void)
 {
 #ifdef CONFIG_KEXEC
+	/* RSDP가 파라미터로 설정되어 있으면 강제한다. */
 	if (acpi_rsdp)
 		return acpi_rsdp;
 #endif
 
 	if (efi_enabled) {
+		/* EFI라면 이쪽
+		 * INVALID..가 아니면 acpi20를 리턴
+		 */
 		if (efi.acpi20 != EFI_INVALID_TABLE_ADDR)
 			return efi.acpi20;
 		else if (efi.acpi != EFI_INVALID_TABLE_ADDR)
@@ -343,9 +347,10 @@ acpi_os_map_memory(acpi_physical_address phys, acpi_size size)
 		return NULL;
 	}
 
+		/* ...gbl_permanent... 이 함수는 ioremap 한다. */
 	if (!acpi_gbl_permanent_mmap)
 		return __acpi_map_table((unsigned long)phys, size);
-
+	/* 뮤텍스를 얻는다. */
 	mutex_lock(&acpi_ioremap_lock);
 	/* Check if there's a suitable mapping already. */
 	map = acpi_map_lookup(phys, size);

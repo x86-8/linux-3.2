@@ -118,14 +118,16 @@ acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
 	 * Set up the Root Table Array
 	 * Allocate the table array if requested
 	 */
+	/* initial_table_array가 null이면 들어간다. */
 	if (!initial_table_array) {
 		status = acpi_allocate_root_table(initial_table_count);
 		if (ACPI_FAILURE(status)) {
 			return_ACPI_STATUS(status);
 		}
 	} else {
+		/* null이 아니면 이쪽 */
 		/* Root Table Array has been statically allocated by the host */
-
+		/* 그냥 memset으로 초기화 */
 		ACPI_MEMSET(initial_table_array, 0,
 			    (acpi_size) initial_table_count *
 			    sizeof(struct acpi_table_desc));

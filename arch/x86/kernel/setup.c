@@ -1049,7 +1049,7 @@ void __init setup_arch(char **cmdline_p)
 	reserve_crashkernel();
 	/* vSMP 초기화 */
 	vsmp_init();
-
+	/* io_delay 포트 등록(0xED) */
 	io_delay_init();
 
 	/*
