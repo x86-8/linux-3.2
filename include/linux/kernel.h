@@ -660,7 +660,12 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
  * @member:	the name of the member within the struct.
  *
  */
-/* 스트럭쳐의 시작주소를 구한다. */
+/* 구조체의 시작주소를 구한다.
+ * 한줄로 써도 되지만 member의 타입과 ptr의 타입이 다를 경우
+ * warning을 낼 것이라 추측한다.
+ * http://forum.falinux.com/zbxe/?document_srl=531954
+ */
+
 #define container_of(ptr, type, member) ({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
 	(type *)( (char *)__mptr - offsetof(type,member) );})

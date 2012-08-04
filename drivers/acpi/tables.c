@@ -337,7 +337,7 @@ static void __init check_multiple_madt(void)
 
 int __init acpi_table_init(void)
 {
-	/* 이것은 u32! */
+	/* acpi_status는 u32! */
 	acpi_status status;
 
 	status = acpi_initialize_tables(initial_tables, ACPI_MAX_TABLES, 0);

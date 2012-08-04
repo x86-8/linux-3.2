@@ -20,6 +20,7 @@
  * 실패시 들어갈 함수 : fail_fn
  * 일단 v와 fail_fn을 타입체크
  * v--해서 0까지는 성공, -1부터는 실패다. (fail_fn 호출)
+ * 실패했을때 함수를 호출하는데 첫번째 인자는 dummy(v를 감소한 값)가 들어간다.
  */
 #define __mutex_fastpath_lock(v, fail_fn)			\
 do {								\

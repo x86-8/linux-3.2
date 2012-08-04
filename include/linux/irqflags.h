@@ -62,6 +62,7 @@
 #define raw_local_irq_enable()		arch_local_irq_enable()
  /* do.. while(0)를 사용하면 매크로를 함수처럼 쓸수 있다. (세미콜론 문제 & 한줄 if문 에러) */
  /* 플래그를 저장한다. */
+ /* save는 플래그 저장, 인터럽트 금지, 플래그값 리턴 */
 #define raw_local_irq_save(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\
@@ -72,6 +73,7 @@
 		typecheck(unsigned long, flags);	\
 		arch_local_irq_restore(flags);		\
 	} while (0)
+/* 플래그만 저장 */
 #define raw_local_save_flags(flags)			\
 	do {						\
 		typecheck(unsigned long, flags);	\

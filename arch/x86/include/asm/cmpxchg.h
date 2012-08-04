@@ -91,6 +91,9 @@ extern void __xadd_wrong_size(void)
  * store NEW in MEM.  Return the initial value in MEM.  Success is
  * indicated by comparing RETURN with OLD.
  */
+/* old 값과 ptr 값을 비교해서 같으면 new=ptr, old 값을 리턴한다.
+ * 다르면 new(al) 값을 리턴한다.
+ */
 #define __raw_cmpxchg(ptr, old, new, size, lock)			\
 ({									\
 	__typeof__(*(ptr)) __ret;					\

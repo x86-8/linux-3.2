@@ -118,7 +118,7 @@ static acpi_status acpi_tb_validate_rsdp(struct acpi_table_rsdp *rsdp)
  *              initialization state of the rest of ACPI.
  *
  ******************************************************************************/
-
+/* RSDP (Root System Description Pointer) */
 acpi_status acpi_find_root_pointer(acpi_size *table_address)
 {
 	u8 *table_ptr;

@@ -17,7 +17,8 @@ static inline unsigned long native_save_fl(void)
 	 * it evaluates its effective address -- this is part of the
 	 * documented behavior of the "pop" instruction.
 	 */
-	asm volatile("# __raw_save_flags\n\t" /* 어셈 주석은 # */
+	/* 어셈 주석은 # */
+	asm volatile("# __raw_save_flags\n\t"
 		     "pushf ; pop %0"
 		     : "=rm" (flags)
 		     : /* no input */

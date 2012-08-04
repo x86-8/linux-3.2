@@ -205,7 +205,9 @@ static inline int atomic_sub_return(int i, atomic_t *v)
 
 #define atomic_inc_return(v)  (atomic_add_return(1, v))
 #define atomic_dec_return(v)  (atomic_sub_return(1, v))
-
+/* counter와 old가 같으면 counter=new, 리턴값=old
+ * 다르면 new를 리턴
+ */
 static inline int atomic_cmpxchg(atomic_t *v, int old, int new)
 {
 	return cmpxchg(&v->counter, old, new);

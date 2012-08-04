@@ -523,6 +523,7 @@ static bool dmi_matches(const struct dmi_system_id *dmi)
  *	dmi_is_end_of_table - check for end-of-table marker
  *	@dmi: pointer to the dmi_system_id structure to check
  */
+/* DMI 테이블의 끝이면 참을 리턴 */
 static bool dmi_is_end_of_table(const struct dmi_system_id *dmi)
 {
 	return dmi->matches[0].slot == DMI_NONE;

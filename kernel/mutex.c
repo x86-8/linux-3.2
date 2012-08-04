@@ -131,8 +131,8 @@ EXPORT_SYMBOL(mutex_unlock);
  */
 static inline int __sched
 __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
-		    struct lockdep_map *nest_lock, unsigned long ip)
-{
+		    		    struct lockdep_map *nest_lock, unsigned long ip)
+{ 
 	struct task_struct *task = current;
 	struct mutex_waiter waiter;
 	unsigned long flags;
@@ -160,16 +160,24 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 	 */
 
 	for (;;) {
-		struct task_struct *owner;
+	
+
+
+	struct task_struct *owner;
 
 		/*
 		 * If there's an owner, wait for it to either
 		 * release the lock or go to sleep.
 		 */
+		/* volatile로 읽는다. */
 		owner = ACCESS_ONCE(lock->owner);
+		/*lock->owner == NULL이 돼었을때 빠져나온다. */
 		if (owner && !mutex_spin_on_owner(lock, owner))
 			break;
-
+		/* count가 1이면 락을 얻고 1을 리턴
+		 * 락을 얻으면 이 루틴 실행
+		 * 락을 못없으면 for문을 돌면서 계속 시도한다.
+		 */
 		if (atomic_cmpxchg(&lock->count, 1, 0) == 1) {
 			lock_acquired(&lock->dep_map, ip);
 			mutex_set_owner(lock);

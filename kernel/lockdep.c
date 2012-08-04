@@ -3542,10 +3542,12 @@ void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 			  struct lockdep_map *nest_lock, unsigned long ip)
 {
 	unsigned long flags;
-
+	/* 재귀적으로 lock을 못하게 한다.
+	 * unlikely를 줘서 가능할것이라고 예상
+	 */
 	if (unlikely(current->lockdep_recursion))
 		return;
-
+	/* 플래그 저장, 인터럽트 금지 */
 	raw_local_irq_save(flags);
 	check_flags(flags);
 

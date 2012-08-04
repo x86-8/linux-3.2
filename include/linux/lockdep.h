@@ -483,7 +483,7 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 # define rwlock_acquire_read(l, s, t, i)	do { } while (0)
 # define rwlock_release(l, n, i)		do { } while (0)
 #endif
-
+/* Lock 관련 debug를 위한 용도로 쓰인다. 아니면 빈 함수 */
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
 # ifdef CONFIG_PROVE_LOCKING
 #  define mutex_acquire(l, s, t, i)		lock_acquire(l, s, t, 0, 2, NULL, i)

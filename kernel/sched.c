@@ -829,13 +829,13 @@ int runqueue_is_locked(int cpu)
 
 #define SCHED_FEAT(name, enabled)	\
 	__SCHED_FEAT_##name ,
-
+/* enum에서 선언 */
 enum {
 #include "sched_features.h"
 };
 
 #undef SCHED_FEAT
-
+/* sysctl_sched_features에 OR로 마구 집어넣는다. */
 #define SCHED_FEAT(name, enabled)	\
 	(1UL << __SCHED_FEAT_##name) * enabled |
 
@@ -848,7 +848,7 @@ const_debug unsigned int sysctl_sched_features =
 #ifdef CONFIG_SCHED_DEBUG
 #define SCHED_FEAT(name, enabled)	\
 	#name ,
-
+/* DEBUG가 있을때는 또 배열에 집어넣는다. */
 static __read_mostly char *sched_feat_names[] = {
 #include "sched_features.h"
 	NULL
@@ -4496,6 +4496,8 @@ EXPORT_SYMBOL(schedule);
 
 static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 {
+	/* 스케쥴링(mutex 경합)이 일어나면서 lock->onwer와 owner가
+	   달라질(NULL이 되어 락이 풀릴 경우) 경우, 스핀락 탈출 */
 	if (lock->owner != owner)
 		return false;
 
@@ -4506,7 +4508,7 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 	 * ensures the memory stays valid.
 	 */
 	barrier();
-
+	/* on_cpu는 현재 task가 cpu에동작하는 것으로 추측 */
 	return owner->on_cpu;
 }
 
@@ -4516,11 +4518,18 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
  */
 int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 {
+	/* sched의 OWNER_SPIN에 해당하는 enum 비트가
+	   선언되어있는지 확인.
+	   
+	   OWNER_SPIN: lock을 건 owner(task)가 lock을 풀때
+	   scheduling overhead를 줄여주는 feature */
 	if (!sched_feat(OWNER_SPIN))
 		return 0;
 
 	rcu_read_lock();
+	/* lock->owner와 owner가 다를-lock이 풀릴-때까지 기다림 */
 	while (owner_running(lock, owner)) {
+		/* 스케쥴링 비트가 켜져 있을때 */
 		if (need_resched())
 			break;
 
@@ -4533,6 +4542,7 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 	 * owner changed, which is a sign for heavy contention. Return
 	 * success only when lock->owner is NULL.
 	 */
+	/* mutex unlock될 때 lock->owner가 NULL이 됨. */
 	return lock->owner == NULL;
 }
 #endif
