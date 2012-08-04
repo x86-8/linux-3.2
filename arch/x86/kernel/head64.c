@@ -87,7 +87,7 @@ void __init x86_64_start_kernel(char * real_mode_data)
 #else
 		set_intr_gate(i, early_idt_handler);
 #endif
-	}
+	}x86_64_start_reservations
 	load_idt((const struct desc_ptr *)&idt_descr); /* lidt로 interrupt descriptor table을 읽어온다. */
 
 	if (console_loglevel == 10)
@@ -101,11 +101,12 @@ void __init x86_64_start_reservations(char *real_mode_data)
 	copy_bootdata(__va(real_mode_data)); /* &boot_params에 복사 */
 
 	memblock_init();			/* memblock 초기화 */
-
-	memblock_x86_reserve_range(__pa_symbol(&_text), __pa_symbol(&__bss_stop), "TEXT DATA BSS"); /* 메모리 블락 예약? */
+	/* text부터 bss까지의 커널 영역을 memblock에 예약한다. */
+	memblock_x86_reserve_range(__pa_symbol(&_text), __pa_symbol(&__bss_stop), "TEXT DATA BSS");
 
 #ifdef CONFIG_BLK_DEV_INITRD
 	/* Reserve INITRD */
+	/* 같이 로드한 INITRD(init ramdisk) 영역도 예약한다. */
 	if (boot_params.hdr.type_of_loader && boot_params.hdr.ramdisk_image) {
 		/* Assume only end is not page aligned */
 		unsigned long ramdisk_image = boot_params.hdr.ramdisk_image;
@@ -121,7 +122,6 @@ void __init x86_64_start_reservations(char *real_mode_data)
 	 * At this point everything still needed from the boot loader
 	 * or BIOS or kernel text should be early reserved or marked not
 	 * RAM in e820. All other memory is free game.
-	 */
-	/* int 15h 0xe820 함수로 얻어온 메모리 정보에서 예약된 부분과 커널/바이오스/부트로더 코드영역  외의 메모리 공간은 예약되어있지 않다. */
+	/* int 15h 서 예약된 부분과 커널/바이오스/부트로더 코드영역  외의 메모리 공간은 예약되어있지 않다. */
 	start_kernel();
 }

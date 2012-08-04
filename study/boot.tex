@@ -10,11 +10,8 @@
 \lstset{language=C,captionpos=b,tabsize=3,frame=lines,keywordstyle=\color{blue},commentstyle=\color{darkgreen},stringstyle=\color{red},numbers=left,numberstyle=\tiny,numbersep=5pt,breaklines=true,showstringspaces=false,basicstyle=\footnotesize,emph={label}}
 
 % 쪽번호, index 생성, figure-float, item, hyperref
-
-% 그림 첨부는 includegraphics 사용, 다만 스케일 조정이 필요. eps사용이 좋음
 %\includegraphics{head64.eps}
 %\includegraphics{init.eps}
-
 
 \begin{document}
 \begin{CJK}{UTF8}{}
@@ -172,11 +169,41 @@ head\_64는 startup\_32와 startup\_64가 있다.
 \end{enumerate}
 
 여기서 스택을 재설정 하는데 나중에 current\_thread\_info 매크로로 이 커널 스택의 thread 정보를 얻을수 있다.
-8KB로 mask한 부분이 시작점이 되며 thread_info 구조체가 있다.
+8KB로 mask한 부분이 시작점이 되며 thread\_info 구조체가 있다.
 
 \section{arch/x86/kernel/head64.c}
 x86\_64\_start\_kernel는 head64.c에 있다.
+이제 아래의 코드로 main.c로 진입한다.
+
+\begin{lstlisting}[label=lst:head64.c]
+  	movq	initial_code(%rip),%rax
+	pushq	$0		# fake return address to stop unwinder
+	pushq	$__KERNEL_CS	# set correct cs
+	pushq	%rax		# target address in negative space
+	lretq
+
+	.align	8
+	ENTRY(initial_code)
+	.quad	x86_64_start_kernel
+	ENTRY(initial_gs)
+	.quad	INIT_PER_CPU_VAR(irq_stack_union)
+
+\end{lstlisting}
+
 \section{init/main.c}
+커널의 초기화 시작부분으로 들어왔다.
+\subsections{x86\_64\_start\_kernel}
+이 함수는 BUILD\_BUG\_ON 매크로로 컴파일 에러를 체크하며 clear\_bss 함수를 통해 커널 영역의 BSS를 초기화한다.
+그리고 인터럽트 예외 루틴들(set\_intr\_gate)을 세팅한다.
+
+\subsections{x86\_64\_start\_reservations}
+이 함수는 우선 command line등의 정보가 담겨있는 boot parameter를 boot\_params 구조체로 복사한다.
+그리고 커널에서 사용할 memblock을 초기화를 하고 TEXT, DATA, BSS의 커널 영역과 INITRD 영역을  \em{``TEXT DATA BSS''}과  \em{RAMDISK}로  예약한다.
+EBDA 영역은 memblock에 BIOS Reserved로 예약한다.
+
+\subsections{start\_kernel}
+
+
 
 
 
@@ -213,8 +240,6 @@ x86\_64\_start\_kernel는 head64.c에 있다.
 
 
 %\includegraphics{cpu_dev_struct.jpg}
-
-
 
 
 \subsection{.ref section}
