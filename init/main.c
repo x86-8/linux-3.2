@@ -475,16 +475,15 @@ asmlinkage void __init start_kernel(void)
 {
 	char * command_line;
 	extern const struct kernel_param __start___param[], __stop___param[];
-
-	smp_setup_processor_id();  /* weak으로 선언한 빈 함수 
-								* 특정 아키텍쳐에서만 함수가 존재한다.
-								*/
+	/* weak으로 선언한 빈 함수 특정 아키텍쳐에서만 함수가 존재한다. */
+	smp_setup_processor_id();
 
 	/*
 	 * Need to run as early as possible, to initialize the
 	 * lockdep hash:
 	 */
-	lockdep_init();				/* lockdep hash table list 초기화 */
+	/* lockdep hash table list 초기화 */
+	lockdep_init();
 	debug_objects_early_init();
 
 	/*
@@ -511,7 +510,8 @@ asmlinkage void __init start_kernel(void)
  * Interrupts are still disabled. Do necessary setups, then
  * enable them
  */
-	tick_init(); // 참조: http://blog.daum.net/english_100/69
+ // 참조: http://blog.daum.net/english_100/69
+	tick_init();
 	boot_cpu_init();
 	page_address_init();	   
 	printk(KERN_NOTICE "%s", linux_banner);

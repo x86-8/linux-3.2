@@ -190,20 +190,24 @@ x86\_64\_start\_kernel는 head64.c에 있다.
 
 \end{lstlisting}
 
-\section{init/main.c}
+\section{head64.c}
 커널의 초기화 시작부분으로 들어왔다.
 \subsections{x86\_64\_start\_kernel}
 이 함수는 BUILD\_BUG\_ON 매크로로 컴파일 에러를 체크하며 clear\_bss 함수를 통해 커널 영역의 BSS를 초기화한다.
 그리고 인터럽트 예외 루틴들(set\_intr\_gate)을 세팅한다.
 
-\subsections{x86\_64\_start\_reservations}
+\subsection{x86\_64\_start\_reservations}
 이 함수는 우선 command line등의 정보가 담겨있는 boot parameter를 boot\_params 구조체로 복사한다.
 그리고 커널에서 사용할 memblock을 초기화를 하고 TEXT, DATA, BSS의 커널 영역과 INITRD 영역을  \em{``TEXT DATA BSS''}과  \em{RAMDISK}로  예약한다.
 EBDA 영역은 memblock에 BIOS Reserved로 예약한다.
 
-\subsections{start\_kernel}
-
-
+\section{init/main.c - start\_kernel}
+init/main이 시작되었다.
+start\_kernel은 상당히 긴 함수이다.
+\subsection{lockdep\_init}
+디버깅을 위한 lockdep hash를 초기화한다.
+\subsection{boot\_init\_canary}
+\subsection{tick\_init}
 
 
 

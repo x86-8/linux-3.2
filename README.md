@@ -74,4 +74,4 @@ Study history (날짜:인원:내용)
 65. 2012/07/14:05:*init/main.c* - setup_arch - get_max_mapped
 66. 2012/07/21:06:*init/main.c* - setup_arch - io_delay_init
 67. 2012/07/28:07:*init/main.c* - setup_arch - acpi_boot_table_init
-68. 2012/08/04:05:*init/main.c* - setup_arch - 
+68. 2012/08/04:07:*init/main.c* - setup_arch - acpi_boot_table_init
