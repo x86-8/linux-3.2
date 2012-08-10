@@ -87,7 +87,7 @@ void __init x86_64_start_kernel(char * real_mode_data)
 #else
 		set_intr_gate(i, early_idt_handler);
 #endif
-	}x86_64_start_reservations
+	}
 	load_idt((const struct desc_ptr *)&idt_descr); /* lidt로 interrupt descriptor table을 읽어온다. */
 
 	if (console_loglevel == 10)
