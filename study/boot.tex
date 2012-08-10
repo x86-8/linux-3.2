@@ -16,11 +16,10 @@
 \begin{document}
 \begin{CJK}{UTF8}{}
 
-\title{Linux x86\_64 부팅과정 분석\\
-Version: 3.2\\}
+\title{Linux v3.2 x86\_64 부팅과정 분석\\
+iamroot x86-8 초급\\}
 \author{
-%\and{\email{} x86-8}
-\and{iamroot x86 8차 초급}
+\and{천승환 \email{simplenfast@gmail.com}}
 }
 \date{}
 
@@ -207,8 +206,27 @@ start\_kernel은 상당히 긴 함수이다.
 \subsection{lockdep\_init}
 디버깅을 위한 lockdep hash를 초기화한다.
 \subsection{boot\_init\_canary}
+스택 오버플로우 방지를 위한 canary를 초기화한다.
 \subsection{tick\_init}
+\subsection{boot\_cpu\_init}
+현재 CPU를 등록한다.
+\subsection{linux\_banner}
+이 부분은 함수는 아니지만.
+printk로 linux\_banner를 출력한다.
+커널 버전과 컴파일러 버전등을 출력한다.
+다음과 같다.
 
+\begin{lstlisting}[label=lst:linux_banner]
+printk(KERN_NOTICE "%s", linux_banner);
+
+const char linux_banner[] =
+	"Linux version " UTS_RELEASE " (" LINUX_COMPILE_BY "@"
+	LINUX_COMPILE_HOST ") (" LINUX_COMPILER ") " UTS_VERSION "\n";
+\end{lstlisting}
+
+\subsection{setup\_arch}
+아키텍쳐 의존적인 초기화 부분이다.
+x86에서는 이 함수가 굉장히 길다.
 
 
 % Define block styles
@@ -253,6 +271,7 @@ start\_kernel은 상당히 긴 함수이다.
 특정 영역의 메모리를 초기화한다.
 find\_early\_table\_space로 메모리 블럭을 다섯개의 배열로 나눈뒤 합치고 kernel\_physical\_mapping\_init 함수가 PGD부터 테이블을 생성한다.
 커널이 쓰는 페이징 시작주소(cr3)는 swapper\_pg\_dir 로 연결되어 있으며 이전에 초기화한 테이블을 재사용 하기도 한다.
+
 
 
 \end{CJK}

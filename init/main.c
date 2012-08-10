@@ -513,7 +513,7 @@ asmlinkage void __init start_kernel(void)
  // 참조: http://blog.daum.net/english_100/69
 	tick_init();
 	boot_cpu_init();
-	page_address_init();	   
+	page_address_init();
 	printk(KERN_NOTICE "%s", linux_banner);
 	setup_arch(&command_line);	/* 아키텍쳐 의존된 초기화부분 */
 	mm_init_owner(&init_mm, &init_task);
