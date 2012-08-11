@@ -1487,7 +1487,13 @@ static struct dmi_system_id __initdata acpi_dmi_table_late[] = {
  *	acpi_irq_model=...
  *	...
  */
-
+/**
+ * @date   Sat Aug 11 20:18:59 2012
+ * 
+ * @brief  
+ * acpi_table_init() dd to allow reading SRAT without other side effects.
+ * 
+ */
 void __init acpi_boot_table_init(void)
 {
 

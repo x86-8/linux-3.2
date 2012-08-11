@@ -118,7 +118,9 @@ acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
 	 * Set up the Root Table Array
 	 * Allocate the table array if requested
 	 */
-	/* initial_table_array가 null이면 들어간다. */
+	/* initial_table_array가 null이면 들어간다.
+	 * null이면 dynamic 하게 할당한다.
+	 */
 	if (!initial_table_array) {
 		status = acpi_allocate_root_table(initial_table_count);
 		if (ACPI_FAILURE(status)) {

@@ -289,6 +289,7 @@ EXPORT_SYMBOL(release_resource);
  * the caller must specify res->start, res->end, res->flags and "name".
  * If found, returns 0, res is overwritten, if not found, returns -1.
  */
+/* io 유사트리 자원에서 해당 영역이 있으면 0이상 못찾으면 -1 */
 static int find_next_system_ram(struct resource *res, char *name)
 {
 	resource_size_t start, end;
@@ -303,14 +304,18 @@ static int find_next_system_ram(struct resource *res, char *name)
 	read_lock(&resource_lock);
 	for (p = iomem_resource.child; p ; p = p->sibling) {
 		/* system ram is just marked as IORESOURCE_MEM */
+		/* 플래그가 같지 않으면 패스 */
 		if (p->flags != res->flags)
 			continue;
+		/* 해당 string 일치하지 않으면 패스 */
 		if (name && strcmp(p->name, name))
 			continue;
+		/* 겹치지 않으면 못찾았기 때문에 더 검색할 필요가 없다. */
 		if (p->start > end) {
 			p = NULL;
 			break;
 		}
+		/* (부분적으로 혹은 전체가) 겹치면 */
 		if ((p->end >= start) && (p->start < end))
 			break;
 	}
@@ -318,6 +323,7 @@ static int find_next_system_ram(struct resource *res, char *name)
 	if (!p)
 		return -1;
 	/* copy data */
+	/* 얻은 자원 주소가 더 작으면 그걸로 대체 */
 	if (res->start < p->start)
 		res->start = p->start;
 	if (res->end > p->end)
@@ -330,6 +336,7 @@ static int find_next_system_ram(struct resource *res, char *name)
  * which are marked as IORESOURCE_MEM and IORESOUCE_BUSY.
  * Now, this function is only for "System RAM".
  */
+/* 못찾으면 -1을 리턴 */
 int walk_system_ram_range(unsigned long start_pfn, unsigned long nr_pages,
 		void *arg, int (*func)(unsigned long, unsigned long, void *))
 {
@@ -337,17 +344,20 @@ int walk_system_ram_range(unsigned long start_pfn, unsigned long nr_pages,
 	unsigned long pfn, end_pfn;
 	u64 orig_end;
 	int ret = -1;
-
+	/* 페이지의 첫주소와 끝주소 */
 	res.start = (u64) start_pfn << PAGE_SHIFT;
 	res.end = ((u64)(start_pfn + nr_pages) << PAGE_SHIFT) - 1;
 	res.flags = IORESOURCE_MEM | IORESOURCE_BUSY;
 	orig_end = res.end;
+	/* 주소가 정상적이고(start<end) System RAM으로 등록되어있으면 */
 	while ((res.start < res.end) &&
 		(find_next_system_ram(&res, "System RAM") >= 0)) {
 		pfn = (res.start + PAGE_SIZE - 1) >> PAGE_SHIFT;
 		end_pfn = (res.end + 1) >> PAGE_SHIFT;
+		/* 해당 페이지 프레임이 차이가 나면 callback 함수 호출 */
 		if (end_pfn > pfn)
 			ret = (*func)(pfn, end_pfn - pfn, arg);
+		/* 1이면 종료 */
 		if (ret)
 			break;
 		res.start = res.end + 1;
@@ -368,6 +378,9 @@ static int __is_ram(unsigned long pfn, unsigned long nr_pages, void *arg)
  */
 int __weak page_is_ram(unsigned long pfn)
 {
+	/* 여기서 __is_ram은 무조건 참이다.
+	 * system 자원에서 해당 주소를 찾으면
+	 */
 	return walk_system_ram_range(pfn, 1, NULL, __is_ram) == 1;
 }
 

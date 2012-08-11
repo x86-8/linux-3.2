@@ -247,7 +247,7 @@ static int __init setup_acpi_rsdp(char *arg)
 }
 early_param("acpi_rsdp", setup_acpi_rsdp);
 #endif
-
+/* EBDA와 E000~FFFF영역에서 rsdp 위치를 찾는다. */
 acpi_physical_address __init acpi_os_get_root_pointer(void)
 {
 #ifdef CONFIG_KEXEC
@@ -276,13 +276,17 @@ acpi_physical_address __init acpi_os_get_root_pointer(void)
 		return pa;
 	}
 }
-
+/* phys,size를 포함하는 리스트를 찾는다. */
 /* Must be called with 'acpi_ioremap_lock' or RCU read lock held. */
 static struct acpi_ioremap *
 acpi_map_lookup(acpi_physical_address phys, acpi_size size)
 {
 	struct acpi_ioremap *map;
-
+	/* acpi_ioremap 리스트의 자료를 검색한다.
+	 * 리스트의 멤버가 찾으려는(phys,size) 부분을 포함하면
+	 * 해당 리스트를 리턴한다.
+	 * 없으면 NULL
+	 */
 	list_for_each_entry_rcu(map, &acpi_ioremaps, list)
 		if (map->phys <= phys &&
 		    phys + size <= map->phys + map->size)
@@ -347,24 +351,27 @@ acpi_os_map_memory(acpi_physical_address phys, acpi_size size)
 		return NULL;
 	}
 
-		/* ...gbl_permanent... 이 함수는 ioremap 한다. */
+	/* ...gbl_permanent... 이 함수는 ioremap 한다. */
 	if (!acpi_gbl_permanent_mmap)
 		return __acpi_map_table((unsigned long)phys, size);
 	/* 뮤텍스를 얻는다. */
 	mutex_lock(&acpi_ioremap_lock);
 	/* Check if there's a suitable mapping already. */
+	/* phys, size에 해당하는 리스트를 구한다. */
 	map = acpi_map_lookup(phys, size);
+	/* 영역이 있으면 out */
 	if (map) {
 		map->refcount++;
 		goto out;
 	}
-
+	/* 영역이 없으면 할당한다.(초기화와 함께) */
 	map = kzalloc(sizeof(*map), GFP_KERNEL);
+	/* 할당이 안되면 뮤텍스 풀고 끝 */
 	if (!map) {
 		mutex_unlock(&acpi_ioremap_lock);
 		return NULL;
 	}
-
+	/* PAGE_SIZE 단위로 넓게 주소와 크기를 정렬한다. */
 	pg_off = round_down(phys, PAGE_SIZE);
 	pg_sz = round_up(phys + size, PAGE_SIZE) - pg_off;
 	virt = acpi_os_ioremap(pg_off, pg_sz);

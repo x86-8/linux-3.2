@@ -75,9 +75,13 @@
 #define _HPAGE_CHG_MASK (_PAGE_CHG_MASK | _PAGE_PSE)
 
 #define _PAGE_CACHE_MASK	(_PAGE_PCD | _PAGE_PWT)
+/* Write Back: */
 #define _PAGE_CACHE_WB		(0)
+/* Write Combining: 연속쓰기만 할때 가장 빠른 캐시 정책 */
 #define _PAGE_CACHE_WC		(_PAGE_PWT)
+/* Un Cached Minus:  Cache 비활성화 */
 #define _PAGE_CACHE_UC_MINUS	(_PAGE_PCD)
+/* Un Cached:  Cache 비활성화 + Write Combining */
 #define _PAGE_CACHE_UC		(_PAGE_PCD | _PAGE_PWT)
 
 #define PAGE_NONE	__pgprot(_PAGE_PROTNONE | _PAGE_ACCESSED)

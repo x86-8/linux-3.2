@@ -132,6 +132,7 @@ extern char *default_machine_specific_memory_setup(void);
  * Returns true iff the specified range [s,e) is completely contained inside
  * the ISA region.
  */
+/* 해당 영역이 640KB~16M 영역인지 체크한다. */
 static inline bool is_ISA_range(u64 s, u64 e)
 {
 	return s >= ISA_START_ADDRESS && e <= ISA_END_ADDRESS;

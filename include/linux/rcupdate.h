@@ -762,6 +762,7 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  * See the RCU_INIT_POINTER() comment header for details.
  */
 /* p = *nl, v = n nl 은 체인헤더 n은 체인헤더에 집어넣을 것.  */
+// https://www.box.com/shared/x5r7ugx6o6
 #define rcu_assign_pointer(p, v) \
 	__rcu_assign_pointer((p), (v), __rcu)
 

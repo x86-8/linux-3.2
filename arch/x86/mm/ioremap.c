@@ -74,6 +74,7 @@ static void __iomem *__ioremap_caller(resource_size_t phys_addr,
 
 	/* Don't allow wraparound or zero size */
 	last_addr = phys_addr + size - 1;
+	/* 마지막 주소가 시작주소보다 작거나 사이즈가 0이면 */
 	if (!size || last_addr < phys_addr)
 		return NULL;
 
@@ -87,6 +88,7 @@ static void __iomem *__ioremap_caller(resource_size_t phys_addr,
 	/*
 	 * Don't remap the low PCI/ISA area, it's always mapped..
 	 */
+	/* 16M이하 영역이면 remap하지 않는다. */
 	if (is_ISA_range(phys_addr, last_addr))
 		return (__force void __iomem *)phys_to_virt(phys_addr);
 
@@ -94,6 +96,7 @@ static void __iomem *__ioremap_caller(resource_size_t phys_addr,
 	 * Don't allow anybody to remap normal RAM that we're using..
 	 */
 	last_pfn = last_addr >> PAGE_SHIFT;
+	/* 시작주소부터 페이지 단위로 io자원에 System RAM으로 된 부분이 있는지 검사 한다. */
 	for (pfn = phys_addr >> PAGE_SHIFT; pfn <= last_pfn; pfn++) {
 		int is_ram = page_is_ram(pfn);
 
@@ -105,10 +108,11 @@ static void __iomem *__ioremap_caller(resource_size_t phys_addr,
 	/*
 	 * Mappings have to be page-aligned
 	 */
+	/* 하위 12비트와 그 윗부분을 각각 mask한다. */
 	offset = phys_addr & ~PAGE_MASK;
 	phys_addr &= PHYSICAL_PAGE_MASK;
 	size = PAGE_ALIGN(last_addr+1) - phys_addr;
-
+	/* 메모리 타입영역 할당? */
 	retval = reserve_memtype(phys_addr, (u64)phys_addr + size,
 						prot_val, &new_prot_val);
 	if (retval) {

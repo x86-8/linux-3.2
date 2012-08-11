@@ -116,6 +116,9 @@ static u8 __mtrr_type_lookup(u64 start, u64 end, u64 *partial_end, int *repeat)
 	u64 base, mask;
 	u8 prev_match, curr_match;
 
+	/* mtrr_state가 활성화 안되어 있거나, 설정(mtrr_state_set)이
+	 * 안되어 있으면 0xFF(mtrr not enabled)
+	 */
 	*repeat = 0;
 	if (!mtrr_state_set)
 		return 0xFF;
@@ -127,20 +130,21 @@ static u8 __mtrr_type_lookup(u64 start, u64 end, u64 *partial_end, int *repeat)
 	end--;
 
 	/* Look in fixed ranges. Just return the type as per start */
+	/* fixed range 안에 start가 포함되는 경우, mtrr_type 반환 */
 	if (mtrr_state.have_fixed && (start < 0x100000)) {
 		int idx;
 
 		if (start < 0x80000) {
 			idx = 0;
-			idx += (start >> 16);
+			idx += (start >> 16); /* 최대 idx < 8 */
 			return mtrr_state.fixed_ranges[idx];
 		} else if (start < 0xC0000) {
 			idx = 1 * 8;
-			idx += ((start - 0x80000) >> 14);
+			idx += ((start - 0x80000) >> 14); /* 최대 idx < 8 + 14 */
 			return mtrr_state.fixed_ranges[idx];
 		} else if (start < 0x1000000) {
 			idx = 3 * 8;
-			idx += ((start - 0xC0000) >> 12);
+			idx += ((start - 0xC0000) >> 12); /* 최대 idx < 24 + 64 */
 			return mtrr_state.fixed_ranges[idx];
 		}
 	}
@@ -150,13 +154,16 @@ static u8 __mtrr_type_lookup(u64 start, u64 end, u64 *partial_end, int *repeat)
 	 * Look of multiple ranges matching this address and pick type
 	 * as per MTRR precedence
 	 */
+	/* MTRR Enable비트가 활성화 되어 있는지 확인, Enable이 안되어
+	 * 있으면 def_type(MTRR에 저장되어 있는 default memory
+	 * type)반환. */
 	if (!(mtrr_state.enabled & 2))
 		return mtrr_state.def_type;
 
 	prev_match = 0xFF;
 	for (i = 0; i < num_var_ranges; ++i) {
 		unsigned short start_state, end_state;
-
+		/* mask_lo의 11번째 비트는 valid 비트 */
 		if (!(mtrr_state.var_ranges[i].mask_lo & (1 << 11)))
 			continue;
 
@@ -167,7 +174,9 @@ static u8 __mtrr_type_lookup(u64 start, u64 end, u64 *partial_end, int *repeat)
 
 		start_state = ((start & mask) == (base & mask));
 		end_state = ((end & mask) == (base & mask));
-
+		/* start_state와 end_state가 존재하며 서로 다른 경우,
+		 start와 end를 partial_end를 기준으로 두 부분으로
+		 나눈다. */
 		if (start_state != end_state) {
 			/*
 			 * We have start:end spanning across an MTRR.
@@ -187,15 +196,24 @@ static u8 __mtrr_type_lookup(u64 start, u64 end, u64 *partial_end, int *repeat)
 			else
 				*partial_end = base;
 
+			/* 만약 partial_end값을 구했음에도 (그럴리는
+			 없겠지만) start보다 작은 경우, 다시 값을
+			 구한다*/
 			if (unlikely(*partial_end <= start)) {
 				WARN_ON(1);
 				*partial_end = start + PAGE_SIZE;
 			}
 
 			end = *partial_end - 1; /* end is inclusive */
-			*repeat = 1;
+			/* repeat이 설정되면 start:partial_end까지
+			  찾고나서, mtrr_type_lookup(호출했던 녀석)가
+			  다시 partial_end:end까지 찾는다 */
+			*repeat = 1;		
 		}
-
+		/* 두 가지가 다를 경우는 start_state가 존재하지 않을
+		 * 경우. 
+		 * (start & mask) != (base & mask) <==> !start_state ??
+		 */
 		if ((start & mask) != (base & mask))
 			continue;
 
@@ -410,7 +428,8 @@ void __init get_mtrr_state(void)
 
 	rdmsr(MSR_MTRRdefType, lo, dummy);
 	mtrr_state.def_type = (lo & 0xff);
-	mtrr_state.enabled = (lo & 0xc00) >> 10; /* FE,E 비트(MTRR Enable, Fixed Enable) */
+	/* 이 변수는 두 비트로 E(11번비트)와 FE(10번비트) 비트이다 (MTRR Enable, Fixed Enable) */
+	mtrr_state.enabled = (lo & 0xc00) >> 10;
 
 	if (amd_special_default_mtrr()) {
 		unsigned low, high;

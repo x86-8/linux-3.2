@@ -334,7 +334,7 @@ static void __init check_multiple_madt(void)
  *
  * result: sdt_entry[] is initialized
  */
-
+/* Root System Description Pointer */
 int __init acpi_table_init(void)
 {
 	/* acpi_status는 u32! */

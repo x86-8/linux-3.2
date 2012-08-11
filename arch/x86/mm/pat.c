@@ -256,6 +256,7 @@ static int free_ram_pages_type(u64 start, u64 end)
  * available type in new_type in case of no error. In case of any error
  * it will return a negative return value.
  */
+
 int reserve_memtype(u64 start, u64 end, unsigned long req_type,
 		    unsigned long *new_type)
 {
@@ -268,6 +269,8 @@ int reserve_memtype(u64 start, u64 end, unsigned long req_type,
 
 	if (!pat_enabled) {
 		/* This is identical to page table setting without PAT */
+		/* PAT가 설정이 안되어 있고 new_type이 있는 경우
+		 * req_type에 따라 new_type설정 */
 		if (new_type) {
 			if (req_type == _PAGE_CACHE_WC)
 				*new_type = _PAGE_CACHE_UC_MINUS;
@@ -278,6 +281,8 @@ int reserve_memtype(u64 start, u64 end, unsigned long req_type,
 	}
 
 	/* Low ISA region is always mapped WB in page table. No need to track */
+	/* start, end영역이 640KB~16M 영역인지 체크한 뒤, CACHE_WB로 설정.
+	   is_untracked_pat_range = is_ISA_range(u64 s, u64 e) */
 	if (x86_platform.is_untracked_pat_range(start, end)) {
 		if (new_type)
 			*new_type = _PAGE_CACHE_WB;
@@ -304,7 +309,7 @@ int reserve_memtype(u64 start, u64 end, unsigned long req_type,
 	} else if (is_range_ram < 0) {
 		return -EINVAL;
 	}
-
+	/* memtype 구조체만큼 할당 */
 	new  = kzalloc(sizeof(struct memtype), GFP_KERNEL);
 	if (!new)
 		return -ENOMEM;

@@ -222,7 +222,7 @@ static inline void list_splice_init_rcu(struct list_head *list,
  * This primitive may safely run concurrently with the _rcu list-mutation
  * primitives such as list_add_rcu() as long as it's guarded by rcu_read_lock().
  */
-
+/* 리스트 ptr을 감싸고 있는 구조체 주소를 구한다. */
 #define list_entry_rcu(ptr, type, member) \
 	({typeof (*ptr) __rcu *__ptr = (typeof (*ptr) __rcu __force *)ptr; \
 	 container_of((typeof(ptr))rcu_dereference_raw(__ptr), type, member); \
@@ -251,6 +251,10 @@ static inline void list_splice_init_rcu(struct list_head *list,
  * This list-traversal primitive may safely run concurrently with
  * the _rcu list-mutation primitives such as list_add_rcu()
  * as long as the traversal is guarded by rcu_read_lock().
+ */
+/* container를 가져온다.
+ * 다 돌아서 pos가 head면 끝
+ * 매번 다음 list의 container를 가져온다.
  */
 #define list_for_each_entry_rcu(pos, head, member) \
 	for (pos = list_entry_rcu((head)->next, typeof(*pos), member); \
