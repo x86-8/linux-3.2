@@ -135,7 +135,7 @@ init_heap(void)
 {
 	char *stack_end;
 
-	/* 헤더의 플래그에서 CAN_USE_HEAP (0x80) 속성 체크 */
+	/* 헤더의 플래그에서 CAN_USE_HEAP (0x80) 비트를 체크해서 */
 	/* setup 뒤의 heap 사이즈를 알 수 있다. */
 	if (boot_params.hdr.loadflags & CAN_USE_HEAP) {
 		/* esp - STACK_SIZE(512)
@@ -143,13 +143,14 @@ init_heap(void)
 		 * esp에는 Stack 영역의 시작 주소가 할당되어 있다.
 		 * 현재스택 위치 - 사용할 스택 크기 = stack_end
 		 */
+		/* stack_end = esp - 512 */
 		asm("leal %P1(%%esp),%0"
-			: "=r" (stack_end)	/* Output */
-			: "i" (-STACK_SIZE)	/* Input : -512 */
+			: "=r" (stack_end)
+			: "i" (-STACK_SIZE)
 		    );
 
 		/* heap_end_ptr은 stack/heap end에서
-		 * -0x200된 값이기 때문에 더해준다. (0x200 = 512bytes)
+		 * -512이기 때문에 더해준다. (0x200 = 512bytes)
 		 */
 		heap_end = (char *)
 			((size_t)boot_params.hdr.heap_end_ptr + 0x200);
@@ -165,25 +166,27 @@ init_heap(void)
 }
 
 /**
- @brief	main function.
+ * @brief	main function.
  */
 void main(void)
 {
 	/* First, copy the boot header into the "zeropage" */
-	copy_boot_params(); // 파라미터 복사
+	copy_boot_params(); // 부트 파라미터 복사
 
 	/* Initialize the early-boot console */
-	console_init();		/* earlyprintk 옵션 확인 및 시리얼 초기화 */
+	/* earlyprintk 옵션 확인 및 시리얼 초기화 */
+	console_init();
 	/* Debug 옵션 확인 */
 	if (cmdline_find_option_bool("debug"))
 		puts("early console in setup code\n");
 
 	/* End of heap check */
-	init_heap();		/* heap_end 설정 */
+	/* heap_end 설정 */
+	init_heap();
 
 	/* Make sure we have all the proper CPU support */
 	/* 이 커널을 사용할수있는 CPU가 아니면 멈춘다 */
-	if (validate_cpu()) {		
+	if (validate_cpu()) {
 		puts("Unable to boot - please use a kernel appropriate "
 		     "for your CPU.\n");
 		die();		/* 장렬히 전사 */
@@ -191,7 +194,7 @@ void main(void)
 
 	/* Tell the BIOS what CPU mode we intend to run in. */
 	/* 64비트면 BIOS에 인터럽트를 64비트 사용을 알린다. */
-	set_bios_mode();	
+	set_bios_mode();
 
 
 	/* Detect memory layout */
@@ -202,7 +205,8 @@ void main(void)
 	detect_memory();	
 
 	/* Set keyboard repeat rate (why?) */
-	keyboard_set_repeat();	/* 키반복 속도 최대로 설정 - 느리면 답답하다. */
+	/* 키반복 속도 최대로 설정 - 느리면 답답하다. */
+	keyboard_set_repeat();
 
 	/* Query MCA information */
 	query_mca();		/* MCA 정보 수집 */
@@ -225,6 +229,7 @@ void main(void)
 #endif
 
 	/* Set the video mode */
+	/* 비디오 관련 초기화, 화면 저장 */
 	set_video();
 
 	/* Do the last things and invoke protected mode */

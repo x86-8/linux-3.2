@@ -111,7 +111,7 @@ root_dev:	.word 0			/* Filled in by build.c */
 boot_flag:	.word 0xAA55
 
 	# offset 512, entry point
-	# 이쪽부터 시작이다.(setup). 점프 코드 뒤에 header 정보가 이어진다.
+	# 여기부터 시작이다.(setup). 점프 코드 뒤에 header 정보가 이어진다.
 	.globl	_start
 _start:
 		# Explicitly enter this as bytes, or the assembler
@@ -263,11 +263,11 @@ start_of_setup:
 # which happened to work by accident for the old code.  Recalculate the stack
 # pointer if %ss is invalid.  Otherwise leave it alone, LOADLIN sets up the
 # stack behind its own code, so we can't blindly put it directly past the heap.
-
+	# 스택 계산하는 코드
 	movw	%ss, %dx
 	cmpw	%ax, %dx	# %ds == %ss?
 	movw	%sp, %dx
-	je	2f		# -> assume %sp is reasonably set # 보통은 2:로 간다.
+	je	2f		# -> assume %sp is reasonably set # 보통은 2: 레이블로 간다.
 
 	# Invalid %ss, make up a new stack # ss와 ds가 같지 않을때의 예외처리
 	movw	$_end, %dx # 커널 setup 끝?
@@ -294,10 +294,12 @@ start_of_setup:
 6:
 
 # Check signature at end of setup
+# setup signature 
 	cmpl	$0x5a5aaa55, setup_sig # aa55 5a5a 확인
 	jne	setup_bad
 
 # Zero the bss
+# BSS도 초기화한다.
 	movw	$__bss_start, %di
 	movw	$_end+3, %cx # 12바이트 더 쓴다?
 	xorl	%eax, %eax

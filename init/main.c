@@ -482,7 +482,9 @@ asmlinkage void __init start_kernel(void)
 	 * Need to run as early as possible, to initialize the
 	 * lockdep hash:
 	 */
-	/* lockdep hash table list 초기화 */
+	/* lockdep hash table list 초기화
+	 * 디버깅 관련 초기화
+	 */
 	lockdep_init();
 	debug_objects_early_init();
 

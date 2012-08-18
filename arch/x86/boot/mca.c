@@ -16,7 +16,7 @@
 #include "boot.h"
 
 /**
- @brief	MCA: http://blog.naver.com/PostView.nhn?blogId=jandark25&logNo=60064229440&redirect=Dlog&widgetTypeCall=true\n
+ @brief	MCA: MircoChannel Architecture http://blog.naver.com/PostView.nhn?blogId=jandark25&logNo=60064229440&redirect=Dlog&widgetTypeCall=true\n
 	 MCA: IBM사가 ISA버스의 후속규격으로 정한 버스(컴퓨터 내부의 데이터 전송로)규격.\n
 	 boot_params.sys_desc_table 에 테이블 정보가 복사된다.
  @return	성공시:0, 실패시:-1

@@ -930,6 +930,7 @@ static ssize_t extract_entropy_user(struct entropy_store *r, void __user *buf,
  * number of good random numbers, suitable for seeding TCP sequence
  * numbers, etc.
  */
+
 void get_random_bytes(void *buf, int nbytes)
 {
 	char *p = buf;

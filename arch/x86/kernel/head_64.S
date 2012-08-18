@@ -46,6 +46,9 @@ L3_START_KERNEL = pud_index(__START_KERNEL_map)
 startup_64:
 
 	/*
+	 * CS.L=1, CS.D=1은 주석 오류라고 추측한다.
+	 * 이러면 GP fault가 발생한다.
+	 * 
 	 * At this point the CPU runs in 64bit mode CS.L = 1 CS.D = 1,
 	 * and someone has loaded an identity mapped page table
 	 * for us.  These identity mapped page tables map all of the
@@ -63,16 +66,17 @@ startup_64:
 	 * tables and then reload them.
 	 */
 
-		/* 압축풀린 커널 부분의 시작 */
+	/* 압축풀린 커널 부분의 시작 */
 	/* Compute the delta between the address I am compiled to run at and the
 	 * address I am actually running at.
 	 */
 	
 	leaq	_text(%rip), %rbp /* 실행중인 코드 시작부분이 될 것이다. */
 	subq	$_text - __START_KERNEL_map, %rbp /* $_text는 VMA의 direct mapping구역 + 16M 이 될 것이다. */
-		/* 0xffffffff80000000은 +-해서 사라지고 16M이 남는다. 실행중인 메모리 위치에서 16M을 빼주면 보통 0이 될 것이다. */
-		/* 결론은 실행중인 위치와 컴파일시 위치의 갭을 구한다. */
-		
+	/* 0xffffffff80000000은 +-해서 사라지고 16M이 남는다.
+	 * 실행중인 메모리 위치에서 16M을 빼주면 보통 0이 될 것이다. */
+	/* 결론은 실행중인 위치와 컴파일시 위치의 갭을 구한다. */
+
 	/* Is the address not 2M aligned? */
 	movq	%rbp, %rax
 	andl	$~PMD_PAGE_MASK, %eax /* 2M 아랫부분 */
@@ -87,12 +91,12 @@ startup_64:
 
 	/* Fixup the physical addresses in the page table
 	 */
-    /* 실행중인 위치와의 차이를 더한다. */
+	/* 실행중인 위치와의 차이를 더한다. */
 	addq	%rbp, init_level4_pgt + 0(%rip)
 	addq	%rbp, init_level4_pgt + (L4_PAGE_OFFSET*8)(%rip)
-/*	ffff880000000000 - ffffc7ffffffffff (=64 TB) direct mapping of all phys. memory 의 L4 주소에 시작주소(LMA)를 더한다 */
+	/* ffff880000000000 - ffffc7ffffffffff (=64 TB) direct mapping of all phys. memory 의 L4 주소에 시작주소(LMA)를 더한다 */
 	addq	%rbp, init_level4_pgt + (L4_START_KERNEL*8)(%rip)
-/* ffffffffa0000000 - fffffffffff00000 (=1536 MB) module mapping space 공간의 L4를 주소에 구해 시작주소를 더한다. */
+	/* ffffffffa0000000 - fffffffffff00000 (=1536 MB) module mapping space 공간의 L4를 주소에 구해 시작주소를 더한다. */
 		/* 아래 사용할 영역들에 base주소를 모두 더한다. */
 	addq	%rbp, level3_ident_pgt + 0(%rip)
 
@@ -102,8 +106,8 @@ startup_64:
 	addq	%rbp, level2_fixmap_pgt + (506*8)(%rip)
 
 	/* Add an Identity mapping if I am above 1G */
-		/* PMD 한 페이지를 꽉 채우면 1G라 이걸 넘어서면 새 PUD가 필요하다. */
-		/* 로드된 위치가 1G를 넘는지 체크해서 넘으면 새로 생성 */
+	/* PMD 한 페이지를 꽉 채우면 1G라 이걸 넘어서면 새 PUD가 필요하다. */
+	/* 로드된 위치가 1G를 넘는지 체크해서 넘으면 새로 생성 */
 	leaq	_text(%rip), %rdi
 	andq	$PMD_PAGE_MASK, %rdi /* PMD이상(PMD,PUD,PGD)만 남는다. */
 
@@ -168,7 +172,9 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	 * to have any identity mapped pages in the kernel page table
 	 * after the boot processor executes this code.
 	 */
-	/* 다른 코어들이 사용하도록 PAE등과 페이징을 다시 초기화 해주는것 같다. */
+	/* trampoline에서 들어오면 다른 코어들이 사용하도록
+	 * PAE등과 페이징을 다시 초기화 해주는것 같다.
+	 */
 	/* Enable PAE mode and PGE */
 	movl	$(X86_CR4_PAE | X86_CR4_PGE), %eax /* PAE와 PGE를 켠다. */
 	movq	%rax, %cr4
@@ -179,7 +185,8 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	movq	%rax, %cr3
 
 	/* Ensure I am executing from virtual addresses */
-	movq	$1f, %rax 			/* 0-512M의 물리메모리와 매핑시킨 VMA(0xffffffff80000000)로 점프 */
+	/* 0-512M의 물리메모리와 매핑시킨 VMA(0xffffffff80000000)로 점프 */
+	movq	$1f, %rax
 	jmp	*%rax
 1:
 
@@ -191,7 +198,8 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	/* Setup EFER (Extended Feature Enable Register) */
 	movl	$MSR_EFER, %ecx
 	rdmsr
-	btsl	$_EFER_SCE, %eax	/* Enable System Call */		/* SYSCALL/SYSRET를 켠다. */
+	/* SYSCALL/SYSRET를 켠다. */
+	btsl	$_EFER_SCE, %eax	/* Enable System Call */
 	btl	$20,%edi		/* No Execute supported? */
 	jnc     1f
 	btsl	$_EFER_NX, %eax		/* 데이터 영역에서 실행하려 하면 page fault 예외가 발생한다. */
@@ -248,7 +256,8 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 
 	/* esi is pointer to real mode structure with interesting info.
 	   pass it to C */
-	movl	%esi, %edi			/* 리얼모드에서 얻은 boot 파라미터 포인터를 첫번째 인자로 전달 */
+	/* 리얼모드에서 얻은 boot 파라미터 포인터를 첫번째 인자로 전달 */
+	movl	%esi, %edi
 	
 	/* Finally jump to run C code and to be on real kernel address
 	 * Since we are running on identity-mapped space we have to jump
@@ -256,7 +265,8 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	 * jump.  In addition we need to ensure %cs is set so we make this
 	 * a far return.
 	 */
-	movq	initial_code(%rip),%rax /* 바로 아래 있다. */
+	/* 바로 아래 있는 x86_64_start_kernel의 코드로 넘어간다. */
+	movq	initial_code(%rip),%rax
 	pushq	$0		# fake return address to stop unwinder
 	pushq	$__KERNEL_CS	# set correct cs
 	pushq	%rax		# target address in negative space /* x86_64_start_kernel 주소 */

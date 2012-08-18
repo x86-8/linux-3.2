@@ -22,13 +22,17 @@
 /**
  @brief	Realmode switch hook 사용 여부를 확인하여 사용하면 realmode_hook을 호출하고 아니면 모든 Interrupt 를 Disable 한다.
  */
+
+
 static void realmode_switch_hook(void)
 {
+	/* 보호모드로 가기 전에 특정 함수를 호출할수 있다. */
 	if (boot_params.hdr.realmode_swtch) {
 		asm volatile("lcallw *%0"
 			     : : "m" (boot_params.hdr.realmode_swtch)
 			     : "eax", "ebx", "ecx", "edx");
 	} else {
+		/* 보통은 이쪽이다. */
 		asm volatile("cli");	// Interrupt Clear.
 		outb(0x80, 0x70); /* Disable NMI */	// Non-Maskable Interrupt
 		io_delay();
@@ -128,7 +132,7 @@ void go_to_protected_mode(void)
 
 	/* Actual transition to protected mode... */
 	setup_idt();		/* idt 초기화 */
-	setup_gdt();		/* 임시 gdt 설정 */
+	setup_gdt();		/* 보호모드로 가기 전에 임시 gdt 설정 */
 	protected_mode_jump(boot_params.hdr.code32_start,
 						(u32)&boot_params + (ds() << 4)); // 초기화하며 저장한 파라미터들 & 헤더
 }

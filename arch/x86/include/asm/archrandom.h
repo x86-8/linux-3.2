@@ -38,7 +38,13 @@
 #endif
 
 #ifdef CONFIG_ARCH_RANDOM
-
+/* 0F C7 /6 : RDRAND r16
+ * 지원하는지는 CPUID를 통해 알 수 있다.
+ * Ref) http://en.wikipedia.org/wiki/RdRand
+ * CF가 1이면 register 가 valid 하지 않다.
+ * f0이 ok를 뜻하지 않는가 추측.
+ * http://software.intel.com/en-us/articles/intel-digital-random-number-generator-drng-software-implementation-guide/?
+ */
 #define GET_RANDOM(name, type, rdrand, nop)			\
 static inline int name(type *v)					\
 {								\

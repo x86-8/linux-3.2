@@ -34,7 +34,8 @@
 #include <asm/processor-flags.h>
 #include <asm/asm-offsets.h>
 	/* 압축된 커널의 첫부분은 .head.text 섹션이다. */
-	__HEAD 						/* #define __HEAD .section ".head.text","ax" */
+	/* #define __HEAD .section ".head.text","ax" */
+	__HEAD
 	.code32
 ENTRY(startup_32)
 	cld
@@ -63,8 +64,9 @@ ENTRY(startup_32)
  * data at 0x1e4 (defined as a scratch field) are used as the stack
  * for this calculation. Only 4 bytes are needed.
  */
-		/* 시작주소를 얻기 위해 esi(&boot_params)를 참조한다. */
-		/* 이 뒤쪽에서 계산을 통해 ebx는 커널의 시작위치, ebp는 (16M정렬한곳) + z_extract_offset으로 쓰인다. */
+	/* 시작주소를 얻기 위해 esi(&boot_params)를 참조한다. */
+	/* 이 뒤쪽에서 계산을 통해 ebx는 커널의 시작위치,
+	 * ebp는 (16M정렬한곳) + z_extract_offset으로 쓰인다. */
 
 	leal	(BP_scratch+4)(%esi), %esp /* 스택 임시 설정 */
 	call	1f
@@ -110,7 +112,8 @@ ENTRY(startup_32)
  */
 
 	/* Load new GDT with the 64bit segments using 32bit descriptor */
-	leal	gdt(%ebp), %eax  /* head_64.S 끝에 미리 준비해둔 gdt(+시작주소) */
+	/* head_64.S 끝에 미리 준비해둔 gdt(+시작주소) */
+	leal	gdt(%ebp), %eax
 	movl	%eax, gdt+2(%ebp)
 	lgdt	gdt(%ebp)
 
@@ -125,8 +128,9 @@ ENTRY(startup_32)
 	leal	pgtable(%ebx), %edi /* head_64 끝(pgtable) + 압축 풀 주소(ebx) */
 	xorl	%eax, %eax
 	movl	$((4096*6)/4), %ecx /* 4k 페이지 테이블 블럭 6개를 초기화 */
-	rep	stosl					/* 16M + z_extract_offset 의 6페이지(24KB)를 청소한다. */
-	
+	/* 16M + z_extract_offset 의 6페이지(24KB)를 청소한다. */
+	rep	stosl
+
 	/* Long mode에서 2M-long mode로 4G 메모리를 위한 page table을 세팅한다. */
 		/* 0에서 4GB까지 가상주소와 물리주소를 1:1로 매핑한다. */
 	/* Build Level 4 */
@@ -238,7 +242,8 @@ ENTRY(startup_64)
 	/* Start with the delta to where the kernel will run at. */
 		/* 압축푼 커널 위치를 구한다. 이 코드 끝에서 rbp로 점프한다. */
 #ifdef CONFIG_RELOCATABLE
-	leaq	startup_32(%rip) /* - $startup_32 */, %rbp  /* 64비트에 들어왔기 때문에 시작주소를 다시 구한다. */
+	/* 64비트에 들어왔기 때문에 시작주소를 다시 구한다. */
+	leaq	startup_32(%rip) /* - $startup_32 */, %rbp
 	movl	BP_kernel_alignment(%rsi), %eax
 	decl	%eax
 	addq	%rax, %rbp
@@ -249,9 +254,10 @@ ENTRY(startup_64)
 #endif
 
 	/* Target address to relocate to for decompression */
-	leaq	z_extract_offset(%rbp), %rbx /* 옮길곳이다. z_extract_offset는 압축원본과 풀린크기의 차에 약간의 공간을 더해준 것이다. */
-		/* rbp + 압축차이면 결국 16M부터 압축풀린 크기만큼(+a) 뒷 주소이다. */
+	/* 옮길곳이다. z_extract_offset는 압축원본과 풀린크기의 차에 약간의 공간을 더해준 것이다. */
+	leaq	z_extract_offset(%rbp), %rbx
 
+	/* rbp + 압축차이면 결국 16M부터 압축풀린 크기만큼(+a) 뒷 주소이다. */
 	/* Set up the stack */
 	leaq	boot_stack_end(%rbx), %rsp /* 옮길곳의 스택 지정 */
 
@@ -268,9 +274,12 @@ ENTRY(startup_64)
  */
 
 	pushq	%rsi
-	leaq	(_bss-8)(%rip), %rsi /* 원본 위치 = 현재 실행되는 코드중 필요한 영역들을 포함한 마지막 주소 */
-	leaq	(_bss-8)(%rbx), %rdi /* 옮길 위치 = 압축풀린크기+약간의 공간 (16M + z_extract_offset + _bss) */
-	movq	$_bss /* - $startup_32 */, %rcx /* _bss의 위치는 .text, .rodata, .got, .data 영역의 크기. */
+	/* 원본 위치 = 현재 실행되는 코드중 필요한 영역들을 포함한 마지막 주소 */
+	leaq	(_bss-8)(%rip), %rsi
+	/* 옮길 위치 = 압축풀린크기+약간의 공간 (16M + z_extract_offset + _bss) */
+	leaq	(_bss-8)(%rbx), %rdi
+	/* _bss의 위치는 .text, .rodata, .got, .data 영역의 크기. */
+	movq	$_bss /* - $startup_32 */, %rcx
 	shrq	$3, %rcx /* count ; 8byte로 나눈다 */
 	std /* direction flag를 set해서 스트링 명령의 si,di를 감소 */
 	rep	movsq /* 현재 1M쯤에 위치한 코드를 16M부터 압축풀릴크기만큼 뒤에 역순으로 복사 */
@@ -330,8 +339,10 @@ relocated:
 /*
  * Jump to the decompressed kernel.
  */
-	jmp	*%rbp					/* 압축을 푼 위치로 점프 */
-		/* .data와 .bss등 영역은 링크 스크립트에서 뒤쪽 영역으로 배치된다. 고로 압축 푸는 과정에서도 안전하다. */
+	/* 압축을 푼 위치로 점프 */
+	jmp	*%rbp
+	/* .data와 .bss등 영역은 링크 스크립트에서 뒤쪽 영역으로 배치된다.
+	 * 고로 압축 푸는 과정에서도 안전하다. */
 	.data
 gdt:
 	.word	gdt_end - gdt

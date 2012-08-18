@@ -74,13 +74,14 @@ void __init x86_64_start_kernel(char * real_mode_data)
 	BUILD_BUG_ON(__fix_to_virt(__end_of_fixed_addresses) <= MODULES_END);
 
 	/* clear bss before set_intr_gate with early_idt_handler */
-	clear_bss();				/* bss 초기화 (__bss_start부터 __bss_stop) */
+	/* bss 초기화 (__bss_start부터 __bss_stop) */
+	clear_bss();
 
 	/* Make NULL pointers segfault */
 	zap_identity_mappings();
 
 	max_pfn_mapped = KERNEL_IMAGE_SIZE >> PAGE_SHIFT; /* 512M / 4K  매핑되는 최대 페이지 프레임 넘버*/
-
+	/* 예외 처리 인터럽트들 설정 */
 	for (i = 0; i < NUM_EXCEPTION_VECTORS; i++) {
 #ifdef CONFIG_EARLY_PRINTK
 		set_intr_gate(i, &early_idt_handlers[i]); /* 인터럽트 예외처리 루틴들을 쓴다. */
@@ -100,7 +101,8 @@ void __init x86_64_start_reservations(char *real_mode_data)
 {
 	copy_bootdata(__va(real_mode_data)); /* &boot_params에 복사 */
 
-	memblock_init();			/* memblock 초기화 */
+	/* memblock 초기화 후 중요 영역들을 memblock에 예약한다. */
+	memblock_init();
 	/* text부터 bss까지의 커널 영역을 memblock에 예약한다. */
 	memblock_x86_reserve_range(__pa_symbol(&_text), __pa_symbol(&__bss_stop), "TEXT DATA BSS");
 
@@ -122,6 +124,7 @@ void __init x86_64_start_reservations(char *real_mode_data)
 	 * At this point everything still needed from the boot loader
 	 * or BIOS or kernel text should be early reserved or marked not
 	 * RAM in e820. All other memory is free game.
-	/* int 15h 서 예약된 부분과 커널/바이오스/부트로더 코드영역  외의 메모리 공간은 예약되어있지 않다. */
+	 /* int 15h 서 예약된 부분과 커널/바이오스/부트로더 코드영역
+	  * 외의 메모리 공간은 예약되어있지 않다. */
 	start_kernel();
 }

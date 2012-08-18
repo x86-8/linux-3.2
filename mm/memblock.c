@@ -858,7 +858,7 @@ void __init memblock_init(void)
 	memblock.memory.regions[0].size = 0;
 	memblock.memory.cnt = 1;
 
-	/* Ditto. = 상동 */
+	/* Ditto. = 위와 같음 */
 	memblock.reserved.regions[0].base = 0;
 	memblock.reserved.regions[0].size = 0;
 	memblock.reserved.cnt = 1;

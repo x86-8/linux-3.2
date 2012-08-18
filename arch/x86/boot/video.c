@@ -329,7 +329,7 @@ static void restore_screen(void)
 
 	store_cursor_position();
 }
-
+/* 기본 그래픽 카드 탐색 및 현재 화면 저장 & 복구 */
 void set_video(void)
 {
 	u16 mode = boot_params.hdr.vid_mode;

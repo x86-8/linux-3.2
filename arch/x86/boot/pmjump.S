@@ -50,7 +50,8 @@ ENDPROC(protected_mode_jump)
 	.section ".text32","ax"
 GLOBAL(in_pm32)
 	# Set up data segments for flat 32-bit mode # 세그먼트들을 0으로 초기화 / flat은 선형으로 이어진 메모리를 말한다.
-	movl	%ecx, %ds /* __BOOT_DS (ds 세그먼트가 위치한 gdt상의 오프셋) */
+	/* __BOOT_DS (ds 세그먼트가 위치한 gdt상의 오프셋) */
+	movl	%ecx, %ds
 	movl	%ecx, %es
 	movl	%ecx, %fs
 	movl	%ecx, %gs
@@ -70,8 +71,9 @@ GLOBAL(in_pm32)
 	xorl	%ebp, %ebp
 	xorl	%edi, %edi
 
-	# Set up LDTR to make Intel VT happy # LDT를 0으로 만든다.
+	# Set up LDTR to make Intel VT happy # LDT 0을 select (아마도 NULL)
 	lldt	%cx
-		/* eax는 hdr.code32_start 이 코드가 끝나고 제어를 넘길 곳(커널본체가 로드된곳)이 들어있다. */
-	jmpl	*%eax			# Jump to the 32-bit entrypoint # setup를 끝내고 커널로 점프한다.
+	/* eax는 hdr.code32_start 이 코드가 끝나고 제어를 넘길 곳(커널본체가 로드된곳)이 들어있다. */
+	# Jump to the 32-bit entrypoint # setup를 끝내고 커널로 점프한다.
+	jmpl	*%eax
 ENDPROC(in_pm32)

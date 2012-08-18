@@ -57,8 +57,8 @@ static void parse_earlyprintk(void)
 	char arg[32];
 	int pos = 0;
 	int port = 0;
-
-	if (cmdline_find_option("earlyprintk", arg, sizeof arg) > 0) { // earlyprintk= 뒤에 오는 값이 arg에 들어간다.
+ // earlyprintk= 뒤에 오는 값이 arg에 들어간다.
+	if (cmdline_find_option("earlyprintk", arg, sizeof arg) > 0) {
 		char *e;
 
 		if (!strncmp(arg, "serial", 6)) {
