@@ -418,12 +418,13 @@ static struct page_address_map page_address_maps[LAST_PKMAP];
 void __init page_address_init(void)
 {
 	int i;
-
-	INIT_LIST_HEAD(&page_address_pool); /* head를 초기화 next=head, prev=헤드 */
+	/* head를 초기화 next=head, prev=헤드 */
+	INIT_LIST_HEAD(&page_address_pool);
 	for (i = 0; i < ARRAY_SIZE(page_address_maps); i++)
 		list_add(&page_address_maps[i].list, &page_address_pool);
 	for (i = 0; i < ARRAY_SIZE(page_address_htable); i++) {
-		INIT_LIST_HEAD(&page_address_htable[i].lh); /* PAE 512혹은 1024개의 해시테이블 초기화 */
+		/* PAE 512혹은 1024개의 해시테이블 초기화 */
+		INIT_LIST_HEAD(&page_address_htable[i].lh);
 		spin_lock_init(&page_address_htable[i].lock);
 	}
 	spin_lock_init(&pool_lock);

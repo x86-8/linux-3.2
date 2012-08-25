@@ -387,6 +387,7 @@ static inline void clts(void)
 
 #endif /* __KERNEL__ */
 
+/* __p 주소를 가지는 캐시 라인을 무효화 */
 static inline void clflush(volatile void *__p)
 {
 	asm volatile("clflush %0" : "+m" (*(volatile char __force *)__p));

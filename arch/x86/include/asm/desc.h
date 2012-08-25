@@ -312,7 +312,8 @@ static inline void _set_gate(int gate, unsigned type, void *addr,
 {
 	gate_desc s;
 
-	pack_gate(&s, type, (unsigned long)addr, dpl, ist, seg); /* 받아온 인자들을 게이트 디스크립터 형식으로 구조체에 쓴다.  */
+	/* 받아온 인자들을 게이트 디스크립터 형식으로 구조체에 쓴다.  */
+	pack_gate(&s, type, (unsigned long)addr, dpl, ist, seg);
 	/*
 	 * does not need to be atomic because it is only done once at
 	 * setup time

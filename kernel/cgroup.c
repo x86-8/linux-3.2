@@ -311,6 +311,7 @@ static int css_set_count;
  * account cgroups in empty hierarchies.
  */
 #define CSS_SET_HASH_BITS	7
+/* 해쉬 테이블 크기는 256 */
 #define CSS_SET_TABLE_SIZE	(1 << CSS_SET_HASH_BITS)
 static struct hlist_head css_set_table[CSS_SET_TABLE_SIZE];
 
@@ -4276,10 +4277,13 @@ EXPORT_SYMBOL_GPL(cgroup_unload_subsys);
  * Initialize cgroups at system boot, and initialize any
  * subsystems that request early init.
  */
+
 int __init cgroup_init_early(void)
 {
  	int i; 
- 	atomic_set(&init_css_set.refcount, 1); /* FIX_: 나중에 쓸 atomic operation의 구조체인 init_css_set의 reference 값을 1로 셋팅해준다. */
+	/* FIX_: 나중에 쓸 atomic operation의 구조체인 init_css_set의
+	 * reference 값을 1로 셋팅해준다. */
+ 	atomic_set(&init_css_set.refcount, 1);
  	INIT_LIST_HEAD(&init_css_set.cg_links);
 	INIT_LIST_HEAD(&init_css_set.tasks);
 	INIT_HLIST_NODE(&init_css_set.hlist);
@@ -4299,7 +4303,8 @@ int __init cgroup_init_early(void)
 		INIT_HLIST_HEAD(&css_set_table[i]);
 
 	/* at bootup time, we don't worry about modular subsystems */
-	for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) { /* CGROUP 개수 */
+	/* CGROUP 개수 */
+	for (i = 0; i < CGROUP_BUILTIN_SUBSYS_COUNT; i++) {
 		struct cgroup_subsys *ss = subsys[i];
 
 		BUG_ON(!ss->name);
@@ -4313,7 +4318,8 @@ int __init cgroup_init_early(void)
 		}
 
 		if (ss->early_init)
-			cgroup_init_subsys(ss); /* 부팅시 Initializing cgroup... 메세지 출력 */
+			/* 부팅시 Initializing cgroup... 메세지 출력 */
+			cgroup_init_subsys(ss);
 	}
 	return 0;
 }

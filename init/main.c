@@ -432,7 +432,7 @@ void __init parse_early_param(void)
 /*
  *	Activate the first processor.
  */
-
+/* boot cpu 번호를 받아서 상태를 모두 1로 만든다.  */
 static void __init boot_cpu_init(void)
 {
 	int cpu = smp_processor_id();
@@ -498,13 +498,13 @@ asmlinkage void __init start_kernel(void)
  * local_irq_disable   
  * arch_local_irq_disable -> native_irq_disable는 인터럽트를 금지(cli)
  * native_irq_enable은 인터럽트 허용(sti)
- */
-
-/* local_irq_enable/disable은 인터럽트를 허용/금지한다.
+ *
+ * local_irq_enable/disable은 인터럽트를 허용/금지한다.
  * local_irq_save는 플래그 상태를 인자에 저장하고 인터럽트를 금지한다.
  * local_irq_restore는 플래그 상태를 복원한다. 때문에 인터럽트 허용/금지상태까지 복원한다.
  * local_irq_save/restore -> raw_local_irq_save/restore -> native_save/restore_fl
  */
+	/* 인터럽트 금지 */
 	local_irq_disable();
 	early_boot_irqs_disabled = true;
 
@@ -512,7 +512,7 @@ asmlinkage void __init start_kernel(void)
  * Interrupts are still disabled. Do necessary setups, then
  * enable them
  */
- // 참조: http://blog.daum.net/english_100/69
+	/* 참조: http://blog.daum.net/english_100/69 */
 	tick_init();
 	boot_cpu_init();
 	page_address_init();

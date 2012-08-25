@@ -254,7 +254,8 @@ int cpumask_any_but(const struct cpumask *mask, unsigned int cpu);
  */
 static inline void cpumask_set_cpu(unsigned int cpu, struct cpumask *dstp)
 {
-	set_bit(cpumask_check(cpu), cpumask_bits(dstp)); /* 비트 배열 포인터(*dstp)에서 cpu에 해당하는 비트를 1로 셋 */
+	/* 비트 배열 포인터(*dstp)에서 cpu에 해당하는 비트를 1로 셋 */
+	set_bit(cpumask_check(cpu), cpumask_bits(dstp));
 }
 
 /**

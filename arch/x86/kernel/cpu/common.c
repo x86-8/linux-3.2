@@ -656,6 +656,7 @@ static void __cpuinit identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
  * WARNING: this function is only called on the BP.  Don't add code here
  * that is supposed to run on all CPUs.
  */
+/* CPU에 따라 물리, 가상메모리, 캐시 라인 크기등이 세팅된다. */
 static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 {
 #ifdef CONFIG_X86_64
@@ -698,8 +699,11 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 	if (this_cpu->c_bsp_init)
 		this_cpu->c_bsp_init(c);
 }
-/* http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/59572c5d-05a4-492f-b52e-4823d9fa7a88 */
 
+/* http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/59572c5d-05a4-492f-b52e-4823d9fa7a88
+ * 각 함수에 해당하는 device 함수를 호출한다.
+ * 64비트에서는 intel, amd, via밖에 없다.
+ */
 void __init early_cpu_init(void)
 {
 	const struct cpu_dev *const *cdev;
@@ -710,16 +714,19 @@ void __init early_cpu_init(void)
 #endif
 	/* __x86_cpu_dev_start 는 .x86_cpu_dev.init 섹션의 시작지점이다.
 	 * arch/x86/kernel/cpu/Makefile 과 ld 스크립트 참조
-	 * 각각의 cpu 파일(intel.c ...)에서 cpu_dev_register 매크로에 의해 .x86_cpu_dev.init 섹션에 들어간다.
-	 * 
+	 * 각각의 cpu 파일(intel.c ...)에서
+	 * cpu_dev_register 매크로에 의해 .x86_cpu_dev.init 섹션에 들어간다.
 	 */
 
 	for (cdev = __x86_cpu_dev_start; cdev < __x86_cpu_dev_end; cdev++) {
-		const struct cpu_dev *cpudev = *cdev; /* 각 cpu 구조체 주소 intel_cpu_dev ... */
+		/* 각 cpu 구조체 주소 intel_cpu_dev ... */
+		const struct cpu_dev *cpudev = *cdev;
 
-		if (count >= X86_VENDOR_NUM) /* x86의 벤더수  */
+		/* x86의 벤더수  */
+		if (count >= X86_VENDOR_NUM)
 			break;
-		cpu_devs[count] = cpudev; /* cpu 구조체들 배열에 하나씩 넣는다. */
+		/* cpu 구조체들 배열에 하나씩 넣는다. */
+		cpu_devs[count] = cpudev;
 		count++;
 
 #ifdef CONFIG_PROCESSOR_SELECT
@@ -729,8 +736,9 @@ void __init early_cpu_init(void)
 			for (j = 0; j < 2; j++) {
 				if (!cpudev->c_ident[j])
 					continue;
+				/* vendor와 ID "Intel" "GenuineIntel" 등의 CPU 정보 출력 */
 				printk(KERN_INFO "  %s %s\n", cpudev->c_vendor,
-					cpudev->c_ident[j]); /* vendor와 ID "Intel" "GenuineIntel" 등의 CPU 정보 출력 */
+					cpudev->c_ident[j]);
 			}
 		}
 #endif

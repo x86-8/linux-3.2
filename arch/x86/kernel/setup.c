@@ -729,7 +729,8 @@ void __init setup_arch(char **cmdline_p)
 {
 #ifdef CONFIG_X86_32
 	memcpy(&boot_cpu_data, &new_cpu_data, sizeof(new_cpu_data));
-	visws_early_detect();		/* SGI workstation 초기화 */
+	/* SGI workstation 초기화 */
+	visws_early_detect();
 
 	/*
 	 * copy kernel address range established so far and switch
@@ -753,17 +754,27 @@ void __init setup_arch(char **cmdline_p)
 
 	// http://blog.naver.com/PostView.nhn?blogId=idthek&logNo=90120709677&redirect=Dlog&widgetTypeCall=true
 	// http://gnudevel.tistory.com/31
-	olpc_ofw_detect();			/* 어린이의, 어린이를 위한 OLPC open firmware */
+	/* 어린이의, 어린이를 위한 OLPC open firmware */
+	olpc_ofw_detect();
 
-	early_trap_init();			/* breakpoint(3), debug(1), page fault(14) 인터럽트 게이트를 등록하고 lidt 명령어로 idtr에 등록한다. */
+	/* breakpoint(3), debug(1), page fault(14)
+	 * 인터럽트 게이트를 등록하고 lidt 명령어로 idtr에 등록한다.
+	 */
+	early_trap_init();
+	/* 해당하는 cpu를 초기화한다. */
 	early_cpu_init();
-	early_ioremap_init(); // pmd를 fixmap으로 설정해준다.
+	// pmd를 fixmap으로 설정해준다.
+	early_ioremap_init();
 
-	setup_olpc_ofw_pgd();  // not kernel , so pass i'am cool
+	// not kernel , so pass i'am cool
+	setup_olpc_ofw_pgd();
 
-	ROOT_DEV = old_decode_dev(boot_params.hdr.root_dev); /* 옛 장치의 major/minor 번호를 8/8에서 12/20으로 확장 dev_t형 (__kernel_dev_t) */
-	screen_info = boot_params.screen_info; // screen 초기화변수 넣기. 
-	edid_info = boot_params.edid_info;	   /* 모니터에 대한 자세한 정보 - 제조사 이름, 제품 유형, edid 버전 등등 */
+	/* 옛 장치의 major/minor 번호를 8/8에서 12/20으로 확장 dev_t형 (__kernel_dev_t) */
+	ROOT_DEV = old_decode_dev(boot_params.hdr.root_dev);
+	// screen 초기화변수 넣는다. 
+	screen_info = boot_params.screen_info;
+	/* 모니터에 대한 자세한 정보 - 제조사 이름, 제품 유형, edid 버전 등등 */
+	edid_info = boot_params.edid_info;
 #ifdef CONFIG_X86_32
 	apm_info.bios = boot_params.apm_bios_info;
 	ist_info = boot_params.ist_info;

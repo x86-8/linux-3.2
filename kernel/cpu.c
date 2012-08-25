@@ -640,6 +640,7 @@ void set_cpu_present(unsigned int cpu, bool present)
 /* cpu는 cpu 번호 online은 세팅할 값(set,clear) */
 void set_cpu_online(unsigned int cpu, bool online)
 {
+	/* 들어온 값이 set인지 clear인지 */
 	if (online)
 		cpumask_set_cpu(cpu, to_cpumask(cpu_online_bits));
 	else

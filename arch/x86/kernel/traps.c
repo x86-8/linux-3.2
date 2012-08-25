@@ -659,12 +659,14 @@ dotraplinkage void do_iret_error(struct pt_regs *regs, long error_code)
 /* Set of traps needed for early debugging. */
 void __init early_trap_init(void)
 {
- /* errorentry 참조 entry_64.S */
+	/* error entry 참조 entry_64.S */
 	set_intr_gate_ist(1, &debug, DEBUG_STACK); /* debug exception */
 	/* int3 can be called from all */
 	set_system_intr_gate_ist(3, &int3, DEBUG_STACK); /*break point*/
-	set_intr_gate(14, &page_fault);					 /* page fault 루틴 등록 */
-	load_idt(&idt_descr);							 /*  idt를 등록한다 */
+	/* page fault 루틴 등록 do_page_fault */
+	set_intr_gate(14, &page_fault);
+	/*  idt를 등록한다 */
+	load_idt(&idt_descr);
 }
 
 void __init trap_init(void)
