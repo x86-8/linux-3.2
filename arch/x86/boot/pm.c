@@ -112,6 +112,7 @@ static void setup_idt(void)
 
 /*
  * Actual invocation sequence
+ * 32비트 보호모드로 넘아가기 위한 a20, idt, gdt 설정
  */
 void go_to_protected_mode(void)
 {
@@ -131,8 +132,15 @@ void go_to_protected_mode(void)
 	mask_all_interrupts();	/* pic의 인터럽트까지 금지 */
 
 	/* Actual transition to protected mode... */
-	setup_idt();		/* idt 초기화 */
-	setup_gdt();		/* 보호모드로 가기 전에 임시 gdt 설정 */
+	/* idt 초기화 */
+	setup_idt();
+	/* 보호모드로 가기 전에 임시 gdt 설정 */
+	setup_gdt();
+	/* 보호모드로 넘어간 후에 갈 곳인 code32_start는
+	 * 부트로더가 읽어들인 1M상의 커널 공간이다.
+	 * 이동하면 1M이하의 setup 코드는 끝이다.
+	 * boot_params는 여기까지 초기화하면서 저장한 파라미터들 & header
+	 */
 	protected_mode_jump(boot_params.hdr.code32_start,
-						(u32)&boot_params + (ds() << 4)); // 초기화하며 저장한 파라미터들 & 헤더
+						(u32)&boot_params + (ds() << 4));
 }

@@ -14,6 +14,7 @@
  * put it inside the section definition.
  */
 
+/* 가상주소가 아닌 LMA를 구하기 위한 매크로, VMA를 빼서 구한다. */	
 #ifdef CONFIG_X86_32
 #define LOAD_OFFSET __PAGE_OFFSET
 #else

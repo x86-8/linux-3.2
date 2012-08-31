@@ -610,7 +610,9 @@ static DECLARE_BITMAP(cpu_possible_bits, CONFIG_NR_CPUS) __read_mostly;
 const struct cpumask *const cpu_possible_mask = to_cpumask(cpu_possible_bits);
 EXPORT_SYMBOL(cpu_possible_mask);
 
+/* cpu_online_bits 이름으로 CPU갯수(NR_CPUS)만큼 bits 배열 선언 */
 static DECLARE_BITMAP(cpu_online_bits, CONFIG_NR_CPUS) __read_mostly;
+/* 선언한 배열을 cpu_xxxx_mask로 대입 */
 const struct cpumask *const cpu_online_mask = to_cpumask(cpu_online_bits);
 EXPORT_SYMBOL(cpu_online_mask);
 
@@ -637,10 +639,13 @@ void set_cpu_present(unsigned int cpu, bool present)
 	else
 		cpumask_clear_cpu(cpu, to_cpumask(cpu_present_bits));
 }
-/* cpu는 cpu 번호 online은 세팅할 값(set,clear) */
+/*
+ * cpu는 cpu 번호, online은 세팅할 값
+ * 들어온 online 값에 따라 해당 CPU(0,1,2...) 비트를 설정(0/1)
+ */
 void set_cpu_online(unsigned int cpu, bool online)
 {
-	/* 들어온 값이 set인지 clear인지 */
+
 	if (online)
 		cpumask_set_cpu(cpu, to_cpumask(cpu_online_bits));
 	else

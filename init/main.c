@@ -514,10 +514,13 @@ asmlinkage void __init start_kernel(void)
  */
 	/* 참조: http://blog.daum.net/english_100/69 */
 	tick_init();
+	/* boot cpu 상태를 모두 1로 설정 */
 	boot_cpu_init();
 	page_address_init();
+	/* 리눅스 버전,gcc 버전등 linux banner 정보 출력 */
 	printk(KERN_NOTICE "%s", linux_banner);
-	setup_arch(&command_line);	/* 아키텍쳐 의존된 초기화부분 */
+	/* 아키텍쳐 의존된 초기화부분 */
+	setup_arch(&command_line);
 	mm_init_owner(&init_mm, &init_task);
 	mm_init_cpumask(&init_mm);
 	setup_command_line(command_line);
@@ -653,7 +656,8 @@ asmlinkage void __init start_kernel(void)
 	taskstats_init_early();
 	delayacct_init();
 
-	check_bugs();		/* alternative 코드도 검사/치환 */
+	/* alternative 코드도 검사/치환 */
+	check_bugs();
 
 	acpi_early_init(); /* before LAPIC and SMP init */
 	sfi_init_late();

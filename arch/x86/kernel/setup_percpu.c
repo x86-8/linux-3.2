@@ -25,6 +25,7 @@ DEFINE_PER_CPU(int, cpu_number);
 EXPORT_PER_CPU_SYMBOL(cpu_number);
 
 #ifdef CONFIG_X86_64
+/* percpu의 시작주소 */
 #define BOOT_PERCPU_OFFSET ((unsigned long)__per_cpu_load)
 #else
 #define BOOT_PERCPU_OFFSET 0
@@ -33,6 +34,9 @@ EXPORT_PER_CPU_SYMBOL(cpu_number);
 DEFINE_PER_CPU(unsigned long, this_cpu_off) = BOOT_PERCPU_OFFSET;
 EXPORT_PER_CPU_SYMBOL(this_cpu_off);
 
+/* CPU 갯수 만큼 배열 선언
+ * [0 ... N] 은 각각의 배열에 같은 값을 대입한다.
+ */
 unsigned long __per_cpu_offset[NR_CPUS] __read_mostly = {
 	[0 ... NR_CPUS-1] = BOOT_PERCPU_OFFSET,
 };

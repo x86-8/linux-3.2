@@ -27,16 +27,22 @@
 #define GET_CR2_INTO_RCX movq %cr2, %rcx
 #endif
 
+/*
+ * 이 코드는 페이징, 플래그등에 대한 몇가지 작업을 한다.
+ */
+
 /* we are not able to switch in one step to the final KERNEL ADDRESS SPACE
  * because we need identity-mapped pages.
  *
  */
-		/* pud_index는 shift와 mask로 몇번째 pud인지를 구한다. */
+/* pud_index는 shift와 mask로 몇번째 pud인지를 구한다. */
 #define pud_index(x)	(((x) >> PUD_SHIFT) & (PTRS_PER_PUD-1))
 
-L4_PAGE_OFFSET = pgd_index(__PAGE_OFFSET) /* 0xffff88000... */
+/* 0xffff88000... */
+L4_PAGE_OFFSET = pgd_index(__PAGE_OFFSET)
 L3_PAGE_OFFSET = pud_index(__PAGE_OFFSET)
-L4_START_KERNEL = pgd_index(__START_KERNEL_map) /* 0xffffffff80000000 */
+/* 0xffffffff80000000 */
+L4_START_KERNEL = pgd_index(__START_KERNEL_map)
 L3_START_KERNEL = pud_index(__START_KERNEL_map)
 
 	.text
@@ -70,12 +76,18 @@ startup_64:
 	/* Compute the delta between the address I am compiled to run at and the
 	 * address I am actually running at.
 	 */
-	
-	leaq	_text(%rip), %rbp /* 실행중인 코드 시작부분이 될 것이다. */
-	subq	$_text - __START_KERNEL_map, %rbp /* $_text는 VMA의 direct mapping구역 + 16M 이 될 것이다. */
-	/* 0xffffffff80000000은 +-해서 사라지고 16M이 남는다.
-	 * 실행중인 메모리 위치에서 16M을 빼주면 보통 0이 될 것이다. */
-	/* 결론은 실행중인 위치와 컴파일시 위치의 갭을 구한다. */
+
+	/* 실행중인 코드 시작부분이 될 것이다. */
+	leaq	_text(%rip), %rbp
+
+	/* $_text는 VMA의 direct mapping구역 + 16M 이 될 것이다. */
+	subq	$_text - __START_KERNEL_map, %rbp
+
+	/*
+	 * 0xffffffff80000000은 +-해서 사라지고 16M이 남는다.
+	 * 실행중인 메모리 위치에서 16M을 빼주면 보통 0이 된다.
+	 * 결론은 실행중인 위치와 컴파일시 위치의 갭을 구한다.
+	 */
 
 	/* Is the address not 2M aligned? */
 	movq	%rbp, %rax
@@ -91,13 +103,15 @@ startup_64:
 
 	/* Fixup the physical addresses in the page table
 	 */
-	/* 실행중인 위치와의 차이를 더한다. */
+	/* 세팅해놓은 페이지들에 커널이 실행중인 위치와의 갭을 더한다. */
 	addq	%rbp, init_level4_pgt + 0(%rip)
 	addq	%rbp, init_level4_pgt + (L4_PAGE_OFFSET*8)(%rip)
-	/* ffff880000000000 - ffffc7ffffffffff (=64 TB) direct mapping of all phys. memory 의 L4 주소에 시작주소(LMA)를 더한다 */
+	/* ffff880000000000 - ffffc7ffffffffff (=64 TB) direct mapping of all phys.
+	 * memory 의 L4 주소에 시작주소(LMA)를 더한다 */
 	addq	%rbp, init_level4_pgt + (L4_START_KERNEL*8)(%rip)
-	/* ffffffffa0000000 - fffffffffff00000 (=1536 MB) module mapping space 공간의 L4를 주소에 구해 시작주소를 더한다. */
-		/* 아래 사용할 영역들에 base주소를 모두 더한다. */
+	/* ffffffffa0000000 - fffffffffff00000 (=1536 MB) module mapping space
+	 * 공간의 L4를 주소에 구해 시작주소를 더한다.
+	 * 아래 사용할 영역들에 base주소를 모두 더한다. */
 	addq	%rbp, level3_ident_pgt + 0(%rip)
 
 	addq	%rbp, level3_kernel_pgt + (510*8)(%rip)
@@ -138,7 +152,8 @@ ident_complete:
 	leaq	level2_kernel_pgt(%rip), %rdi
  	leaq	4096(%rdi), %r8
 	/* See if it is a valid page table entry */
-1:	testq	$1, 0(%rdi) 		/* Present 비트를 체크한다. (페이지가 있는지 채크) */
+	/* Present 비트를 체크한다. (페이지가 있는지 채크) */
+1:	testq	$1, 0(%rdi)
 	jz	2f
 	addq	%rbp, 0(%rdi)
 	/* Go to the next page */
@@ -157,8 +172,11 @@ ident_complete:
 	 * zeros. Better take a jmp than relying on empty space being
 	 * filled with 0x90 (nop)
 	 */
-	jmp secondary_startup_64	/* ENTRY로 정렬된 곳으로 점프 */
-ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
+	/* ENTRY로 정렬된 곳으로 점프 */
+	jmp secondary_startup_64
+
+	/* BSP와 trampoline를 통한 AP들이 이쪽으로 점프한다. */
+ENTRY(secondary_startup_64)
 	/*
 	 * At this point the CPU runs in 64bit mode CS.L = 1 CS.D = 1,
 	 * and someone has loaded a mapped page table.
@@ -209,16 +227,19 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 #define CR0_STATE	(X86_CR0_PE | X86_CR0_MP | X86_CR0_ET | \
 			 X86_CR0_NE | X86_CR0_WP | X86_CR0_AM | \
 			 X86_CR0_PG)
-	movl	$CR0_STATE, %eax	/* CR0 재설정 */
+	/* CR0 재설정 */
+	movl	$CR0_STATE, %eax
 	/* Make changes effective */
 	movq	%rax, %cr0
 
 	/* Setup a boot time stack */
-	movq stack_start(%rip),%rsp	/* 스택 재설정 */
+	/* 스택 재설정 */
+	movq stack_start(%rip),%rsp
 
 	/* zero EFLAGS after setting rsp */
 	pushq $0
-	popfq						/* 스택(rsp)설정후 eflags 리셋 */
+	/* 스택(rsp)설정후 eflags 리셋 */
+	popfq
 
 	/*
 	 * We must switch to a new descriptor in kernel space for the GDT
@@ -226,7 +247,8 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	 * addresses where we're currently running on. We have to do that here
 	 * because in 32bit we couldn't load a 64bit linear address.
 	 */
-	lgdt	early_gdt_descr(%rip) /* 일단 gdt 설정 */
+	/* 일단 gdt 설정 */
+	lgdt	early_gdt_descr(%rip)
 
 	/* set up data segments */
 	xorl %eax,%eax
@@ -249,7 +271,8 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	 * located at %gs:40.  Note that, on SMP, the boot cpu uses
 	 * init data section till per cpu areas are set up.
 	 */
-	movl	$MSR_GS_BASE,%ecx	/* #define MSR_GS_BASE	0xc0000101 : 64bit GS base */
+	/* #define MSR_GS_BASE	0xc0000101 : 64bit GS base */
+	movl	$MSR_GS_BASE,%ecx
 	movl	initial_gs(%rip),%eax
 	movl	initial_gs+4(%rip),%edx
 	wrmsr	
@@ -269,7 +292,8 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	movq	initial_code(%rip),%rax
 	pushq	$0		# fake return address to stop unwinder
 	pushq	$__KERNEL_CS	# set correct cs
-	pushq	%rax		# target address in negative space /* x86_64_start_kernel 주소 */
+	/* x86_64_start_kernel 주소 */
+	pushq	%rax		# target address in negative space
 	lretq
 
 	/* SMP bootup changes these two */
@@ -280,9 +304,10 @@ ENTRY(secondary_startup_64)		/* trampoline에서 이쪽으로 점프한다. */
 	ENTRY(initial_gs)
 	.quad	INIT_PER_CPU_VAR(irq_stack_union)
 
-	/* 스택은 .ref.data 섹션을 가리키고 있다.
+	/*
+	 * 스택은 .ref.data 섹션을 가리키고 있다.
 	 * 기본 thread_info와 task_struct가 이곳에 설정되어 있다.
-	*/
+	 */
 	ENTRY(stack_start)
 	.quad  init_thread_union+THREAD_SIZE-8
 	.word  0
@@ -371,14 +396,16 @@ ENTRY(name)
  * 커널영역 0xffffffff80000000은 물리메모리 0번지를 매핑
  * 페이지 테이블 크기로 정렬후 심볼 지정(NEXT_PAGE)
  * 내부는 다음 레벨의 페이지 테이블 내용을 담고 있다.
-*/
-/* linux-x86-8/Documentation/x86/x86_64/mm.txt 참조
+ *
+ * linux-x86-8/Documentation/x86/x86_64/mm.txt 참조
  * init_level4_pgt는 direct mapping된 가상주소공간이다.
  * 때문에 페이지 엔트리에서 물리주소를 쓸때는 0xfff...8000을 빼준다.
  * C 포인터에 init_level... 심볼을 대입하면 바로 접근이 가능하다.
+ * 오프셋에 __START_KERNEL_map을 빼주는 이유는 오프셋이 VMA로 계산되기 때문인것 같다.
  */
-NEXT_PAGE(init_level4_pgt)	  /* 오프셋에 __START_KERNEL_map을 빼주는 이유는 오프셋이 VMA로 계산되기 때문인것 같다. */
-	.quad	level3_ident_pgt - __START_KERNEL_map + _KERNPG_TABLE /* level3_ident_pgt의 상대주소 */
+NEXT_PAGE(init_level4_pgt)
+	/* level3_ident_pgt의 상대주소 */
+	.quad	level3_ident_pgt - __START_KERNEL_map + _KERNPG_TABLE
 	.org	init_level4_pgt + L4_PAGE_OFFSET*8, 0 /* 0xffff8800.. 의 LV4 인덱스 */
 	.quad	level3_ident_pgt - __START_KERNEL_map + _KERNPG_TABLE
 	.org	init_level4_pgt + L4_START_KERNEL*8, 0 /* 0xffffffff800..(커널) 영역의 LV4 인덱스 */
@@ -421,8 +448,9 @@ NEXT_PAGE(level2_kernel_pgt)	/* 커널의 512M 매핑영역 */
 	 *  If you want to increase this then increase MODULES_VADDR
 	 *  too.)
 	 */
+	/* LARGE가 붙은건 2M 페이징이다. KERNEL_IMAGE_SIZE는 512M / 2M (PMD크기) = 256개. 0xffffffff80000000영역은 물리메모리 0부터 512M만 매핑하면 된다. */
 	PMDS(0, __PAGE_KERNEL_LARGE_EXEC,
-		KERNEL_IMAGE_SIZE/PMD_SIZE) /* LARGE가 붙은건 2M 페이징이다. KERNEL_IMAGE_SIZE는 512M / 2M (PMD크기) = 256개. 0xffffffff80000000영역은 물리메모리 0부터 512M만 매핑하면 된다. */
+		KERNEL_IMAGE_SIZE/PMD_SIZE)
 
 NEXT_PAGE(level2_spare_pgt)
 	.fill   512, 8, 0

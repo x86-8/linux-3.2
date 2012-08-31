@@ -690,7 +690,9 @@
  * @cacheline is used to align subsections to avoid false cacheline
  * sharing between subsections for different purposes.
  */
- /* cache miss를 줄이기 위해 cache line 단위로 자료구조를 나눈다. */
+ /* cache miss를 줄이기 위해 cache line 단위로 자료구조를 나눈다.
+  * PERCPU 안에 들어가는 세부적인 섹션들 선언
+  */
 #define PERCPU_INPUT(cacheline)						\
 	VMLINUX_SYMBOL(__per_cpu_start) = .;				\
 	*(.data..percpu..first)						\
@@ -727,7 +729,10 @@
  * If there is no need to put the percpu section at a predetermined
  * address, use PERCPU_SECTION.
  */
- /*  percpu가 위치하는곳 */
+ /* percpu가 위치하는곳
+  * .data..percpu와 세부적인 섹션들(PERCPU_INPUT)을 선언한다.
+  * AT으로 LMA 세팅후 VMA 증가
+  */
 #define PERCPU_VADDR(cacheline, vaddr, phdr)				\
 	VMLINUX_SYMBOL(__per_cpu_load) = .;				\
 	.data..percpu vaddr : AT(VMLINUX_SYMBOL(__per_cpu_load)		\

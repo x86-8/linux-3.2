@@ -718,6 +718,7 @@ static inline void sync_core(void)
 {
 	int tmp;
 
+	/* 386과 486은 투기적 분기 실행을 하지 않기 때문에 jmp로 장벽을 친다. */
 #if defined(CONFIG_M386) || defined(CONFIG_M486)
 	if (boot_cpu_data.x86 < 5)
 		/* There is no speculative execution.

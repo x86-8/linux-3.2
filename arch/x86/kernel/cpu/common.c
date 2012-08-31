@@ -700,7 +700,8 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 		this_cpu->c_bsp_init(c);
 }
 
-/* http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/59572c5d-05a4-492f-b52e-4823d9fa7a88
+/*
+ * http://social.msdn.microsoft.com/Forums/en-US/vcgeneral/thread/59572c5d-05a4-492f-b52e-4823d9fa7a88
  * 각 함수에 해당하는 device 함수를 호출한다.
  * 64비트에서는 intel, amd, via밖에 없다.
  */

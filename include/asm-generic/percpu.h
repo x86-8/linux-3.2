@@ -89,6 +89,7 @@ extern void setup_per_cpu_areas(void);
 
 #ifndef PER_CPU_BASE_SECTION
 #ifdef CONFIG_SMP
+/* SMP면 ..percpu 섹션에 할당 */
 #define PER_CPU_BASE_SECTION ".data..percpu"
 #else
 #define PER_CPU_BASE_SECTION ".data"

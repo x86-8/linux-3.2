@@ -348,19 +348,22 @@ static int __init early_ioremap_debug_setup(char *str)
 early_param("early_ioremap_debug", early_ioremap_debug_setup);
 
 static __initdata int after_paging_init;
-// 1페이지 크기만큼 pte변수를 생성
-/* 64비트에서는 512개 */
+
+/*
+ * 1페이지 크기만큼 pte변수를 생성
+ * 64비트에서는 512개
+ */
 static pte_t bm_pte[PAGE_SIZE/sizeof(pte_t)] __page_aligned_bss;
 
 static inline pmd_t * __init early_ioremap_pmd(unsigned long addr)
 {
 	/* Don't assume we're using swapper_pg_dir at this point */
-	pgd_t *base = __va(read_cr3()); // 가상주소 영역으로 바꾼다.
+	// 가상주소 영역으로 바꾼다.
+	pgd_t *base = __va(read_cr3());
 	pgd_t *pgd = &base[pgd_index(addr)];
 	pud_t *pud = pud_offset(pgd, addr);
 	pmd_t *pmd = pmd_offset(pud, addr);
- // pmd 값(lv2) 를 구해 리턴
-	return pmd;
+	return pmd; // pmd 값(lv2) 를 구해 리턴
 }
 
 /* pte엔트리[addr의엔트리 번호] */
@@ -375,7 +378,7 @@ bool __init is_early_ioremap_ptep(pte_t *ptep)
 }
 
 /** 
- *  long 4개 (FIX_BTMAPS_SLOTS)
+ *  slot 4개 (long) (FIX_BTMAPS_SLOTS : 64 * 4)
  */
 static unsigned long slot_virt[FIX_BTMAPS_SLOTS] __initdata;
 
@@ -387,11 +390,15 @@ void __init early_ioremap_init(void)
 	if (early_ioremap_debug)
 		printk(KERN_INFO "early_ioremap_init()\n");
 
-	for (i = 0; i < FIX_BTMAPS_SLOTS; i++) /* slot_virt  배열(4번)만큼 실행  */
-		slot_virt[i] = __fix_to_virt(FIX_BTMAP_BEGIN - NR_FIX_BTMAPS*i); /* 0이면 0번째 BTMAP 가상주소 1이면 64번째 페이지 가상주소.... */
+	/* slot_virt  배열(4번)만큼 실행  */
+	for (i = 0; i < FIX_BTMAPS_SLOTS; i++)
+		/* 0이면 0번째 BTMAP 가상주소 1이면 64번째 페이지 가상주소.... */
+		slot_virt[i] = __fix_to_virt(FIX_BTMAP_BEGIN - NR_FIX_BTMAPS*i);
 
-	pmd = early_ioremap_pmd(fix_to_virt(FIX_BTMAP_BEGIN)); // FIX_BTMAP_BEGIN의 pmd를 구한다.
-	memset(bm_pte, 0, sizeof(bm_pte)); // 비트맵 페이지 초기화
+	// FIX_BTMAP_BEGIN의 pmd를 구한다.
+	pmd = early_ioremap_pmd(fix_to_virt(FIX_BTMAP_BEGIN));
+	// 비트맵 페이지 초기화
+	memset(bm_pte, 0, sizeof(bm_pte));
 	pmd_populate_kernel(&init_mm, pmd, bm_pte);
 
 	/*
@@ -399,7 +406,7 @@ void __init early_ioremap_init(void)
 	 * we are not prepared:
 	 */
 #define __FIXADDR_TOP (-PAGE_SIZE)
-	// 시작과 끝 체크
+	// 시작과 끝 검사
 	BUILD_BUG_ON((__fix_to_virt(FIX_BTMAP_BEGIN) >> PMD_SHIFT)
 		     != (__fix_to_virt(FIX_BTMAP_END) >> PMD_SHIFT));
 #undef __FIXADDR_TOP

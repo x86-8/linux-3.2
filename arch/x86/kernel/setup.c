@@ -717,7 +717,8 @@ early_param("reservelow", parse_reservelow);
  * for initialization.  Note, the efi init code path is determined by the
  * global efi_enabled. This allows the same kernel image to be used on existing
  * systems (with a traditional BIOS) as well as on EFI systems.
- * EFI : http://ko.wikipedia.org/wiki/%ED%99%95%EC%9E%A5_%ED%8E%8C%EC%9B%A8%EC%96%B4_%EC%9D%B8%ED%84%B0%ED%8E%98%EC%9D%B4%EC%8A%A4
+ *
+ * EFI : http://ko.wikipedia.org/w/index.php?title=확장_펌웨어_인터페이스&oldid=8791005
  */
 /*
  * setup_arch - architecture-specific boot-time initializations
@@ -725,6 +726,9 @@ early_param("reservelow", parse_reservelow);
  * Note: On x86_64, fixmaps are ready for use even before this is called.
  */
 
+/*
+ * 아키텍쳐 종속적인 초기화를 한다.
+ */
 void __init setup_arch(char **cmdline_p)
 {
 #ifdef CONFIG_X86_32
@@ -739,11 +743,13 @@ void __init setup_arch(char **cmdline_p)
 	clone_pgd_range(swapper_pg_dir     + KERNEL_PGD_BOUNDARY,
 			initial_page_table + KERNEL_PGD_BOUNDARY,
 			KERNEL_PGD_PTRS);
-
-	load_cr3(swapper_pg_dir);	/* cr3를 swapper_pg_dir로 세팅(물리주소로 변환)
-					 * 커널의 페이징 위치는 swapper_pg_dir이다. */
-	__flush_tlb_all();			/* 페이징 변경후엔 tlb를 초기화 */
+	/* cr3를 swapper_pg_dir로 세팅(물리주소로 변환)
+	 * 커널의 페이징 위치는 swapper_pg_dir이다. */
+	load_cr3(swapper_pg_dir);
+	/* 페이징 변경후엔 tlb를 초기화 */
+	__flush_tlb_all();
 #else
+	/* 이쪽이 64비트 */
 	printk(KERN_INFO "Command line: %s\n", boot_command_line);
 #endif
 
@@ -752,27 +758,31 @@ void __init setup_arch(char **cmdline_p)
 	 * reserve_top(), so do this before touching the ioremap area.
 	 */
 
-	// http://blog.naver.com/PostView.nhn?blogId=idthek&logNo=90120709677&redirect=Dlog&widgetTypeCall=true
-	// http://gnudevel.tistory.com/31
-	/* 어린이의, 어린이를 위한 OLPC open firmware */
+	/* 어린이를 위한 OLPC open firmware */
 	olpc_ofw_detect();
 
 	/* breakpoint(3), debug(1), page fault(14)
-	 * 인터럽트 게이트를 등록하고 lidt 명령어로 idtr에 등록한다.
+	 * 인터럽트 게이트를 등록하고 lidt 명령어로 trap 인터럽트 루틴을 등록한다.
 	 */
 	early_trap_init();
-	/* 해당하는 cpu를 초기화한다. */
+
+	/* 해당하는 cpu의 초기화 함수를 호출 (intel, amd, via) */
 	early_cpu_init();
-	// pmd를 fixmap으로 설정해준다.
+
+	/* 임시 ioremap을 위한 고정된 주소(fixmap)를 설정한다.
+	 * ioremap : http://gnudevel.tistory.com/31
+	 */
 	early_ioremap_init();
 
-	// not kernel , so pass i'am cool
+	/* OLPC를 위한 PGD 예외처리 */
 	setup_olpc_ofw_pgd();
 
-	/* 옛 장치의 major/minor 번호를 8/8에서 12/20으로 확장 dev_t형 (__kernel_dev_t) */
+	/* 옛 장치의 major/minor 번호를 8/8에서 12/20으로 확장 (__kernel_dev_t) */
 	ROOT_DEV = old_decode_dev(boot_params.hdr.root_dev);
-	// screen 초기화변수 넣는다. 
+
+	/* 화면 정보를 저장 */
 	screen_info = boot_params.screen_info;
+
 	/* 모니터에 대한 자세한 정보 - 제조사 이름, 제품 유형, edid 버전 등등 */
 	edid_info = boot_params.edid_info;
 #ifdef CONFIG_X86_32
@@ -786,8 +796,10 @@ void __init setup_arch(char **cmdline_p)
 	}
 #endif
 	saved_video_mode = boot_params.hdr.vid_mode;
-	bootloader_type = boot_params.hdr.type_of_loader; /* type_of_loader에 타입과 버전 정보가 있다 */
-	if ((bootloader_type >> 4) == 0xe) {			  /* type이 0xe면 extended 정보가 활성화 */
+	/* type_of_loader에 타입과 버전 정보가 있다 */
+	bootloader_type = boot_params.hdr.type_of_loader;
+	/* type이 0xe면 extended 정보가 활성화 */
+	if ((bootloader_type >> 4) == 0xe) {
 		bootloader_type &= 0xf;
 		bootloader_type |= (boot_params.hdr.ext_loader_type+0x10) << 4;
 	}
@@ -825,15 +837,17 @@ void __init setup_arch(char **cmdline_p)
 		     "EL64",
 #endif
 		     4)) {
-		efi_enabled = 1; /* efi가 켜있으면 1 */
+		/* 시그니쳐가 해당 아키텍쳐면 괄호안의 루틴 실행 */
+		efi_enabled = 1;
 		efi_memblock_x86_reserve_range();
 		
 	}
 #endif
+	/* x86_init_noop : 빈 루틴 */
+	x86_init.oem.arch_setup();
 
-	x86_init.oem.arch_setup();	/* 없다 */
-
-	iomem_resource.end = (1ULL << boot_cpu_data.x86_phys_bits) - 1; /* 물리 메모리 상한선 early_cpu_init에서 호출. */
+	/* 물리 메모리 상한선 early_cpu_init에서 호출. */
+	iomem_resource.end = (1ULL << boot_cpu_data.x86_phys_bits) - 1;
 	setup_memory_map();
 	parse_setup_data();
 	/* update the e820_saved too */
@@ -848,7 +862,8 @@ void __init setup_arch(char **cmdline_p)
 	init_mm.start_code = (unsigned long) _text;
 	init_mm.end_code = (unsigned long) _etext;
 	init_mm.end_data = (unsigned long) _edata;
-	init_mm.brk = _brk_end;		/* heap은 bss 위쪽에 있다. */
+	/* heap은 bss 위쪽에 있다. */
+	init_mm.brk = _brk_end;
 
 	/* 물리주소 영역들도 세팅 */
 	code_resource.start = virt_to_phys(_text);
@@ -895,7 +910,8 @@ void __init setup_arch(char **cmdline_p)
 	/* 보통은 acpi를 지원하기 때문에 이쪽은 실행되지 않는다. */
 	if (acpi_mps_check()) {
 #ifdef CONFIG_X86_LOCAL_APIC
-		disable_apic = 1; /* apic 를 사용하지 않는다. */
+		/* apic 를 사용하지 않는다. */
+		disable_apic = 1;
 #endif
 		/* cpu 수집 정보에서 APIC를 꺼주고 표시한다. */
 		setup_clear_cpu_cap(X86_FEATURE_APIC);
@@ -908,8 +924,10 @@ void __init setup_arch(char **cmdline_p)
 
 	finish_e820_parsing();
 
-	if (efi_enabled)    /* CONFIG_EFI가 켜있으면 export되어 1이다. */
-		efi_init();	/* EFI runtime 서비스를 사용가능하게 한다. */
+	/* CONFIG_EFI가 켜있으면 export되어 1이다. */
+	if (efi_enabled)
+		/* EFI runtime 서비스를 사용가능하게 한다. */
+		efi_init();
 
 	dmi_scan_machine();
 
@@ -917,9 +935,11 @@ void __init setup_arch(char **cmdline_p)
 	 * VMware detection requires dmi to be available, so this
 	 * needs to be done after dmi_scan_machine, for the BP.
 	 */
-	init_hypervisor_platform(); /* 하이퍼바이저 체크 및 초기화 */
+	/* 하이퍼바이저 체크 및 초기화 */
+	init_hypervisor_platform();
 
-	x86_init.resources.probe_roms(); /* 롬 영역을 스캔하고 자원을 등록한다. */
+	/* 롬 영역을 스캔하고 자원을 등록한다. */
+	x86_init.resources.probe_roms();
 
 	/* after parse_early_param, so could debug it */
 	/* iomem 리소스 아래에 code 리소스를 등록  */
@@ -927,7 +947,8 @@ void __init setup_arch(char **cmdline_p)
 	insert_resource(&iomem_resource, &data_resource);
 	insert_resource(&iomem_resource, &bss_resource);
 
-	trim_bios_range();	/* 하위 1M 메모리의 앞뒤를 짤라준디. */
+	/* 하위 1M 메모리의 앞뒤를 짤라준디. */
+	trim_bios_range();
 #ifdef CONFIG_X86_32
 	if (ppro_with_ram_bug()) {
 		e820_update_range(0x70000000ULL, 0x40000ULL, E820_RAM,
@@ -949,7 +970,9 @@ void __init setup_arch(char **cmdline_p)
 	max_pfn = e820_end_of_ram_pfn();
 
 	/* update e820 for memory not covered by WB MTRRs */
-	mtrr_bp_init();		/* 캐시를 위해 mtrr을 초기화한다. */
+	/* 캐시를 위해 mtrr을 초기화한다. */
+	mtrr_bp_init();
+
 	/* Intel 아키텍쳐에서 WB가 아닌 부분을 e820에서 예약됨으로 업데이트 한다.
 	 * 이렇게 trim되고 e820이 갱신된 부분이 있으면 최대 페이지값을 갱신한다.
 	 */
@@ -964,15 +987,19 @@ void __init setup_arch(char **cmdline_p)
 	/* 최대 물리 페이지 수를 세팅 */
 	num_physpages = max_pfn;
 
-	check_x2apic();		/* intel x2apic 를 지원하는지 체크 */
+	/* intel x2apic 를 지원하는지 체크 */
+	check_x2apic();
 
 	/* How many end-of-memory variables you have, grandma! */
 	/* need this before calling reserve_initrd */
 	/* 64비트에서 메모리크기가 4G보다 크면 low는 최대 4G이다. */
 	if (max_pfn > (1UL<<(32 - PAGE_SHIFT)))
-		max_low_pfn = e820_end_of_low_ram_pfn(); /* max_low_pfn은 max가 4G */
+		/* max_low_pfn은 max가 4G */
+		max_low_pfn = e820_end_of_low_ram_pfn();
 	else
-		max_low_pfn = max_pfn; /* 4G 이하면 그냥 PFN 최대값 */
+		/* 4G 이하면 그냥 PFN 최대값 */
+		max_low_pfn = max_pfn;
+
 	/* 가용 메모리 주소 (가상주소) 끝을 high_memory로 둔다. */
 	high_memory = (void *)__va(max_pfn * PAGE_SIZE - 1) + 1;
 #endif
@@ -980,9 +1007,11 @@ void __init setup_arch(char **cmdline_p)
 	/*
 	 * Find and reserve possible boot-time SMP configuration:
 	 */
-	find_smp_config();	/* 기본메모리에서 smp를 찾아서 예약한다. */
+	/* 기본메모리에서 smp를 찾아서 예약한다. */
+	find_smp_config();
 
-	reserve_ibft_region();	/* iscsi boot firmware table을 검색하고 예약 */
+	/* iscsi boot firmware table을 검색하고 예약 */
+	reserve_ibft_region();
 
 	/*
 	 * Need to conclude brk, before memblock_x86_fill()
@@ -991,9 +1020,12 @@ void __init setup_arch(char **cmdline_p)
 	 */
 	reserve_brk();
 
-	cleanup_highmap();	/* 커널영역 제외 초기화 */
+	/* 커널영역 제외 초기화 */
+	cleanup_highmap();
 
-	memblock.current_limit = get_max_mapped(); /* memblock의 한계를 세팅 (물리메모리?) */
+	/* memblock의 한계를 세팅 (물리메모리?) */
+	memblock.current_limit = get_max_mapped();
+
 	/* e820의 정보(RAM, KERN)를 memblock의 사용가능(memory)한 쪽에 더하고 체크한뒤
 	 * debug 옵션이 켜있으면 memblock 정보를 출력한다.
 	 */
@@ -1010,20 +1042,23 @@ void __init setup_arch(char **cmdline_p)
 	early_reserve_e820_mpc_new();
 
 #ifdef CONFIG_X86_CHECK_BIOS_CORRUPTION
-	/* 바이오스의 커럽션 체크하는걸 셋업한다. */
+	/* 바이오스 64KB에 대한 주기적 오염 검사를 위한 세팅 */
 	setup_bios_corruption_check();
 #endif
 	/* 여기서는 max_pfn이512M이다.  */
 	printk(KERN_DEBUG "initial memory mapped : 0 - %08lx\n",
 			max_pfn_mapped<<PAGE_SHIFT);
 
-	setup_trampolines();	/* trampoline코드를 1M이하로 복사 */
+	/* trampoline코드를 1M이하로 복사 */
+	setup_trampolines();
 
-	init_gbpages();		/* 1GB 페이징이 가능한지 체크 */
+	/* 1GB 페이징이 가능한지 체크 */
+	init_gbpages();
 
 	/* max_pfn_mapped is updated here */
 	/* 4G까지의 메모리 최대 크기 */
 	max_low_pfn_mapped = init_memory_mapping(0, max_low_pfn<<PAGE_SHIFT);
+
 	/* max_pfn을 재지정한다. low(메모리크기,4G) */
 	max_pfn_mapped = max_low_pfn_mapped;
 

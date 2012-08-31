@@ -4,11 +4,13 @@
 #include <linux/linkage.h>
 
 /* L1 cache line size */
-#define L1_CACHE_SHIFT	(CONFIG_X86_L1_CACHE_SHIFT) /* 퍼포먼스를 위해 Cache line만큼 벌린다. */
+/* 퍼포먼스를 위해 Cache line만큼 벌린다. */
+#define L1_CACHE_SHIFT	(CONFIG_X86_L1_CACHE_SHIFT)
 #define L1_CACHE_BYTES	(1 << L1_CACHE_SHIFT)
 
 #define __read_mostly __attribute__((__section__(".data..read_mostly")))
 
+/* 64비트에서는 12 = 4K */
 #define INTERNODE_CACHE_SHIFT CONFIG_X86_INTERNODE_CACHE_SHIFT
 #define INTERNODE_CACHE_BYTES (1 << INTERNODE_CACHE_SHIFT)
 

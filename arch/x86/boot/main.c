@@ -166,7 +166,8 @@ init_heap(void)
 }
 
 /**
- * @brief	main function.
+ * @brief 이 부분은 파라미터 복사, 화면 저장,등 간단한 초기화 부분이다.
+ *        protected 모드로 넘어가기 전까지의 코드이다.
  */
 void main(void)
 {

@@ -25,6 +25,7 @@
  * Example:
  *    PER_CPU(cpu_gdt_descr, %ebx)
  */
+/* PER_CPU로 이 CPU에 해당하는 segment 영역으로 억세스 */
 #ifdef CONFIG_SMP
 #define PER_CPU(var, reg)						\
 	__percpu_mov_op %__percpu_seg:this_cpu_off, reg;		\
@@ -89,8 +90,8 @@
 /* For arch-specific code, we can use direct single-insn ops (they
  * don't give an lvalue though). */
 extern void __bad_percpu_size(void);
+
 /* percpu_xxxx_op의 인자는 (op, dest, src) 로 인텔어셈과 유사하다. */
- /* ax,bx,cx,dx, 즉치값 */
 #define percpu_to_op(op, var, val)			\
 do {							\
 	typedef typeof(var) pto_T__;			\
@@ -182,8 +183,17 @@ do {									\
 	default: __bad_percpu_size();					\
 	}								\
 } while (0)
- /* percpu_arg는 percpu구조체가 있는 영역(gs)을 prefix로 가지킨다. 이 값을 var인자로 온 값을 리턴값으로 넘긴다.(pfo_ret__) */
- /* 가능하면 ax,bx,cx,dx 레지스터 */
+
+ /* 
+  * percpu_arg는 percpu구조체가 있는 영역(gs)을 prefix로 가리킨다.
+  * 64비트는 percpu의 segment는 gs, 32비트는 fs이다.
+  * 이 값을 var인자로 온 값을 pfo_ret__로 선언해서 리턴한다.
+  * var 크기에 따라 op size 또한 변한다. (case 1: byte, case 2: word...)
+  * ( output의 q는 ax,bx,cx,dx / r은 general register)
+  * 
+  * 예를 들면 var 크기가 2byte일때 아래 라인과 같다.
+  * movw gs:[var], [pfo_ret__]
+  */
 #define percpu_from_op(op, var, constraint)		\
 ({							\
 	typeof(var) pfo_ret__;				\
@@ -355,7 +365,7 @@ do {									\
 	pco_ret__;							\
 })
 
-/*퍼씨피유는 쥐씨씨가 퍼씨피유 변수(변수가 access될때마다)를 로드하도록 만들어준다. 
+/*
  * percpu_read() makes gcc load the percpu variable every time it is
  * accessed while percpu_read_stable() allows the value to be cached.
  *
@@ -367,7 +377,11 @@ do {									\
  * stable for the duration of the respective task.
  */
 
- /* 첫번째 인자는 명령어 두번째는 읽을 값, 세번째는 gcc inline asm의 input type  */
+ /*
+  * 첫번째 인자는 명령어 ex. "mov"
+  * 두번째는 읽을 값
+  * 세번째는 gcc inline asm의 input type
+  */
 #define percpu_read(var)		percpu_from_op("mov", var, "m" (var))
  /* stable은 포인터를 통해 값을 읽어온다. %p =  An operand that is a valid memory address is allowed*/
 #define percpu_read_stable(var)		percpu_from_op("mov", var, "p" (&(var)))

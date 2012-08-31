@@ -22,7 +22,8 @@ typedef struct cpumask { DECLARE_BITMAP(bits, NR_CPUS); } cpumask_t;
  */
 #define cpumask_bits(maskp) ((maskp)->bits)
 
-#if NR_CPUS == 1				/* 최대 cpu 개수 = CONFIG_NR_CPUS로 조절가능 */
+/* 최대 cpu 개수 = CONFIG_NR_CPUS로 조절가능 */
+#if NR_CPUS == 1
 #define nr_cpu_ids		1
 #else
 extern int nr_cpu_ids;
@@ -105,7 +106,8 @@ extern const struct cpumask *const cpu_active_mask;
 static inline unsigned int cpumask_check(unsigned int cpu)
 {
 #ifdef CONFIG_DEBUG_PER_CPU_MAPS
-	WARN_ON_ONCE(cpu >= nr_cpumask_bits); /* MAX cpu값보다 현재 구하려는 cpu값이 크면 한번만 경고 */
+	/* MAX cpu값보다 현재 구하려는 cpu값이 크면 한번만 경고 */
+	WARN_ON_ONCE(cpu >= nr_cpumask_bits);
 #endif /* CONFIG_DEBUG_PER_CPU_MAPS */
 	return cpu;
 }

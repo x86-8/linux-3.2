@@ -78,3 +78,4 @@ Study history (날짜:인원:내용)
 69. 2012/08/11:07:*init/main.c* - setup_arch - acpi_boot_table_init
 70. 2012/08/18:05:*init/main.c* - boot_init_stack_canary | 리뷰
 71. 2012/08/25:07:*init/main.c* - early_cpu_init | 리뷰, 회식
+

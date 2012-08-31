@@ -11,6 +11,7 @@
  * linkage errors occur due the compiler generating the wrong code to access
  * that section.
  */
+/* percpu섹션에 밀어넣는 매크로 */
 #define __PCPU_ATTRS(sec)						\
 	__percpu __attribute__((section(PER_CPU_BASE_SECTION sec)))	\
 	PER_CPU_ATTRIBUTES

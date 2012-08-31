@@ -6,7 +6,7 @@
 #ifndef __ASSEMBLY__
 #ifdef	__KERNEL__
 
-/* 비트만큼 선언(올림) */
+/* 변수명(name)으로 비트(bits)만큼 선언(올림) */
 #define DECLARE_BITMAP(name,bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]
 #else

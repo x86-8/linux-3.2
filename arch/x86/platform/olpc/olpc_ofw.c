@@ -85,6 +85,7 @@ EXPORT_SYMBOL_GPL(olpc_ofw_present);
 
 /* OFW starts on a 1MB boundary */
 #define OFW_BOUND (1<<20)
+
 /* 어린이를 위한 OLPC 찾기 */
 void __init olpc_ofw_detect(void)
 {

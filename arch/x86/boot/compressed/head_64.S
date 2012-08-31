@@ -33,8 +33,14 @@
 #include <asm/msr.h>
 #include <asm/processor-flags.h>
 #include <asm/asm-offsets.h>
-	/* 압축된 커널의 첫부분은 .head.text 섹션이다. */
-	/* #define __HEAD .section ".head.text","ax" */
+	
+/*
+ * 이 코드는 압축을 풀기위한 선행작업을 하는 코드이다.
+ * 먼저 gdt와 페이지, 스택 설정, 위치계산, 64비트 진입 코드가 포함되어 있다.
+ *
+ * 압축된 커널의 첫부분은 .head.text 섹션이다.
+ * #define __HEAD .section ".head.text","ax"
+ */
 	__HEAD
 	.code32
 ENTRY(startup_32)
@@ -339,10 +345,11 @@ relocated:
 /*
  * Jump to the decompressed kernel.
  */
-	/* 압축을 푼 위치로 점프 */
+/* 커널 압축을 풀어놓은 위치로 점프 */
 	jmp	*%rbp
-	/* .data와 .bss등 영역은 링크 스크립트에서 뒤쪽 영역으로 배치된다.
-	 * 고로 압축 푸는 과정에서도 안전하다. */
+
+/* .data와 .bss등 영역은 링크 스크립트에서 뒤쪽 영역으로 배치되기 때문에
+ * 압축 푸는 과정에서도 안전하다. */
 	.data
 gdt:
 	.word	gdt_end - gdt
