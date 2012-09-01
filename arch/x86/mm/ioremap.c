@@ -359,6 +359,7 @@ static inline pmd_t * __init early_ioremap_pmd(unsigned long addr)
 {
 	/* Don't assume we're using swapper_pg_dir at this point */
 	// 가상주소 영역으로 바꾼다.
+	// 따라가서 pmd 값을 구한다.
 	pgd_t *base = __va(read_cr3());
 	pgd_t *pgd = &base[pgd_index(addr)];
 	pud_t *pud = pud_offset(pgd, addr);
@@ -397,7 +398,8 @@ void __init early_ioremap_init(void)
 
 	// FIX_BTMAP_BEGIN의 pmd를 구한다.
 	pmd = early_ioremap_pmd(fix_to_virt(FIX_BTMAP_BEGIN));
-	// 비트맵 페이지 초기화
+	// boot-time 페이지 초기화
+	// bm_pte은 512개 크기는 4K
 	memset(bm_pte, 0, sizeof(bm_pte));
 	pmd_populate_kernel(&init_mm, pmd, bm_pte);
 

@@ -75,6 +75,9 @@ extern unsigned long __FIXADDR_TOP;
  * TLB entries of such buffers will not be flushed across
  * task switches.
  */
+/* fixed_addresses를 써서 얻는 장점은 TLB 캐시를 계속 올려놓을 수 있는 것과
+ * 컴파일 타임에 즉치값으로 변경해서 한번 덜 타서 속도가 빨라진다.
+ */
 enum fixed_addresses {
 #ifdef CONFIG_X86_32
 	FIX_HOLE,
@@ -128,15 +131,15 @@ enum fixed_addresses {
 	FIX_LNW_VRTC,
 #endif
 	__end_of_permanent_fixed_addresses,
-	/* 이곳이 FIXADDR의 끝이다. 아래쪽은 부팅시만 사용 */
 	/*
 	 * 256 temporary boot-time mappings, used by early_ioremap(),
 	 * before ioremap() is functional.
 	 *
 	 * If necessary we round it up to the next 256 pages boundary so
 	 * that we can have a single pgd entry and a single pte table:
+	 * 이곳이 FIXADDR의 끝이다. 아래쪽은 부팅시만 사용
+	 * 비트맵이 아니다. 이곳은 boot-time 을 위한 공간이다.
 	 */
-	/* 비트맵이 아니다. 이곳은 boot-time 을 위한 공간이다. */
 #define NR_FIX_BTMAPS		64
 #define FIX_BTMAPS_SLOTS	4
 #define TOTAL_FIX_BTMAPS	(NR_FIX_BTMAPS * FIX_BTMAPS_SLOTS)

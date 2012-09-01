@@ -282,7 +282,8 @@ void *copy_from_gs(void *dst, addr_t src, size_t len);
 void *memcpy(void *dst, void *src, size_t len);
 void *memset(void *dst, int c, size_t len);
 
-#define memcpy(d,s,l) __builtin_memcpy(d,s,l) /* gcc 제공 memcpy */
+/* gcc 제공 memcpy */
+#define memcpy(d,s,l) __builtin_memcpy(d,s,l)
 #define memset(d,c,l) __builtin_memset(d,c,l)
 
 /* a20.c */

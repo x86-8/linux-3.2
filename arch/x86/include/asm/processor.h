@@ -113,7 +113,7 @@ struct cpuinfo_x86 {
 #endif
 	u32			microcode;
 } __attribute__((__aligned__(SMP_CACHE_BYTES)));
-
+/* 빈숫자 4, 6은 뭘까요?*/
 #define X86_VENDOR_INTEL	0
 #define X86_VENDOR_CYRIX	1
 #define X86_VENDOR_AMD		2
@@ -643,6 +643,7 @@ unsigned long get_wchan(struct task_struct *p);
  * Generic CPUID function
  * clear %ecx since some cpus (Cyrix MII) do not set or clear %ecx
  * resulting in stale register contents being returned.
+ * op = eax, ecx 가 0 인 이유는? 밑에 주석에서 보듯이 분류 
  */
 static inline void cpuid(unsigned int op,
 			 unsigned int *eax, unsigned int *ebx,
@@ -654,6 +655,7 @@ static inline void cpuid(unsigned int op,
 }
 
 /* Some CPUID calls want 'count' to be placed in ecx */
+/* cx를 사용하는 cpuid  */
 static inline void cpuid_count(unsigned int op, int count,
 			       unsigned int *eax, unsigned int *ebx,
 			       unsigned int *ecx, unsigned int *edx)

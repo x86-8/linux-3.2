@@ -477,6 +477,7 @@ static void __init parse_setup_data(void)
 			parse_e820_ext(data);
 			break;
 		case SETUP_DTB:
+	/* device tree block/binary  */
 			add_dtb(pa_data);
 			break;
 		default:
@@ -766,7 +767,8 @@ void __init setup_arch(char **cmdline_p)
 	 */
 	early_trap_init();
 
-	/* 해당하는 cpu의 초기화 함수를 호출 (intel, amd, via) */
+	/* 해당하는 cpu의 초기화 함수를 호출 (intel, amd, via)
+	 * 적당히 초기화 모든게 호환될수 있게 */
 	early_cpu_init();
 
 	/* 임시 ioremap을 위한 고정된 주소(fixmap)를 설정한다.
@@ -844,7 +846,7 @@ void __init setup_arch(char **cmdline_p)
 	}
 #endif
 	/* x86_init_noop : 빈 루틴 */
-	x86_init.oem.arch_setup();
+	x86_init.oem.arch_setup(); 
 
 	/* 물리 메모리 상한선 early_cpu_init에서 호출. */
 	iomem_resource.end = (1ULL << boot_cpu_data.x86_phys_bits) - 1;

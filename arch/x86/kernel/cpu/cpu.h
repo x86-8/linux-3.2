@@ -2,6 +2,7 @@
 
 #define ARCH_X86_CPU_H
 
+/* http://www.sandpile.org/x86/cpuid.htm */
 struct cpu_model_info {
 	int		vendor;
 	int		family;
@@ -11,7 +12,7 @@ struct cpu_model_info {
 /* attempt to consolidate cpu attributes */
 struct cpu_dev {
 	const char	*c_vendor;
-
+	/*http://ko.wikipedia.org/wiki/CPUID Transmeta 2개*/
 	/* some have two possibilities for cpuid string */
 	const char	*c_ident[2];
 

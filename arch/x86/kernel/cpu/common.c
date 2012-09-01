@@ -319,9 +319,10 @@ static void __cpuinit filter_cpuid_features(struct cpuinfo_x86 *c, bool warn)
 		     (u32)df->level > (u32)c->extended_cpuid_level :
 		     (s32)df->level > (s32)c->cpuid_level))
 			continue;
-
-		clear_cpu_cap(c, df->feature); /* 해당 기능을 clear하고 clear한 비트를 표시한다. */
-		if (!warn)				/* false면 프린트하지 않는다. */
+		/* 해당 기능을 clear하고 clear한 비트를 표시한다. */
+		clear_cpu_cap(c, df->feature);
+		/* false면 프린트하지 않는다. */
+		if (!warn)
 			continue;
 
 		printk(KERN_WARNING
@@ -516,7 +517,7 @@ static void __cpuinit get_cpu_vendor(struct cpuinfo_x86 *c)
 	char *v = c->x86_vendor_id;
 	int i;
 
-	for (i = 0; i < X86_VENDOR_NUM; i++) { /* x86 cpu 벤더 수 */
+	for (i = 0; i < X86_VENDOR_NUM; i++) { /* x86 cpu 벤더 수 9 */
 		if (!cpu_devs[i])
 			break;
 		/* cpu_dev의 c_ident는 AuthenticAMD, GenuineIntel등 문자열과 현재 CPU(CPUID)의 문자열을 비교한다. */
@@ -541,22 +542,23 @@ static void __cpuinit get_cpu_vendor(struct cpuinfo_x86 *c)
 void __cpuinit cpu_detect(struct cpuinfo_x86 *c)
 {
 	/* Get vendor name */
-  /* eax는 CPUID level이며 기능의 최대 번호. Maximum Input Value for Basic CPUID Information */
+/* eax는 CPUID level이며 기능의 최대 번호. Maximum Input Value for Basic CPUID Information */
 	cpuid(0x00000000, (unsigned int *)&c->cpuid_level,
 	      (unsigned int *)&c->x86_vendor_id[0],
 	      (unsigned int *)&c->x86_vendor_id[8],
 	      (unsigned int *)&c->x86_vendor_id[4]);
-		/* 테스트해본 결과 level이 qemu 64비트에서는 4, core2 duo에서는 10이었다 */
+	/* 테스트해본 결과 level이 qemu 64비트에서는 4, core2 duo에서는 10이었다 */
 	c->x86 = 4;
 	/* Intel-defined flags: level 0x00000001 */
 	if (c->cpuid_level >= 0x00000001) {
 		u32 junk, tfms, cap0, misc;
 		/* tfms = type, family, model, stepping */
 		cpuid(0x00000001, &tfms, &misc, &junk, &cap0); /* CPUID 명령어 1번 기능 eax,ebx,ecx,edx */
-		c->x86 = (tfms >> 8) & 0xf;
-		c->x86_model = (tfms >> 4) & 0xf;
-		c->x86_mask = tfms & 0xf;
+		c->x86 = (tfms >> 8) & 0xf; /* family model 정보 */
+		c->x86_model = (tfms >> 4) & 0xf; /* brand model 정보 */
+		c->x86_mask = tfms & 0xf; /* stepping 정보 */
 		/* cpu 정보들을 넣어준다. 자세한 설명은 생략한다. */
+		/* x86값이 0xf일 경우 Extended Family Model 정보를 넣어준다 */
 		if (c->x86 == 0xf)
 			c->x86 += (tfms >> 20) & 0xff;
 		if (c->x86 >= 0x6)
@@ -656,7 +658,9 @@ static void __cpuinit identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
  * WARNING: this function is only called on the BP.  Don't add code here
  * that is supposed to run on all CPUs.
  */
-/* CPU에 따라 물리, 가상메모리, 캐시 라인 크기등이 세팅된다. */
+/* CPU에 따라 물리, 가상메모리, 캐시 라인 크기등이 세팅된다. 
+ * CPU의 최소 사양 설정
+ */
 static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 {
 #ifdef CONFIG_X86_64
@@ -717,8 +721,10 @@ void __init early_cpu_init(void)
 	 * arch/x86/kernel/cpu/Makefile 과 ld 스크립트 참조
 	 * 각각의 cpu 파일(intel.c ...)에서
 	 * cpu_dev_register 매크로에 의해 .x86_cpu_dev.init 섹션에 들어간다.
-	 */
 
+	 * start ~ end 까지 설정
+	 */
+	
 	for (cdev = __x86_cpu_dev_start; cdev < __x86_cpu_dev_end; cdev++) {
 		/* 각 cpu 구조체 주소 intel_cpu_dev ... */
 		const struct cpu_dev *cpudev = *cdev;
@@ -731,6 +737,7 @@ void __init early_cpu_init(void)
 		count++;
 
 #ifdef CONFIG_PROCESSOR_SELECT
+	/* KERNEL support 밑에 지원하는 CPU 출력 */
 		{
 			unsigned int j;
 

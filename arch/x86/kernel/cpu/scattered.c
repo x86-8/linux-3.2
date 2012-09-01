@@ -57,9 +57,14 @@ void __cpuinit init_scattered_cpuid_features(struct cpuinfo_x86 *c)
 	for (cb = cpuid_bits; cb->feature; cb++) {
 
 		/* Verify that the level is valid */
+
+		/* 해당 레벨의 0 or 0x8000.. 최대값을 구한다.  */
 		max_level = cpuid_eax(cb->level & 0xffff0000);
+		/* 0x00000000 또는 0x80000000로 얻어온 최대 지원 level값이 
+		 * 현재 요청할 cpuid 레벨보다 낮거나, 완전히 벗어나는 경우(0xFFFF)
+		 * cpuid를 요청하지 않도록 처리 */
 		if (max_level < cb->level ||
-		    max_level > (cb->level | 0xffff)) /* 0x8000xxxx가 아니면 continue */
+		    max_level > (cb->level | 0xffff))
 			continue;
 
 		cpuid_count(cb->level, cb->sub_leaf, &regs[CR_EAX],
