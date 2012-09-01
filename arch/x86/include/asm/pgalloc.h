@@ -58,12 +58,16 @@ static inline void __pte_free_tlb(struct mmu_gather *tlb, struct page *pte,
 {
 	___pte_free_tlb(tlb, pte);
 }
-/* 일반적인 페이지로 set */
+/*
+ * mm의 페이징에서 한개의 pmd 엔트리를 pte 엔트리 집합(512개)의 주소로 대입
+ */
 static inline void pmd_populate_kernel(struct mm_struct *mm,
 				       pmd_t *pmd, pte_t *pte)
 {
-	paravirt_alloc_pte(mm, __pa(pte) >> PAGE_SHIFT); /* 반가상화 명령은 패스 */
-	set_pmd(pmd, __pmd(__pa(pte) | _PAGE_TABLE)); /* 앞은 셋할 pmd 가상 주소, 뒤는 물리주소 */
+	/* 반가상화 명령은 패스 */
+	paravirt_alloc_pte(mm, __pa(pte) >> PAGE_SHIFT);
+	/* 앞은 셋할 pmd 가상 주소, 뒤는 물리주소와 플래그 */
+	set_pmd(pmd, __pmd(__pa(pte) | _PAGE_TABLE));
 }
 
 static inline void pmd_populate(struct mm_struct *mm, pmd_t *pmd,
@@ -108,7 +112,11 @@ static inline void pud_populate(struct mm_struct *mm, pud_t *pud, pmd_t *pmd)
 #endif	/* CONFIG_X86_PAE */
 
 #if PAGETABLE_LEVELS > 3
-/* 역시 일반적인 페이지 세팅 */
+/* 
+ * pgd 엔트리 한개에 pud 엔트리들을 대입한다.
+ * 한개의 페이지가 4K이며 엔트리 크기가 8byte라면
+ * 512개의 pud 엔트리 집합의 주소가 pgd 엔트리에 대입되는 것이다.
+ */
 static inline void pgd_populate(struct mm_struct *mm, pgd_t *pgd, pud_t *pud)
 {
 	paravirt_alloc_pud(mm, __pa(pud) >> PAGE_SHIFT);

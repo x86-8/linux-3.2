@@ -61,12 +61,20 @@ static inline void native_set_pte_atomic(pte_t *ptep, pte_t pte)
 {
 	native_set_pte(ptep, pte);
 }
-/* pmd를 재빠르게 대입해준다. */
+
+/* 
+ * native_set_pmd는 한개의 pmd 엔트리(*pmdp)에 pmd 값을 대입한다.
+ * pgd, pte등도 동일하다.
+ */
 static inline void native_set_pmd(pmd_t *pmdp, pmd_t pmd)
 {
 	*pmdp = pmd;
 }
 
+/*
+ * 물리주소 0에 해당하는 pmd 타입(pmd_t)을 만들어 대입한다.
+ * 결과적으로 해당 엔트리를 clear한다.
+ */
 static inline void native_pmd_clear(pmd_t *pmd)
 {
 	native_set_pmd(pmd, native_make_pmd(0));

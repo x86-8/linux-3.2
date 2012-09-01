@@ -64,8 +64,10 @@
 #define _PAGE_FILE	(_AT(pteval_t, 1) << _PAGE_BIT_FILE)
 #define _PAGE_PROTNONE	(_AT(pteval_t, 1) << _PAGE_BIT_PROTNONE)
 
+/* 일반 페이지 테이블은 유저가 억세스 가능 */
 #define _PAGE_TABLE	(_PAGE_PRESENT | _PAGE_RW | _PAGE_USER |	\
 			 _PAGE_ACCESSED | _PAGE_DIRTY)
+/* 커널용 페이지 테이블은 유저가 억세스 불가 */
 #define _KERNPG_TABLE	(_PAGE_PRESENT | _PAGE_RW | _PAGE_ACCESSED |	\
 			 _PAGE_DIRTY)
 
@@ -237,6 +239,7 @@ static inline pudval_t native_pud_val(pud_t pud)
 #if PAGETABLE_LEVELS > 2
 typedef struct { pmdval_t pmd; } pmd_t;
 
+/* val의 물리주소에 해당하는 pmd 값을 반환 */
 static inline pmd_t native_make_pmd(pmdval_t val)
 {
 	return (pmd_t) { val };

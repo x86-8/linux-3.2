@@ -350,8 +350,8 @@ early_param("early_ioremap_debug", early_ioremap_debug_setup);
 static __initdata int after_paging_init;
 
 /*
- * 1페이지 크기만큼 pte변수를 생성
- * 64비트에서는 512개
+ * 1페이지 크기(512)만큼 pte 생성, 한개의 pmd 엔트리가 된다.
+ * 용도는 boot-time의 early_ioremap 용이다. (FIX_BTMAP)
  */
 static pte_t bm_pte[PAGE_SIZE/sizeof(pte_t)] __page_aligned_bss;
 
@@ -398,9 +398,14 @@ void __init early_ioremap_init(void)
 
 	// FIX_BTMAP_BEGIN의 pmd를 구한다.
 	pmd = early_ioremap_pmd(fix_to_virt(FIX_BTMAP_BEGIN));
-	// boot-time 페이지 초기화
-	// bm_pte은 512개 크기는 4K
+
+	// boot-time ioremap용 pte 엔트리들 초기화
 	memset(bm_pte, 0, sizeof(bm_pte));
+
+	/*
+	 * early_ioremap을 위한 pmd 엔트리 하나를 대입한다. (4K(pte) * 512 = 2M)
+	 * 이제는 bm_pte가 ioremap을 위한 pte 엔트리들이다.
+	 */
 	pmd_populate_kernel(&init_mm, pmd, bm_pte);
 
 	/*
