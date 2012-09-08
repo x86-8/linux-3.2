@@ -290,7 +290,8 @@ static long __init_memblock memblock_add_region(struct memblock_type *type,
 	int i, slot = -1;
 
 	/* First try and coalesce this MEMBLOCK with others */
-	/* 아래의 for문 안의 if들은 앞뒤의 겹치는 블럭들을 merge 한다.
+	/*
+	 * 아래의 for문 안의 if들은 앞뒤의 겹치는 블럭들을 merge 한다.
 	 * 서로 다른 비교/처리를 하는 것은 그 때문이다.
 	 * base가 rgn의 앞으로 겹치면 rgn 블럭을 늘리고
 	 * base가 rgn의 뒷부분으로 겹치면 rgn 블럭을 삭제한다.
@@ -450,6 +451,7 @@ long __init_memblock memblock_add(phys_addr_t base, phys_addr_t size)
 	return memblock_add_region(&memblock.memory, base, size);
 
 }
+
 /* 이 함수는 블럭들을 탐색후 해당 영역을 제거한다. */
 static long __init_memblock __memblock_remove(struct memblock_type *type,
 					      phys_addr_t base, phys_addr_t size)
@@ -516,6 +518,7 @@ long __init_memblock memblock_remove(phys_addr_t base, phys_addr_t size)
 {
 	return __memblock_remove(&memblock.memory, base, size);
 }
+
 /* reserved에서 해당 영역을 제거 */
 long __init_memblock memblock_free(phys_addr_t base, phys_addr_t size)
 {
@@ -524,10 +527,13 @@ long __init_memblock memblock_free(phys_addr_t base, phys_addr_t size)
 
 long __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
 {
-	struct memblock_type *_rgn = &memblock.reserved; /* 전역변수의 reserved 할당 */
+	/* memblock.reserved 에 예약됨 표시 */
+	struct memblock_type *_rgn = &memblock.reserved;
 
 	BUG_ON(0 == size);
-/* base부터 size만큼 사용한다고 reserved 배열에 표시한다. */
+	/*
+	 * base부터 size만큼 사용한다고 reserved 배열에 표시한다.
+	 */
 	return memblock_add_region(_rgn, base, size);
 }
 
@@ -840,16 +846,21 @@ void __init memblock_init(void)
 	init_done = 1;
 
 	/* Hookup the initial arrays */
-	memblock.memory.regions	= memblock_memory_init_regions; /* 129개의 배열 */
+	/* memory와 reserved는 각각 128 + 1 개의 배열
+	 * 128개가 사용가능하고 [128]에는 INACTIVE 값이 들어간다
+	 */
+	memblock.memory.regions	= memblock_memory_init_regions;
 	memblock.memory.max		= INIT_MEMBLOCK_REGIONS;
-	memblock.reserved.regions	= memblock_reserved_init_regions; /* 역시 129개 */
+	memblock.reserved.regions	= memblock_reserved_init_regions;
 	memblock.reserved.max	= INIT_MEMBLOCK_REGIONS;
-	/* 사용하지 않을 마지막 배열에 시그니쳐 값을 넣는다. */
+
 	/* Write a marker in the unused last array entry */
+	/* 사용하지 않을 마지막 배열에 시그니쳐 값을 넣는다. */
 	/* MEMBLOCK_REGIONS=128 */
 	/* MEMBLOCK_INACTIVE=0x3a84fb0144c9e71bULL, analyze에서 체크한다. */
 	memblock.memory.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE;
 	memblock.reserved.regions[INIT_MEMBLOCK_REGIONS].base = MEMBLOCK_INACTIVE;
+
 	/* 첫 배열 세팅(0) */
 	/* Create a dummy zero size MEMBLOCK which will get coalesced away later.
 	 * This simplifies the memblock_add() code below...
