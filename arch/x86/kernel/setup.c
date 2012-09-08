@@ -241,6 +241,7 @@ unsigned long saved_video_mode;
 
 static char __initdata command_line[COMMAND_LINE_SIZE];
 #ifdef CONFIG_CMDLINE_BOOL
+/* 내장 command line  */
 static char __initdata builtin_cmdline[COMMAND_LINE_SIZE] = CONFIG_CMDLINE;
 #endif
 
@@ -254,11 +255,13 @@ EXPORT_SYMBOL(edd);
  *              from boot_params into a safe place.
  *
  */
-/* EDD 정보를 복사한다. */
+/* EDD enhanced disk drive 정보를 복사한다. */
 static inline void __init copy_edd(void)
 {
+	/* 시그니쳐 복사  */
      memcpy(edd.mbr_signature, boot_params.edd_mbr_sig_buffer,
 	    sizeof(edd.mbr_signature));
+	/* 인터럽트로 얻어온 edd 정보들을 복사 (query_edd()) */
      memcpy(edd.edd_info, boot_params.eddbuf, sizeof(edd.edd_info));
      edd.mbr_signature_nr = boot_params.edd_mbr_sig_buf_entries;
      edd.edd_info_nr = boot_params.eddbuf_entries;
@@ -437,7 +440,9 @@ static void __init reserve_initrd(void)
 }
 #endif /* CONFIG_BLK_DEV_INITRD */
 
-/* 여분의 setup_data를 파싱한다. */
+/* 여분의 setup_data를 파싱한다.
+ * setup은 크기 제한(32K)이 있기 때문인듯.
+ */
 static void __init parse_setup_data(void)
 {
 	/* struct setup_data { */
@@ -664,6 +669,7 @@ static __init void reserve_ibft_region(void)
 /* low memory는 KB단위 */
 static unsigned reserve_low = CONFIG_X86_RESERVE_LOW << 10;
 
+/* bios 영역은 사용하면 안되기 때문에 e820에서 예약/삭제 */
 static void __init trim_bios_range(void)
 {
 	/*
@@ -675,8 +681,10 @@ static void __init trim_bios_range(void)
 	 * since some BIOSes are known to corrupt low memory.  See the
 	 * Kconfig help text for X86_RESERVE_LOW.
 	 */
-	/* Interrupt Vector Table, Bios Data area, 부트로더등의 영역을 low memory로 예약해놓는다. */
-	/* 0부터 low로 예약된 영역(보통64KB)를 예약되었다고 표시 */
+	/*
+	 * Interrupt Vector Table, Bios Data area, 부트로더등의 영역을 low memory로 예약해놓는다.
+	 * 0부터 low로 예약된 영역(보통64KB : X86_RESERVE_LOW)를 예약되었다고 표시
+	 */
 	e820_update_range(0, ALIGN(reserve_low, PAGE_SIZE),
 			  E820_RAM, E820_RESERVED);
 
@@ -861,6 +869,7 @@ void __init setup_arch(char **cmdline_p)
 	if (!boot_params.hdr.root_flags)
 		root_mountflags &= ~MS_RDONLY;
 	/* 코드, 데이터 영역 설정 */
+	/* init_mm은 커널이 현재 쓰고 있는 메모리 구조체  */
 	init_mm.start_code = (unsigned long) _text;
 	init_mm.end_code = (unsigned long) _etext;
 	init_mm.end_data = (unsigned long) _edata;
@@ -879,6 +888,7 @@ void __init setup_arch(char **cmdline_p)
 #ifdef CONFIG_CMDLINE_OVERRIDE
 	strlcpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
 #else
+	/* 커널 내장 cmdline 옵션도 복사  */
 	if (builtin_cmdline[0]) {
 		/* append boot loader cmdline to builtin */
 		strlcat(builtin_cmdline, " ", COMMAND_LINE_SIZE);
@@ -898,14 +908,19 @@ void __init setup_arch(char **cmdline_p)
 	 * again from within noexec_setup() during parsing early parameters
 	 * to honor the respective command line option.
 	 */
-	/* NX비트 관련 체크를 하고 NX비트가 사용가능하면 pte_mask에 세팅한다. */
+	/* NX비트 관련 체크를 하고 NX비트가 사용가능하면 pte_mask에 세팅한다.
+	 * 64 나 32 pae 지원하면*/
+
 	x86_configure_nx();
+
 	/* early 파라미터들을 호출한다. */
 	parse_early_param();
 
+	/* NX 켜져있는지 알려준다. */
 	x86_report_nx();
 
 	/* after early param, so could get panic from serial */
+	/* memblock에 확장된 setup 영역을 등록한다. */
 	memblock_x86_reserve_range_setup_data();
 
 	/* Advanced Configuration and Power Interface */
@@ -949,7 +964,7 @@ void __init setup_arch(char **cmdline_p)
 	insert_resource(&iomem_resource, &data_resource);
 	insert_resource(&iomem_resource, &bss_resource);
 
-	/* 하위 1M 메모리의 앞뒤를 짤라준디. */
+	/* 하위 1M 메모리의 앞뒤 바이오스 영역을 짤라준디. */
 	trim_bios_range();
 #ifdef CONFIG_X86_32
 	if (ppro_with_ram_bug()) {
@@ -968,7 +983,7 @@ void __init setup_arch(char **cmdline_p)
 	 * partially used pages are not usable - thus
 	 * we are rounding upwards:
 	 */
-	/* 최대 페이지 넘버 값 */
+	/* 물리메모리의 최대 페이지 넘버 값 */
 	max_pfn = e820_end_of_ram_pfn();
 
 	/* update e820 for memory not covered by WB MTRRs */
@@ -1020,15 +1035,17 @@ void __init setup_arch(char **cmdline_p)
 	 *  it could use memblock_find_in_range, could overlap with
 	 *  brk area.
 	 */
+	/* memblock에 BRK 영역을 예약한다. */
 	reserve_brk();
 
 	/* 커널영역 제외 초기화 */
 	cleanup_highmap();
 
-	/* memblock의 한계를 세팅 (물리메모리?) */
+	/* memblock의 한계를 커널 크기(512M)로 세팅?? */
 	memblock.current_limit = get_max_mapped();
 
-	/* e820의 정보(RAM, KERN)를 memblock의 사용가능(memory)한 쪽에 더하고 체크한뒤
+	/*
+	 * e820의 정보(RAM, KERN)를 memblock의 사용가능(memory)한 쪽에 더하고 체크한뒤
 	 * debug 옵션이 켜있으면 memblock 정보를 출력한다.
 	 */
 	memblock_x86_fill();

@@ -1627,7 +1627,7 @@ early_param("pci", parse_pci);
 
 int __init acpi_mps_check(void)
 {
-	/* MPS 코드는 지원 안함, LOCAL_APIC가 켜진 상태에서 acpi를 사용불가능하면 워닝 */
+/* MPS 코드는 지원 안함, LOCAL_APIC가 켜진 상태에서 acpi를 사용불가능하면 워닝 */
 #if defined(CONFIG_X86_LOCAL_APIC) && !defined(CONFIG_X86_MPPARSE)
 /* mptable code is not built-in*/
 	if (acpi_disabled || acpi_noirq) {

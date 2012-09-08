@@ -592,7 +592,10 @@ int __initdata changed_by_mtrr_cleanup;
  *
  * This needs to be called early; before any of the other CPUs are
  * initialized (i.e. before smp_init()).
- * Memory type range register
+ */
+/**
+ * cpu가 mtrr을 지원하는지 체크하고 MTRR 초기화
+ * MTRR : Memory type range register
  */
 void __init mtrr_bp_init(void)
 {
@@ -619,7 +622,7 @@ void __init mtrr_bp_init(void)
 		if (cpuid_eax(0x80000000) >= 0x80000008) {
 			phys_addr = cpuid_eax(0x80000008) & 0xff;
 			/* CPUID workaround for Intel 0F33/0F34 CPU
-			   * * http://www.cpu-world.com/cgi-bin/CPUID.pl?MANUF=&FAMILY=&MODEL=&SIGNATURE=3891&PART=&ACTION=Filter&STEPPING= 
+			 * h ttp://www.cpu-world.com/cgi-bin/CPUID.pl?MANUF=&FAMILY=&MODEL=&SIGNATURE=3891&PART=&ACTION=Filter&STEPPING= 
 			 */
 			if (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL &&
 			    boot_cpu_data.x86 == 0xF &&

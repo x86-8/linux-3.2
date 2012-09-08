@@ -419,15 +419,18 @@ void __init get_mtrr_state(void)
 	 * VARIABLE RANGE는 1M 위쪽으로 BASE, MASK로 가변적인 영역이다.
 	 */
 	rdmsr(MSR_MTRRcap, lo, dummy);
-	mtrr_state.have_fixed = (lo >> 8) & 1; /* 8번비트: fixed range의 지원여부 */
+	/* 8번비트: fixed range의 지원여부 */
+	mtrr_state.have_fixed = (lo >> 8) & 1;
 
+	/* variable range 를 얻는다. */
 	for (i = 0; i < num_var_ranges; i++)
-		get_mtrr_var_range(i, &vrs[i]); /* variable range 를 얻는다. */
+		get_mtrr_var_range(i, &vrs[i]);
 	if (mtrr_state.have_fixed)
 		get_fixed_ranges(mtrr_state.fixed_ranges); /* fixed range 를 얻는다. */
 
 	rdmsr(MSR_MTRRdefType, lo, dummy);
 	mtrr_state.def_type = (lo & 0xff);
+	
 	/* 이 변수는 두 비트로 E(11번비트)와 FE(10번비트) 비트이다 (MTRR Enable, Fixed Enable) */
 	mtrr_state.enabled = (lo & 0xc00) >> 10;
 

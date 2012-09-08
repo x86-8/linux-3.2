@@ -194,7 +194,8 @@ static int __init romchecksum(const unsigned char *rom, unsigned long length)
 	return !length && !sum;
 }
 
-// ref ->  http://lks.springnote.com/pages/631915
+// ref ->  http://lks.springnote.com/pgaes/631915
+/* 메모리에 있는 롬 영역을 찾는다. (video,system rom) */
 void __init probe_roms(void)
 {
 	const unsigned char *rom;
@@ -207,11 +208,14 @@ void __init probe_roms(void)
 	/* start는 0xc0000 */
 	for (start = video_rom_resource.start; start < upper; start += 2048) {
 		rom = isa_bus_to_virt(start); /* 해당하는 물리주소를 가상주소로 변환 */
+		/* signature 값이 0xaa55 여야 한다. */
 		if (!romsignature(rom))
 			continue;
-		/* signature 값이 0xaa55 여야 한다. */
 		video_rom_resource.start = start;
-		/* romsignature 다음 값(길이*512)이 0이 아니면 continue해서 뒤쪽을 읽는다. */
+		/* romsignature 다음 값(길이*512)이 0이 아니면 continue해서 뒤쪽을 읽는다.
+		 * rom+2 주소값을 성공적으로 c에 복사했으면
+		 * rom+2의 메모리 값을 c에 가져온다.
+		 */
 		if (probe_kernel_address(rom + 2, c) != 0)
 			continue;
 
@@ -222,7 +226,8 @@ void __init probe_roms(void)
 		if (length && romchecksum(rom, length))
 			video_rom_resource.end = start + length - 1; /* end값을 넣어준다. */
 
-		request_resource(&iomem_resource, &video_rom_resource); /* 그냥 자원 등록 */
+		/* 그냥 자원 등록 */
+		request_resource(&iomem_resource, &video_rom_resource);
 		break;		/* 찾았으면 등록하고 break */
 	}
 	/* 2048 더하고 정렬한것보다 적으면 start=upper */
@@ -236,8 +241,10 @@ void __init probe_roms(void)
 	upper = system_rom_resource.start;
 
 	/* check for extension rom (ignore length byte!) */
-	rom = isa_bus_to_virt(extension_rom_resource.start); /* 물리메모리를 가상주소로 변환 */
-	if (romsignature(rom)) {			     /* 롬이 있는가? */
+	/* 물리메모리를 가상주소로 변환 */
+	rom = isa_bus_to_virt(extension_rom_resource.start);
+	/* 롬이 있는가? */
+	if (romsignature(rom)) {
 		length = resource_size(&extension_rom_resource);
 		if (romchecksum(rom, length)) {
 			request_resource(&iomem_resource, &extension_rom_resource);

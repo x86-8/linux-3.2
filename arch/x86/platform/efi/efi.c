@@ -386,6 +386,7 @@ void __init efi_reserve_boot_services(void)
 		efi_memory_desc_t *md = p;
 		u64 start = md->phys_addr;
 		u64 size = md->num_pages << EFI_PAGE_SHIFT;
+
 		/* CODE나 DATA일때만 실행 */
 		if (md->type != EFI_BOOT_SERVICES_CODE &&
 		    md->type != EFI_BOOT_SERVICES_DATA)
@@ -439,7 +440,9 @@ static void __init efi_free_boot_services(void)
 		free_bootmem_late(start, size);
 	}
 }
-
+/*
+ * EFI : Extensible Firmware Interface
+ */
 void __init efi_init(void)
 {
 	efi_config_table_t *config_tables;

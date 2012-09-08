@@ -909,7 +909,8 @@ int __init mtrr_trim_uncached_memory(unsigned long end_pfn)
 	/* 인텔 MTRR을 위한 루틴 */
 	rdmsr(MSR_MTRRdefType, def, dummy);
 	def &= 0xff;
-	if (def != MTRR_TYPE_UNCACHABLE) /* MTRR을 지원 안하면 종료 */
+	/* MTRR을 지원 안하면 종료 */
+	if (def != MTRR_TYPE_UNCACHABLE)
 		return 0;
 
 	/* Get it and store it aside: */

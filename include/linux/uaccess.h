@@ -73,6 +73,7 @@ static inline unsigned long __copy_from_user_nocache(void *to,
  */
 /* addr에서 retval 크기만큼 읽어서 retval에 넣는다.
  * ret값이 복사가 성공이면 0아니면 복사못한 바이트를 반환
+ * 이 매크로는 retval에 물리 주소(addr)의 값을 가져온다.
  */
 #define probe_kernel_address(addr, retval)		\
 	({						\

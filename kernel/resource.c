@@ -608,12 +608,15 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
 
 	for (;; parent = first) {
 		first = __request_resource(parent, new);
-		if (!first)	/* request로 등록해보고 등록되면 리턴 No conflict */
+		/* request로 등록해보고 등록되면 리턴 No conflict */
+		if (!first)
 			return first;
 
-		if (first == parent) /* 같으면 리턴, 한번 돌고나면 여기서 빠진다. Conflict */
+		/* 같으면 리턴, 한번 돌고나면 여기서 빠진다. Conflict */
+		if (first == parent)
 			return first;
-		if (WARN_ON(first == new))	/* duplicated insertion */
+		/* duplicated insertion */
+		if (WARN_ON(first == new))
 			return first;
 		/* 처음이나 끝 둘중 더 큰 범위라면 뷁 */
 		if ((first->start > new->start) || (first->end < new->end))
@@ -639,7 +642,8 @@ static struct resource * __insert_resource(struct resource *parent, struct resou
 	/* new가 더 크기때문에 new가 부모가 된다. */
 	new->parent = parent;	
 	new->sibling = next->sibling;
-	new->child = first; /* i'm your father */
+	/* i'm your father */
+	new->child = first;
 	/* sibling들을 돌면서 parent와 sibling을 바꿔준다. */
 	next->sibling = NULL;
 	for (next = first; next; next = next->sibling)

@@ -236,7 +236,7 @@ void __init e820_print_map(char *who)
  *	   ___________________2____
  *	   ____________________33__
  *	   ______________________4_
- 승환씨 */
+ */
 
 /* 위 그림에서 한줄(행)은 각각의 e820 entry
  * 열은 메모리 주소, 값은 entry의 type이다.
@@ -899,7 +899,8 @@ unsigned long __init e820_end_of_ram_pfn(void)
 {
 	return e820_end_pfn(MAX_ARCH_PFN, E820_RAM);
 }
-/* 4G이하에서 최대 페이지 넘버를 구한다.
+
+/* 4G이하에서 e820 map의 최대 페이지 넘버를 구한다.
  * 첫번째 인자(limit) 안에서 사용가능(RAM)한 끝을 구한다.
  */
 unsigned long __init e820_end_of_low_ram_pfn(void)
@@ -1172,6 +1173,7 @@ void __init setup_memory_map(void)
 	e820_print_map(who);
 }
 
+/* e820 맵에서 예약된 영역만 memblock.memory에 더한다. */
 void __init memblock_x86_fill(void)
 {
 	int i;
@@ -1183,7 +1185,7 @@ void __init memblock_x86_fill(void)
 	 * is rather later for x86
 	 */
 	memblock_can_resize = 1;
-	/* e820 엔트리를 모두 찾는다. e820에서 특정 영역을 memblock에 더한다.  */
+	/* e820 엔트리를 모두 찾는다. e820에서 특정 영역을 memblock에 추가한다.  */
 	for (i = 0; i < e820.nr_map; i++) {
 		struct e820entry *ei = &e820.map[i];
 
@@ -1198,6 +1200,7 @@ void __init memblock_x86_fill(void)
 	}
 
 	memblock_analyze();
+	/* memblock 출력 */
 	memblock_dump_all();
 }
 

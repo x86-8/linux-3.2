@@ -299,7 +299,8 @@ static int __init parse_gart_mem(char *p)
 	return 0;
 }
 early_param("gart_fix_e820", parse_gart_mem);
-/* Graphics address remapping table
+/*
+ * Graphics address remapping table
  * 비디오 메모리를 시스템 메모리에 remapping 해서 직접 억세스 가능하게 한다.
  */
 void __init early_gart_iommu_check(void)

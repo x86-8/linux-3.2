@@ -254,6 +254,7 @@ struct obs_kernel_param {
 
 /* NOTE: fn is as per module_param, not __setup!  Emits warning if fn
  * returns non-zero. */
+/* early 필드가 1이 되면 early 로 등록 */
 #define early_param(str, fn)					\
 	__setup_param(str, fn, fn, 1)
 

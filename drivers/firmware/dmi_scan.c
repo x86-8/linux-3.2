@@ -441,7 +441,7 @@ void __init dmi_scan_machine(void)
 {
 	char __iomem *p, *q;
 	int rc;
-
+	/* efi가 enable이면 efi에서 찾는다.  */
 	if (efi_enabled) {
 		if (efi.smbios == EFI_INVALID_TABLE_ADDR)
 			goto error;
@@ -463,6 +463,7 @@ void __init dmi_scan_machine(void)
 		}
 	}
 	else {
+	/* efi를 사용 안하면 BIOS 영역에서 찾는다. */
 		/*
 		 * no iounmap() for that ioremap(); it would be a no-op, but
 		 * it's so early in setup that sucker gets confused into doing

@@ -389,18 +389,24 @@ static noinline void __init_refok rest_init(void)
 /* Check for early params. 
  * init = ... init_setup
  * console = ... 이면 console_setup 안에 있는 함수를 찾아본다.
+ * __setup_start (.init.setup) 영역에 __setup로 등록된
+ * early 부분을 체크한다.
  */
 static int __init do_early_param(char *param, char *val)
 {
 	const struct obs_kernel_param *p;
-
+	/* __setup_param 매크로로 등록된 부분은 모두
+	 * .init.setup에 들어간다.
+	 * 그러면 해당 옵션과 매칭되는 함수를 호출한다.
+	 */
 	for (p = __setup_start; p < __setup_end; p++) {
-	  /* early가 1이면 early 함수다 */
+	  /* early가 1이면 early 함수다. early인 함수만 호출 */
 		if ((p->early && parameq(param, p->str)) ||
 		    (strcmp(param, "console") == 0 &&
 		     strcmp(p->str, "earlycon") == 0)
 		) {
-			if (p->setup_func(val) != 0) /* 파라미터 처리 함수를 호출하고 실패하면 경고 */
+			/* 파라미터 처리 함수를 호출하고 실패하면 경고 */
+			if (p->setup_func(val) != 0)
 				printk(KERN_WARNING
 				       "Malformed early option '%s'\n", param);
 		}

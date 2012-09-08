@@ -36,6 +36,7 @@ void __cpuinit x86_configure_nx(void)
    * NX는 64비트에서 최상위(63) 비트다.
    * _PAGE_NX는 PAE나 64비트여야 된다.
    * 
+   * <인텔 메뉴얼 인용>
    * 5.6.1 No Execute (NX) Bit
    * The NX bit in the page-translation tables specifies whether instructions can be executed from the page.
    * This bit is not checked during every instruction fetch. Instead, the NX bits in the page-translation-table
@@ -51,10 +52,12 @@ void __cpuinit x86_configure_nx(void)
    * the CPUID extended-feature flags (see the CPUID Specification, order# 25481).
    * REQUIRED bit
    */
-
+	/* cpu에서 NX비트를 사용가능하고 NX를 disable 하지 않았다면  */
 	if (cpu_has_nx && !disable_nx)
+	/* NX mask를 켜서 NX비트 사용가능하게 한다.  */
 		__supported_pte_mask |= _PAGE_NX;
 	else
+	/* NX비트는 사용불가능 */
 		__supported_pte_mask &= ~_PAGE_NX;
 }
 
