@@ -735,8 +735,8 @@ early_param("reservelow", parse_reservelow);
  * Note: On x86_64, fixmaps are ready for use even before this is called.
  */
 
-/*
- * 아키텍쳐 종속적인 초기화를 한다.
+/**
+ * x86 아키텍쳐에 종속적인 초기화를 한다.
  */
 void __init setup_arch(char **cmdline_p)
 {
@@ -767,19 +767,22 @@ void __init setup_arch(char **cmdline_p)
 	 * reserve_top(), so do this before touching the ioremap area.
 	 */
 
-	/* 어린이를 위한 OLPC open firmware */
+	/* 어린이를 위한 OLPC open firmware 검색 */
 	olpc_ofw_detect();
 
-	/* breakpoint(3), debug(1), page fault(14)
+	/*
+	 * breakpoint(3), debug(1), page fault(14)
 	 * 인터럽트 게이트를 등록하고 lidt 명령어로 trap 인터럽트 루틴을 등록한다.
 	 */
 	early_trap_init();
 
-	/* 해당하는 cpu의 초기화 함수를 호출 (intel, amd, via)
+	/**
+	 * 해당하는 cpu의 초기화 함수를 호출 (intel, amd, via)
 	 * 적당히 초기화 모든게 호환될수 있게 */
 	early_cpu_init();
 
-	/* 임시 ioremap을 위한 고정된 주소(fixmap)를 설정한다.
+	/**
+	 * 임시 ioremap을 위한 고정된 주소(fixmap)를 설정한다.
 	 * ioremap : http://gnudevel.tistory.com/31
 	 */
 	early_ioremap_init();
@@ -1090,7 +1093,8 @@ void __init setup_arch(char **cmdline_p)
 		max_pfn_mapped = init_memory_mapping(1UL<<32,
 						     max_pfn<<PAGE_SHIFT);
 		/* can we preseve max_low_pfn ?*/
-		max_low_pfn = max_pfn; /* 64비트는 결국 low와 max(실제메모리 크기)가 동일하다 */
+		/* 64비트는 결국 low와 max(실제메모리 크기)가 동일하다 */
+		max_low_pfn = max_pfn;
 	}
 #endif.
 	/* current_limit = 메모리 크기 */

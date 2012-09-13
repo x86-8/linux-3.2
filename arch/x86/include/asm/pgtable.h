@@ -768,9 +768,14 @@ static inline void pmdp_set_wrprotect(struct mm_struct *mm,
  * dst and src can be on the same page, but the range must not overlap,
  * and must not cross a page boundary.
  */
+/**
+ * src에서 dst만큼 복사하는 함수
+ * count는 pgd 엔트리 갯수
+ */
 static inline void clone_pgd_range(pgd_t *dst, pgd_t *src, int count)
 {
-       memcpy(dst, src, count * sizeof(pgd_t)); /* pgd 카운트만큼 복사 */
+
+       memcpy(dst, src, count * sizeof(pgd_t));
 }
 
 

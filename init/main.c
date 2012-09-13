@@ -497,10 +497,13 @@ asmlinkage void __init start_kernel(void)
 	/*
 	 * Set up the the initial canary ASAP:
 	 */
-	boot_init_stack_canary();	/* 스택 오버플로우 방지를 위한 함수 초기화 */
+	/* 스택 오버플로우 방지를 위한 함수 초기화 */
+	boot_init_stack_canary();
 
-	cgroup_init_early();		/* cgroup을 재빨리 초기화 한다. */
-/** 
+	/* cgroup을 재빨리 초기화 한다. */
+	cgroup_init_early();
+ 
+/**
  * local_irq_disable   
  * arch_local_irq_disable -> native_irq_disable는 인터럽트를 금지(cli)
  * native_irq_enable은 인터럽트 허용(sti)
@@ -510,7 +513,6 @@ asmlinkage void __init start_kernel(void)
  * local_irq_restore는 플래그 상태를 복원한다. 때문에 인터럽트 허용/금지상태까지 복원한다.
  * local_irq_save/restore -> raw_local_irq_save/restore -> native_save/restore_fl
  */
-	/* 인터럽트 금지 */
 	local_irq_disable();
 	early_boot_irqs_disabled = true;
 
@@ -523,9 +525,9 @@ asmlinkage void __init start_kernel(void)
 	/* boot cpu 상태를 모두 1로 설정 */
 	boot_cpu_init();
 	page_address_init();
-	/* 리눅스 버전,gcc 버전등 linux banner 정보 출력 */
+	/* 리눅스, gcc 버전등의 linux banner 정보 출력 */
 	printk(KERN_NOTICE "%s", linux_banner);
-	/* 아키텍쳐 의존된 초기화부분 */
+	/* 아키텍쳐 종속적인 초기화 루틴 */
 	setup_arch(&command_line);
 	mm_init_owner(&init_mm, &init_task);
 	mm_init_cpumask(&init_mm);
