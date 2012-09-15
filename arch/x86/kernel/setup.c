@@ -1061,6 +1061,7 @@ void __init setup_arch(char **cmdline_p)
 		efi_reserve_boot_services();
 
 	/* preallocate 4k for mptable mpc */
+	/* 공간만 예약 */
 	early_reserve_e820_mpc_new();
 
 #ifdef CONFIG_X86_CHECK_BIOS_CORRUPTION

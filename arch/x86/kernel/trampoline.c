@@ -7,6 +7,9 @@
 
 unsigned char *x86_trampoline_base;
 
+/* smp 커널에서 현재까지 한개의 CPU로 했었음.
+ * 
+*/
 void __init setup_trampolines(void)
 {
 	phys_addr_t mem;

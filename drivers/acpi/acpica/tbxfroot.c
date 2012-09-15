@@ -75,22 +75,23 @@ static acpi_status acpi_tb_validate_rsdp(struct acpi_table_rsdp *rsdp)
 	 * Note: Sometimes there exists more than one RSDP in memory; the valid
 	 * RSDP has a valid checksum, all others have an invalid checksum.
 	 */
+	/* RSDP 스펙 처음에는 8바이트 시그니쳐가 온다.  */
 	if (ACPI_STRNCMP((char *)rsdp, ACPI_SIG_RSDP,
 			 sizeof(ACPI_SIG_RSDP) - 1) != 0) {
 
 		/* Nope, BAD Signature */
-
+		/* 못찾으면 에러값 리턴  */
 		return (AE_BAD_SIGNATURE);
 	}
 
 	/* Check the standard checksum */
-
+	/* 더한 체크섬 확인  */
 	if (acpi_tb_checksum((u8 *) rsdp, ACPI_RSDP_CHECKSUM_LENGTH) != 0) {
 		return (AE_BAD_CHECKSUM);
 	}
 
 	/* Check extended checksum if table version >= 2 */
-
+	/* 버전이 2 이상이면 36바이트까지 체크섬 확인  */
 	if ((rsdp->revision >= 2) &&
 	    (acpi_tb_checksum((u8 *) rsdp, ACPI_RSDP_XCHECKSUM_LENGTH) != 0)) {
 		return (AE_BAD_CHECKSUM);
@@ -118,7 +119,10 @@ static acpi_status acpi_tb_validate_rsdp(struct acpi_table_rsdp *rsdp)
  *              initialization state of the rest of ACPI.
  *
  ******************************************************************************/
-/* RSDP (Root System Description Pointer) */
+/* RSDP (Root System Description Pointer)를 구하는 함수
+ * 1. EBDA를 찾아서(a) EBDA에서 찾는다.
+ * 2. 0xE0000 ~ 0xFFFFF 에서 찾는다.
+ */
 acpi_status acpi_find_root_pointer(acpi_size *table_address)
 {
 	u8 *table_ptr;
@@ -154,6 +158,9 @@ acpi_status acpi_find_root_pointer(acpi_size *table_address)
 		 * 1b) Search EBDA paragraphs (EBDA is required to be a
 		 *     minimum of 1_k length)
 		 */
+		/* physical_address은 물리주소이고
+		 * table_ptr은 ioremap한 가상주소이다.
+		 */
 		table_ptr = acpi_os_map_memory((acpi_physical_address)
 					       physical_address,
 					       ACPI_EBDA_WINDOW_SIZE);
@@ -164,19 +171,20 @@ acpi_status acpi_find_root_pointer(acpi_size *table_address)
 
 			return_ACPI_STATUS(AE_NO_MEMORY);
 		}
-
+		/* mem_rover은 RSDT를 찾은 위치  */
 		mem_rover =
 		    acpi_tb_scan_memory_for_rsdp(table_ptr,
 						 ACPI_EBDA_WINDOW_SIZE);
+		/* 연결한 map 해제  */
 		acpi_os_unmap_memory(table_ptr, ACPI_EBDA_WINDOW_SIZE);
 
 		if (mem_rover) {
 
 			/* Return the physical address */
-
+			/* 찾은 RSDT 주소 - EBDA 시작주소 (가상주소) */
 			physical_address +=
 			    (u32) ACPI_PTR_DIFF(mem_rover, table_ptr);
-
+			/* 찾은 주소 대입  */
 			*table_address = physical_address;
 			return_ACPI_STATUS(AE_OK);
 		}
@@ -185,6 +193,7 @@ acpi_status acpi_find_root_pointer(acpi_size *table_address)
 	/*
 	 * 2) Search upper memory: 16-byte boundaries in E0000h-FFFFFh
 	 */
+	/* 역시 table_ptr은 가상주소  */
 	table_ptr = acpi_os_map_memory((acpi_physical_address)
 				       ACPI_HI_RSDP_WINDOW_BASE,
 				       ACPI_HI_RSDP_WINDOW_SIZE);
@@ -252,6 +261,7 @@ static u8 *acpi_tb_scan_memory_for_rsdp(u8 * start_address, u32 length)
 		status =
 		    acpi_tb_validate_rsdp(ACPI_CAST_PTR
 					  (struct acpi_table_rsdp, mem_rover));
+		/* status가 0이 아니면 RSDT를 찾은것이다. 찾으면 리턴  */
 		if (ACPI_SUCCESS(status)) {
 
 			/* Sig and checksum valid, we have found a real RSDP */
@@ -266,7 +276,7 @@ static u8 *acpi_tb_scan_memory_for_rsdp(u8 * start_address, u32 length)
 	}
 
 	/* Searched entire block, no RSDP was found */
-
+	/* 못찾으면 출력과 NULL 리턴 */
 	ACPI_DEBUG_PRINT((ACPI_DB_INFO,
 			  "Searched entire block from %p, valid RSDP was not found\n",
 			  start_address));

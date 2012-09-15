@@ -127,9 +127,11 @@ acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
 			return_ACPI_STATUS(status);
 		}
 	} else {
-		/* null이 아니면 이쪽 */
 		/* Root Table Array has been statically allocated by the host */
-		/* 그냥 memset으로 초기화 */
+		/* initial_table_array 포인터에 값이 넘어왔다면 이쪽을 실행한다.
+		 * acpi 테이블을 초기화하는 코드다.
+		 */
+		/* ACPI_MEMSET은 memset으로 초기화 */
 		ACPI_MEMSET(initial_table_array, 0,
 			    (acpi_size) initial_table_count *
 			    sizeof(struct acpi_table_desc));
@@ -137,15 +139,17 @@ acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
 		acpi_gbl_root_table_list.tables = initial_table_array;
 		acpi_gbl_root_table_list.max_table_count = initial_table_count;
 		acpi_gbl_root_table_list.flags = ACPI_ROOT_ORIGIN_UNKNOWN;
+	/* allow resize가 있을때만   */
 		if (allow_resize) {
 			acpi_gbl_root_table_list.flags |=
-			    ACPI_ROOT_ALLOW_RESIZE;
+				    ACPI_ROOT_ALLOW_RESIZE;
 		}
 	}
 
 	/* Get the address of the RSDP */
-
+	/* 찾은 rsdp 주소를 대입  */
 	rsdp_address = acpi_os_get_root_pointer();
+	/* 못찾으면 AE_NOT_FOUND  */
 	if (!rsdp_address) {
 		return_ACPI_STATUS(AE_NOT_FOUND);
 	}

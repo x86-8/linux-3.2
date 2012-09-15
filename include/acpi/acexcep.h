@@ -54,6 +54,8 @@
 #define AE_CODE_CONTROL                 0x4000
 #define AE_CODE_MASK                    0xF000
 
+/* 의미를 논리적으로 명확히 하기 위해 쓰인다. (성공/실패)
+ * 더욱 명시적으로 하기 위하여 즉 0 아니면 1 두개만 올수있게 */
 #define ACPI_SUCCESS(a)                 (!(a))
 #define ACPI_FAILURE(a)                 (a)
 

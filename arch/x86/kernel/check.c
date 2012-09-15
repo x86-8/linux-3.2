@@ -66,6 +66,7 @@ void __init setup_bios_corruption_check(void)
 
 	if (memory_corruption_check == -1) {
 		memory_corruption_check =
+		/* 변태적인놈의 코딩 */
 #ifdef CONFIG_X86_BOOTPARAM_MEMORY_CORRUPTION_CHECK
 			1
 #else

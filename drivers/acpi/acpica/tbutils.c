@@ -334,7 +334,7 @@ acpi_status acpi_tb_verify_checksum(struct acpi_table_header *table, u32 length)
  * DESCRIPTION: Calculates circular checksum of memory region.
  *
  ******************************************************************************/
-
+/* 더한 값(sum) 확인  */
 u8 acpi_tb_checksum(u8 *buffer, u32 length)
 {
 	u8 sum = 0;

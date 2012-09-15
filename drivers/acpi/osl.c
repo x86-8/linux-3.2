@@ -259,6 +259,7 @@ acpi_physical_address __init acpi_os_get_root_pointer(void)
 	if (efi_enabled) {
 		/* EFI라면 이쪽
 		 * INVALID..가 아니면 acpi20를 리턴
+		 * acpi20 이상은 rsdt 대신 xsdt(64bit phys addr)를 사용
 		 */
 		if (efi.acpi20 != EFI_INVALID_TABLE_ADDR)
 			return efi.acpi20;
@@ -273,6 +274,7 @@ acpi_physical_address __init acpi_os_get_root_pointer(void)
 		acpi_physical_address pa = 0;
 
 		acpi_find_root_pointer(&pa);
+		/* pa에 rsdt찾은 물리주소가 대입되었다.   */
 		return pa;
 	}
 }
@@ -280,8 +282,7 @@ acpi_physical_address __init acpi_os_get_root_pointer(void)
 /* Must be called with 'acpi_ioremap_lock' or RCU read lock held. */
 static struct acpi_ioremap *
 acpi_map_lookup(acpi_physical_address phys, acpi_size size)
-{
-	struct acpi_ioremap *map;
+ acpi_ioremap *map;
 	/* acpi_ioremap 리스트의 자료를 검색한다.
 	 * 리스트의 멤버가 찾으려는(phys,size) 부분을 포함하면
 	 * 해당 리스트를 리턴한다.
@@ -413,7 +414,9 @@ static void acpi_os_map_cleanup(struct acpi_ioremap *map)
 void __ref acpi_os_unmap_memory(void __iomem *virt, acpi_size size)
 {
 	struct acpi_ioremap *map;
-
+	/* permanent가 0이면 (acpi어쩌구init이 아직 초기화되지 않으면)
+	 * early_io(un)remap으로 연결
+	 */
 	if (!acpi_gbl_permanent_mmap) {
 		__acpi_unmap_table(virt, size);
 		return;

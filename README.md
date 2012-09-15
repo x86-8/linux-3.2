@@ -80,3 +80,4 @@ Study history (날짜:인원:내용)
 71. 2012/08/25:07:*init/main.c* - early_cpu_init | 리뷰, 회식
 72. 2012/09/01:07:*init/main.c* - copy_edd | 리뷰
 73. 2012/09/08:06:*init/main.c* - early_reserve_e820_mpc_new | 리뷰
+74. 2012/09/15:05:*init/main.c* - acpi_table_init | 리뷰 종료
