@@ -34,6 +34,7 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
  * the prev/next entries already!
  */
 #ifndef CONFIG_DEBUG_LIST
+/* 새로운 엔트리(new)를 prev와 next 사이에 삽입한다. */
 static inline void __list_add(struct list_head *new,
 			      struct list_head *prev,
 			      struct list_head *next)
@@ -57,6 +58,10 @@ extern void __list_add(struct list_head *new,
  * Insert a new entry after the specified head.
  * This is good for implementing stacks.
  */
+/**
+ * 이 함수는 새 엔트리(new)를 처음에 삽입한다.
+ * head <-> new <-> head->next
+ */
 static inline void list_add(struct list_head *new, struct list_head *head)
 {
 	__list_add(new, head, head->next);
@@ -71,6 +76,10 @@ static inline void list_add(struct list_head *new, struct list_head *head)
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
+/**
+ * 꼬리에 새로운 리스트(new)를 삽입한다. 환형 리스트라서 아래의 관계가 된다.
+ * head->prev(꼬리) <-> new <-끝-> head(머리)
+ */
 static inline void list_add_tail(struct list_head *new, struct list_head *head)
 {
 	__list_add(new, head->prev, head);
@@ -83,6 +92,7 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
+/* next와 prev를 서로 연결한다. 결국 현재 리스트는 연결이 끊어진다. */
 static inline void __list_del(struct list_head * prev, struct list_head * next)
 {
 	next->prev = prev;
@@ -101,9 +111,11 @@ static inline void __list_del_entry(struct list_head *entry)
 	__list_del(entry->prev, entry->next);
 }
 
+/* doubly linked list에서 인자로 들어온 엔트리를 지운다. */
 static inline void list_del(struct list_head *entry)
 {
 	__list_del(entry->prev, entry->next);
+	/* 지워진 엔트리에는 page fault가 나도록 POISON값을 넣는다. */
 	entry->next = LIST_POISON1;
 	entry->prev = LIST_POISON2;
 }
@@ -347,6 +359,7 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  */
+/* container_of 매크로로 구조체의 시작주소를 얻어온다. */
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
 
@@ -357,6 +370,10 @@ static inline void list_splice_tail_init(struct list_head *list,
  * @member:	the name of the list_struct within the struct.
  *
  * Note, that list is expected to be not empty.
+ */
+/**
+ * 리스트가 비어있지 않다면 첫번째 엔트리가 나올 것이다
+ * container_of로 엔트리 첫주소를 가져온다
  */
 #define list_first_entry(ptr, type, member) \
 	list_entry((ptr)->next, type, member)
