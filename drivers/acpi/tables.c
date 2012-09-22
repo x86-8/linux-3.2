@@ -213,17 +213,22 @@ acpi_table_parse_entries(char *id,
 	unsigned long table_end;
 	acpi_size tbl_size;
 
+	/* ACPI가 비활성화 되어 있는 경우 */
 	if (acpi_disabled)
 		return -ENODEV;
 
+	/* 핸들러가 없는 경우 */
 	if (!handler)
 		return -EINVAL;
 
+	/* MADT 시그니쳐 검사 */
 	if (strncmp(id, ACPI_SIG_MADT, 4) == 0)
 		acpi_get_table_with_size(id, acpi_apic_instance, &table_header, &tbl_size);
 	else
+	/* 시그니쳐가 않맞는 경우, 처음부터 검증 */
 		acpi_get_table_with_size(id, 0, &table_header, &tbl_size);
 
+	/* 테이블 헤더가 없는 경우 */
 	if (!table_header) {
 		printk(KERN_WARNING PREFIX "%4.4s not present\n", id);
 		return -ENODEV;
@@ -233,27 +238,35 @@ acpi_table_parse_entries(char *id,
 
 	/* Parse all entries looking for a match. */
 
+	/* entry 시작 위치를 얻어옮 */
 	entry = (struct acpi_subtable_header *)
 	    ((unsigned long)table_header + table_size);
 
+	/* entry 위치가 table 길이보다 클때까지 */
 	while (((unsigned long)entry) + sizeof(struct acpi_subtable_header) <
 	       table_end) {
+	       	/* entry id가 맞는 경우 핸들러 실행 */
 		if (entry->type == entry_id
 		    && (!max_entries || count++ < max_entries))
 			if (handler(entry, table_end)) {
+				/* 핸들러 실행 실패시 에러 */
 				early_acpi_os_unmap_memory((char *)table_header, tbl_size);
 				return -EINVAL;
 			}
 
+		/* 다음 entry 증가 */
 		entry = (struct acpi_subtable_header *)
 		    ((unsigned long)entry + entry->length);
 	}
+	/* max_entries 보다 entry 갯수가 많은 경우 - 이후 엔트리는 무시하겠다는 로그만 남김(무시하는지는 모름) */
 	if (max_entries && count > max_entries) {
 		printk(KERN_WARNING PREFIX "[%4.4s:0x%02x] ignored %i entries of "
 		       "%i found\n", id, entry_id, count - max_entries, count);
 	}
 
 	early_acpi_os_unmap_memory((char *)table_header, tbl_size);
+
+	/* 테이블 헤더의 id에  매칭된 entry 갯수 반환 */
 	return count;
 }
 
@@ -261,6 +274,10 @@ int __init
 acpi_table_parse_madt(enum acpi_madt_type id,
 		      acpi_table_entry_handler handler, unsigned int max_entries)
 {
+	/* 
+	 * id와 시그니쳐가 맞는 테이블을 찾고 테이블에 속하는 각 엔트리
+	 * 마다 핸들러를 실행하고, 테이블 헤더의 찾은 엔트리 갯수를 반환
+	 */
 	return acpi_table_parse_entries(ACPI_SIG_MADT,
 					    sizeof(struct acpi_table_madt), id,
 					    handler, max_entries);
@@ -275,6 +292,7 @@ acpi_table_parse_madt(enum acpi_madt_type id,
  * Scan the ACPI System Descriptor Table (STD) for a table matching @id,
  * run @handler on it.  Return 0 if table found, return on if not.
  */
+/* id에 속하는 ACPI 테이블을 찾아서 해당 테이블을 인자로 넘겨주어 핸들러를 실행한다. */
 int __init acpi_table_parse(char *id, acpi_table_handler handler)
 {
 	struct acpi_table_header *table = NULL;
@@ -285,16 +303,18 @@ int __init acpi_table_parse(char *id, acpi_table_handler handler)
 
 	if (!handler)
 		return -EINVAL;
-
+	/* 원하는 id의 테이블을 찾아서 &table에 넣는다.  */
 	if (strncmp(id, ACPI_SIG_MADT, 4) == 0)
+	/* MADT면 apic_instance만큼 넘긴다  */
 		acpi_get_table_with_size(id, acpi_apic_instance, &table, &tbl_size);
 	else
 		acpi_get_table_with_size(id, 0, &table, &tbl_size);
 
+	/* 인자로 받아온 핸들러를 실행 */
 	if (table) {
 		handler(table);
 		early_acpi_os_unmap_memory(table, tbl_size);
-		return 0;
+		return 0;	/* 성공!  */
 	} else
 		return 1;
 }
@@ -308,8 +328,9 @@ static void __init check_multiple_madt(void)
 {
 	struct acpi_table_header *table = NULL;
 	acpi_size tbl_size;
-
+	/* 엔트리를 검색하면서 MADT를 verify 한다.  */
 	acpi_get_table_with_size(ACPI_SIG_MADT, 2, &table, &tbl_size);
+	/* 성공했으면 table에 결과값이 있다. MADT를 찾았다는 것이다.   */
 	if (table) {
 		printk(KERN_WARNING PREFIX
 		       "BIOS bug: multiple APIC/MADT found,"

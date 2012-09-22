@@ -1125,8 +1125,11 @@ void __init setup_arch(char **cmdline_p)
 	/*
 	 * Parse the ACPI tables for possible boot-time SMP configuration.
 	 */
+	/** 
+	 * acpi root 테이블을 얻어오고 파싱/설정해준다
+	 */
 	acpi_boot_table_init();
-
+	/* acpi 관련 세팅을 마저 한다. */
 	early_acpi_boot_init();
 
 	initmem_init();

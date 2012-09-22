@@ -78,6 +78,7 @@
  * Otherwise, we have to move one byte at a time.
  */
 #ifdef ACPI_BIG_ENDIAN
+/* ACPI 테이블 안의 숫자값들은 little endian을 따른다. 때문에 다른 엔디안을 사용하면 변환한다.  */
 /*
  * Macros for big-endian machines
  */
@@ -405,7 +406,9 @@
  */
 #ifndef ACPI_SIMPLE_RETURN_MACROS
 
-/* s값이 반환(치환)된다.  */
+/* s값이 반환(치환)된다.
+ * 디버깅, TRACE를 위해 매크로 사용(출력된다.)
+ */
 #define return_ACPI_STATUS(s)           ACPI_DO_WHILE0 ({			\
 			register acpi_status _s = (s);				\
 			acpi_ut_status_exit (ACPI_DEBUG_PARAMETERS, _s);	\

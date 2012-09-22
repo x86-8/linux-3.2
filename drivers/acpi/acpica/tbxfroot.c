@@ -193,7 +193,9 @@ acpi_status acpi_find_root_pointer(acpi_size *table_address)
 	/*
 	 * 2) Search upper memory: 16-byte boundaries in E0000h-FFFFFh
 	 */
-	/* 역시 table_ptr은 가상주소  */
+	/* 두번째 솔루션
+	 * 역시 table_ptr은 가상주소
+	 */
 	table_ptr = acpi_os_map_memory((acpi_physical_address)
 				       ACPI_HI_RSDP_WINDOW_BASE,
 				       ACPI_HI_RSDP_WINDOW_SIZE);
@@ -241,6 +243,7 @@ acpi_status acpi_find_root_pointer(acpi_size *table_address)
  * DESCRIPTION: Search a block of memory for the RSDP signature
  *
  ******************************************************************************/
+/* 메모리에서 RSDP 구조체를 찾는다.  */
 static u8 *acpi_tb_scan_memory_for_rsdp(u8 * start_address, u32 length)
 {
 	acpi_status status;
@@ -261,7 +264,7 @@ static u8 *acpi_tb_scan_memory_for_rsdp(u8 * start_address, u32 length)
 		status =
 		    acpi_tb_validate_rsdp(ACPI_CAST_PTR
 					  (struct acpi_table_rsdp, mem_rover));
-		/* status가 0이 아니면 RSDT를 찾은것이다. 찾으면 리턴  */
+		/* status가 0이 아니면 RSDP를 찾은것이다. 찾으면 리턴  */
 		if (ACPI_SUCCESS(status)) {
 
 			/* Sig and checksum valid, we have found a real RSDP */

@@ -254,11 +254,14 @@ int __init default_acpi_madt_oem_check(char *oem_id, char *oem_table_id)
 	struct apic **drv;
 
 	for (drv = __apicdrivers; drv < __apicdrivers_end; drv++) {
+		/* MADT_OEM_CHECK 함수가 없는 경우 skip */
 		if (!(*drv)->acpi_madt_oem_check)
 			continue;
+		/* MADT_OEM_CHECK 함수 실행이 실패한 경우 skip */
 		if (!(*drv)->acpi_madt_oem_check(oem_id, oem_table_id))
 			continue;
 
+		/* cmdline_apic가 활성화 되어 있는 경우 현재 APIC 드라이버를 수정 */
 		if (!cmdline_apic) {
 			apic = *drv;
 			printk(KERN_INFO "Switched to APIC driver `%s'.\n",

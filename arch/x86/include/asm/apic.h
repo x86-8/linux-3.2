@@ -520,6 +520,7 @@ static inline const struct cpumask *default_target_cpus(void)
 DECLARE_EARLY_PER_CPU(u16, x86_bios_cpu_apicid);
 
 
+/* 등록된 APIC 드라이버로부터 APIC_ID(0x20) 를 얻어옮*/
 static inline unsigned int read_apic_id(void)
 {
 	unsigned int reg;

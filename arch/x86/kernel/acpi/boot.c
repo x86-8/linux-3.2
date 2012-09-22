@@ -169,10 +169,12 @@ void __init __acpi_unmap_table(char *map, unsigned long size)
 }
 
 #ifdef CONFIG_X86_LOCAL_APIC
+/* MADT 엔트리 정보 파싱 핸들러 */
 static int __init acpi_parse_madt(struct acpi_table_header *table)
 {
 	struct acpi_table_madt *madt = NULL;
 
+	/* APIC가 없는 경우 에러 */
 	if (!cpu_has_apic)
 		return -EINVAL;
 
@@ -182,6 +184,7 @@ static int __init acpi_parse_madt(struct acpi_table_header *table)
 		return -ENODEV;
 	}
 
+	/* MADT 엔트리에 주소 정보가 있는 경우, acpi_lapic_addr갱신 */
 	if (madt->address) {
 		acpi_lapic_addr = (u64) madt->address;
 
@@ -189,6 +192,7 @@ static int __init acpi_parse_madt(struct acpi_table_header *table)
 		       madt->address);
 	}
 
+	/* 각 APIC 드라이버 마다 MADT oem_check 함수 실행  */
 	default_acpi_madt_oem_check(madt->header.oem_id,
 				    madt->header.oem_table_id);
 
@@ -864,16 +868,18 @@ static int __init early_acpi_parse_madt_lapic_addr_ovr(void)
 	 * Note that the LAPIC address is obtained from the MADT (32-bit value)
 	 * and (optionally) overriden by a LAPIC_ADDR_OVR entry (64-bit value).
 	 */
-
+	/* Override하고 나서 갯수를 얻어온다 */
 	count =
 	    acpi_table_parse_madt(ACPI_MADT_TYPE_LOCAL_APIC_OVERRIDE,
 				  acpi_parse_lapic_addr_ovr, 0);
+	/* MADT시그니쳐의 엔트리가 없을 경우 */
 	if (count < 0) {
 		printk(KERN_ERR PREFIX
 		       "Error parsing LAPIC address override entry\n");
 		return count;
 	}
 
+	/* acpi_lapic_addr를 등록(MADT 엔트리의 주소 정보로 갱신되었기 때문) */
 	register_lapic_address(acpi_lapic_addr);
 
 	return count;
@@ -1511,11 +1517,12 @@ void __init acpi_boot_table_init(void)
 	/*
 	 * Initialize the ACPI boot-time table parser.
 	 */
+	/* acpi table 초기화가 실패하면 disable 한다. */
 	if (acpi_table_init()) {
 		disable_acpi();
 		return;
 	}
-
+	/* "BOOT" acpi 테이블 검사  */
 	acpi_table_parse(ACPI_SIG_BOOT, acpi_parse_sbf);
 
 	/*
@@ -1537,6 +1544,7 @@ int __init early_acpi_boot_init(void)
 	/*
 	 * If acpi_disabled, bail out
 	 */
+	 /* ACPI가 비활성화 되어 있는 경우 - 블랙리스트 처리되었음 */
 	if (acpi_disabled)
 		return 1;
 

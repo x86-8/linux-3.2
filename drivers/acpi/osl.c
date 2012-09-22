@@ -515,6 +515,7 @@ acpi_os_predefined_override(const struct acpi_predefined_names *init_val,
 	return AE_OK;
 }
 
+/* custom DSDT를 사용하기 위한 함수  */
 acpi_status
 acpi_os_table_override(struct acpi_table_header * existing_table,
 		       struct acpi_table_header ** new_table)
@@ -525,6 +526,7 @@ acpi_os_table_override(struct acpi_table_header * existing_table,
 	*new_table = NULL;
 
 #ifdef CONFIG_ACPI_CUSTOM_DSDT
+//http://www.lesswatts.org/projects/acpi/overridingDSDT.php
 	if (strncmp(existing_table->signature, "DSDT", 4) == 0)
 		*new_table = (struct acpi_table_header *)AmlCode;
 #endif

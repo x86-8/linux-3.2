@@ -512,14 +512,14 @@ u32 acpi_ut_dword_byte_swap(u32 value)
  *              makes a difference.
  *
  ******************************************************************************/
-
+/* 버전에 따라 비트, 니블, 바이트 크기 설정  */
 void acpi_ut_set_integer_width(u8 revision)
 {
 
 	if (revision < 2) {
 
 		/* 32-bit case */
-
+		/* nibble을 nybble로 쓰기도 한다.  */
 		acpi_gbl_integer_bit_width = 32;
 		acpi_gbl_integer_nybble_width = 8;
 		acpi_gbl_integer_byte_width = 4;

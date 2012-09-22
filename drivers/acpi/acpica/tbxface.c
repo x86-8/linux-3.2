@@ -118,8 +118,8 @@ acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
 	 * Set up the Root Table Array
 	 * Allocate the table array if requested
 	 */
-	/* initial_table_array가 null이면 들어간다.
-	 * null이면 dynamic 하게 할당한다.
+	/* initial_table_array가 null이면 dynamic 하게 할당한다.
+	 * 값이 있으면 else 쪽 실행
 	 */
 	if (!initial_table_array) {
 		status = acpi_allocate_root_table(initial_table_count);
@@ -295,7 +295,7 @@ acpi_get_table_header(char *signature,
 	struct acpi_table_header *header;
 
 	/* Parameter validation */
-
+	/* 시그니쳐나 out_table_header가 null이면 리턴(ERROR)  */
 	if (!signature || !out_table_header) {
 		return (AE_BAD_PARAMETER);
 	}
@@ -304,20 +304,23 @@ acpi_get_table_header(char *signature,
 
 	for (i = 0, j = 0; i < acpi_gbl_root_table_list.current_table_count;
 	     i++) {
+		/* 원하는 시그니쳐가 아니면 패스  */
 		if (!ACPI_COMPARE_NAME
 		    (&(acpi_gbl_root_table_list.tables[i].signature),
 		     signature)) {
 			continue;
 		}
-
+		/* 인스턴스 만큼 패스  */
 		if (++j < instance) {
 			continue;
 		}
 
 		if (!acpi_gbl_root_table_list.tables[i].pointer) {
+		/* 포인터가 없지만 ORIGIN_MAPPED만 켜있으면  */
 			if ((acpi_gbl_root_table_list.tables[i].flags &
 			     ACPI_TABLE_ORIGIN_MASK) ==
 			    ACPI_TABLE_ORIGIN_MAPPED) {
+				/* 물리주소로 포인터를 얻어온다.  */
 				header =
 				    acpi_os_map_memory(acpi_gbl_root_table_list.
 						       tables[i].address,
@@ -326,15 +329,17 @@ acpi_get_table_header(char *signature,
 				if (!header) {
 					return AE_NO_MEMORY;
 				}
+				/* 찾은 헤더를 복사한다.  */
 				ACPI_MEMCPY(out_table_header, header,
 					    sizeof(struct acpi_table_header));
 				acpi_os_unmap_memory(header,
 						     sizeof(struct
 							    acpi_table_header));
-			} else {
+			} else {	/* 못찾았으면 NOT_FOUND 리턴  */
 				return AE_NOT_FOUND;
 			}
 		} else {
+		/* 주소가 있을 경우 복사 */
 			ACPI_MEMCPY(out_table_header,
 				    acpi_gbl_root_table_list.tables[i].pointer,
 				    sizeof(struct acpi_table_header));
@@ -415,22 +420,24 @@ acpi_get_table_with_size(char *signature,
 	}
 
 	/* Walk the root table list */
-
+	/* 테이블 엔트리를 돌면서  */
 	for (i = 0, j = 0; i < acpi_gbl_root_table_list.current_table_count;
 	     i++) {
+		/* signature가 다르면 continue == 같은 signature만 검사  */
 		if (!ACPI_COMPARE_NAME
 		    (&(acpi_gbl_root_table_list.tables[i].signature),
 		     signature)) {
 			continue;
 		}
-
+		/* instance 만큼 뛰어넘는다. 여기서는 2개  */
 		if (++j < instance) {
 			continue;
 		}
-
+		/* 엔트리를 verifiy 한다.  */
 		status =
 		    acpi_tb_verify_table(&acpi_gbl_root_table_list.tables[i]);
 		if (ACPI_SUCCESS(status)) {
+			/* 찾았다면 out_table에 결과 포인터가 들어간다.  */
 			*out_table = acpi_gbl_root_table_list.tables[i].pointer;
 			*tbl_size = acpi_gbl_root_table_list.tables[i].length;
 		}

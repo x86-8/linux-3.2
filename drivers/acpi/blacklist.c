@@ -76,23 +76,28 @@ static struct acpi_blacklist_item acpi_blacklist[] __initdata = {
 };
 
 #if	CONFIG_ACPI_BLACKLIST_YEAR
-
+/* 이 옵션이 년도값으로 설정되어 있으면
+ * block하지 않는다.
+ */
 static int __init blacklist_by_year(void)
 {
 	int year;
 
 	/* Doesn't exist? Likely an old system */
+	/* ACPI를 지원하지 않는 경우 */
 	if (!dmi_get_date(DMI_BIOS_DATE, &year, NULL, NULL)) {
 		printk(KERN_ERR PREFIX "no DMI BIOS year, "
 			"acpi=force is required to enable ACPI\n" );
 		return 1;
 	}
 	/* 0? Likely a buggy new BIOS */
+	/* 역시 BIOS가 제대로 동작하지 않음 - ACPI 사용가능 */
 	if (year == 0) {
 		printk(KERN_ERR PREFIX "DMI BIOS year==0, "
 			"assuming ACPI-capable machine\n" );
 		return 0;
 	}
+	/* 세팅한 년도를 지나면 blacklist되지 않는다. */
 	if (year < CONFIG_ACPI_BLACKLIST_YEAR) {
 		printk(KERN_ERR PREFIX "BIOS age (%d) fails cutoff (%d), "
 		       "acpi=force is required to enable ACPI\n",
@@ -108,6 +113,7 @@ static inline int blacklist_by_year(void)
 }
 #endif
 
+/* ACPI 블랙리스트 처리가 필요한지 확인 */
 int __init acpi_blacklisted(void)
 {
 	int i = 0;
@@ -115,16 +121,19 @@ int __init acpi_blacklisted(void)
 	struct acpi_table_header table_header;
 
 	while (acpi_blacklist[i].oem_id[0] != '\0') {
+		/* table_header에 테이블 헤더를 얻어온다.  */
 		if (acpi_get_table_header(acpi_blacklist[i].table, 0, &table_header)) {
 			i++;
 			continue;
 		}
 
+		/* OEM ID 비교 */
 		if (strncmp(acpi_blacklist[i].oem_id, table_header.oem_id, 6)) {
 			i++;
 			continue;
 		}
 
+		/* OEM TABLE ID 비교 */
 		if (strncmp
 		    (acpi_blacklist[i].oem_table_id, table_header.oem_table_id,
 		     8)) {
@@ -132,6 +141,7 @@ int __init acpi_blacklisted(void)
 			continue;
 		}
 
+		/* 버그가 있거나 ACPI에 문제가 있는 리비전 비교 */
 		if ((acpi_blacklist[i].oem_revision_predicate == all_versions)
 		    || (acpi_blacklist[i].oem_revision_predicate ==
 			less_than_or_equal
@@ -170,6 +180,7 @@ int __init acpi_blacklisted(void)
 
 	dmi_check_system(acpi_osi_dmi_table);
 
+	/* blacklisted 값이 1이상일 경우, 에러처리 필요 */
 	return blacklisted;
 }
 #ifdef CONFIG_DMI

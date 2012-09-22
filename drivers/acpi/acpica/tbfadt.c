@@ -131,7 +131,7 @@ static struct acpi_fadt_info fadt_info_table[] = {
 	 0,
 	 ACPI_FADT_SEPARATE_LENGTH}
 };
-
+/* FADT INFO 엔트리 갯수  */
 #define ACPI_FADT_INFO_ENTRIES \
 			(sizeof (fadt_info_table) / sizeof (struct acpi_fadt_info))
 
@@ -249,7 +249,7 @@ void acpi_tb_parse_fadt(u32 table_index)
 	acpi_os_unmap_memory(table, length);
 
 	/* Obtain the DSDT and FACS tables via their addresses within the FADT */
-
+	/* 0, 1번 엔트리(dsdt, facs)역시 install 한다.  */
 	acpi_tb_install_table((acpi_physical_address) acpi_gbl_FADT.Xdsdt,
 			      ACPI_SIG_DSDT, ACPI_TABLE_INDEX_DSDT);
 
@@ -280,6 +280,7 @@ void acpi_tb_create_local_fadt(struct acpi_table_header *table, u32 length)
 	 * (the ACPI 2.0/3.0 version). If so, truncate the table, and issue
 	 * a warning.
 	 */
+	/* 기본 테이블 크기보다 크면 2.0 이상이면 경고 출력  */
 	if (length > sizeof(struct acpi_table_fadt)) {
 		ACPI_WARNING((AE_INFO,
 			      "FADT (revision %u) is longer than ACPI 2.0 version, "
@@ -289,11 +290,11 @@ void acpi_tb_create_local_fadt(struct acpi_table_header *table, u32 length)
 	}
 
 	/* Clear the entire local FADT */
-
+	/* acpi_gbl_FADT 테이블 초기화  */
 	ACPI_MEMSET(&acpi_gbl_FADT, 0, sizeof(struct acpi_table_fadt));
 
 	/* Copy the original FADT, up to sizeof (struct acpi_table_fadt) */
-
+	/* acpi_gbl_FADT에 기본 테이블 크기만큼 복사  */
 	ACPI_MEMCPY(&acpi_gbl_FADT, table,
 		    ACPI_MIN(length, sizeof(struct acpi_table_fadt)));
 
@@ -361,6 +362,7 @@ static void acpi_tb_convert_fadt(void)
 	 * (FIRMWARE_CTRL/X_FIRMWARE_CTRL, DSDT/X_DSDT) which would indicate
 	 * the presence of two FACS or two DSDT tables.
 	 */
+	/* 확장된 FACS가 없다면 32비트 FACS 사용  */
 	if (!acpi_gbl_FADT.Xfacs) {
 		acpi_gbl_FADT.Xfacs = (u64) acpi_gbl_FADT.facs;
 	} else if (acpi_gbl_FADT.facs &&
@@ -369,6 +371,7 @@ static void acpi_tb_convert_fadt(void)
 		    "32/64 FACS address mismatch in FADT - two FACS tables!"));
 	}
 
+	/* 확장된 DSDT(64bits)가 없다면 32비트짜리 xsdt 사용 */
 	if (!acpi_gbl_FADT.Xdsdt) {
 		acpi_gbl_FADT.Xdsdt = (u64) acpi_gbl_FADT.dsdt;
 	} else if (acpi_gbl_FADT.dsdt &&
@@ -388,6 +391,7 @@ static void acpi_tb_convert_fadt(void)
 	 * Note: The FADT revision value is unreliable. Only the length can be
 	 * trusted.
 	 */
+	/* v2.0인지 크기로 체크  */
 	if (acpi_gbl_FADT.header.length <= ACPI_FADT_V2_SIZE) {
 		acpi_gbl_FADT.preferred_profile = 0;
 		acpi_gbl_FADT.pstate_control = 0;
@@ -410,6 +414,7 @@ static void acpi_tb_convert_fadt(void)
 	 * tested by the BIOS manufacturer.
 	 */
 	for (i = 0; i < ACPI_FADT_INFO_ENTRIES; i++) {
+		/* 32비트 주소와 64비트 주소를 가져온다  */
 		address32 = *ACPI_ADD_PTR(u32,
 					  &acpi_gbl_FADT,
 					  fadt_info_table[i].address32);
@@ -422,6 +427,7 @@ static void acpi_tb_convert_fadt(void)
 		 * If both 32- and 64-bit addresses are valid (non-zero),
 		 * they must match.
 		 */
+	/* 32비트와 64비트 주소가 있고 서로 같지 않다면 에러 출력  */
 		if (address64->address && address32 &&
 		    (address64->address != (u64) address32)) {
 			ACPI_ERROR((AE_INFO,
@@ -431,7 +437,7 @@ static void acpi_tb_convert_fadt(void)
 		}
 
 		/* Always use 32-bit address if it is valid (non-null) */
-
+		/* 32비트 주소가 유효하면 32비트를 사용 (64비트로 복사)  */
 		if (address32) {
 			/*
 			 * Copy the 32-bit address to the 64-bit GAS structure. The
@@ -467,7 +473,7 @@ static void acpi_tb_convert_fadt(void)
  * Gpe block lengths must be multiple of 2
  *
  ******************************************************************************/
-
+/* FADT 검증  */
 static void acpi_tb_validate_fadt(void)
 {
 	char *name;
@@ -480,6 +486,7 @@ static void acpi_tb_validate_fadt(void)
 	 * the 32-bit and 64-bit address fields (FIRMWARE_CTRL/X_FIRMWARE_CTRL and
 	 * DSDT/X_DSDT) would indicate the presence of two FACS or two DSDT tables.
 	 */
+	/* xfacs랑 facs가 같지 않으면 facs 사용, warning 출력  */
 	if (acpi_gbl_FADT.facs &&
 	    (acpi_gbl_FADT.Xfacs != (u64) acpi_gbl_FADT.facs)) {
 		ACPI_WARNING((AE_INFO,
@@ -490,7 +497,7 @@ static void acpi_tb_validate_fadt(void)
 
 		acpi_gbl_FADT.Xfacs = (u64) acpi_gbl_FADT.facs;
 	}
-
+	/* 이하동문  */
 	if (acpi_gbl_FADT.dsdt &&
 	    (acpi_gbl_FADT.Xdsdt != (u64) acpi_gbl_FADT.dsdt)) {
 		ACPI_WARNING((AE_INFO,
@@ -509,6 +516,7 @@ static void acpi_tb_validate_fadt(void)
 		 * Generate pointer to the 64-bit address, get the register
 		 * length (width) and the register name
 		 */
+		/* 엔트리 주소를 가져와서 타입, 크기 등을 체크한다.  */
 		address64 = ACPI_ADD_PTR(struct acpi_generic_address,
 					 &acpi_gbl_FADT,
 					 fadt_info_table[i].address64);
@@ -587,6 +595,7 @@ static void acpi_tb_setup_fadt_registers(void)
 	 * Optionally check all register lengths against the default values and
 	 * update them if they are incorrect.
 	 */
+	/* 엔트리를 돌면서 레지스터 크기 체크  */
 	if (acpi_gbl_use_default_register_widths) {
 		for (i = 0; i < ACPI_FADT_INFO_ENTRIES; i++) {
 			target64 =

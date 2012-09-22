@@ -230,7 +230,10 @@ acpi_tb_cleanup_table_header(struct acpi_table_header *out_header,
  * DESCRIPTION: Print an ACPI table header. Special cases for FACS and RSDP.
  *
  ******************************************************************************/
-
+/* acpi table 헤더 정보를 출력해준다
+ * FACS와 RSDP는 특별히 처리하고 일반적인 ACPI는 동일하게 출력한다
+ * 물리주소와 가상주소 모두 필요한데 물리주소는 출력할 정보로 쓰인다.
+ */
 void
 acpi_tb_print_table_header(acpi_physical_address address,
 			   struct acpi_table_header *header)
@@ -296,7 +299,7 @@ acpi_tb_print_table_header(acpi_physical_address address,
  *              exception on bad checksum.
  *
  ******************************************************************************/
-
+/* 단순히 더한 체크섬을 verify 한다.  */
 acpi_status acpi_tb_verify_checksum(struct acpi_table_header *table, u32 length)
 {
 	u8 checksum;
@@ -461,7 +464,7 @@ acpi_tb_install_table(acpi_physical_address address,
 	}
 
 	/* Map just the table header */
-
+	/* 물리주소를 가상주소로 매핑한다.   */
 	mapped_table =
 	    acpi_os_map_memory(address, sizeof(struct acpi_table_header));
 	if (!mapped_table) {
@@ -469,7 +472,9 @@ acpi_tb_install_table(acpi_physical_address address,
 	}
 
 	/* If a particular signature is expected (DSDT/FACS), it must match */
-
+	/* 인자로 들어온 signature가 null이 아니고
+	 * mapped_table->signature 와 signature가 같지 않다면 에러 출력후 go : unmap & exit
+	 */
 	if (signature && !ACPI_COMPARE_NAME(mapped_table->signature, signature)) {
 		ACPI_ERROR((AE_INFO,
 			    "Invalid signature 0x%X for ACPI table, expected [%s]",
@@ -486,6 +491,7 @@ acpi_tb_install_table(acpi_physical_address address,
 	 * including the DSDT which is pointed to by the FADT.
 	 */
 	status = acpi_os_table_override(mapped_table, &override_table);
+	/* DSDT를 새로 덮어씌울 것이 있다면 그걸(override_table) 사용 */
 	if (ACPI_SUCCESS(status) && override_table) {
 		ACPI_INFO((AE_INFO,
 			   "%4.4s @ 0x%p Table override, replaced with:",
@@ -499,17 +505,20 @@ acpi_tb_install_table(acpi_physical_address address,
 		table_to_install = override_table;
 		flags = ACPI_TABLE_ORIGIN_OVERRIDE;
 	} else {
+	/* 아니라면 기존 테이블(mapped_table) 사용  */
 		table_to_install = mapped_table;
 		flags = ACPI_TABLE_ORIGIN_MAPPED;
 	}
 
 	/* Initialize the table entry */
-
+	/* 엔트리의 물리 주소  */
 	acpi_gbl_root_table_list.tables[table_index].address = address;
+	/* 매핑한 블럭의 크기 */
 	acpi_gbl_root_table_list.tables[table_index].length =
 	    table_to_install->length;
 	acpi_gbl_root_table_list.tables[table_index].flags = flags;
-
+	/* table_index는 엔트리의 번호
+	 * 시그니쳐를 커널의 구조체에 복사*/
 	ACPI_MOVE_32_TO_32(&
 			   (acpi_gbl_root_table_list.tables[table_index].
 			    signature), table_to_install->signature);
@@ -619,17 +628,20 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	/*
 	 * Map the entire RSDP and extract the address of the RSDT or XSDT
 	 */
+	/* rsdp의 크기만큼 ioremap  */
 	rsdp = acpi_os_map_memory(rsdp_address, sizeof(struct acpi_table_rsdp));
 	if (!rsdp) {
 		return_ACPI_STATUS(AE_NO_MEMORY);
 	}
-
+	/* acpi RSDP 헤더 출력  */
 	acpi_tb_print_table_header(rsdp_address,
 				   ACPI_CAST_PTR(struct acpi_table_header,
 						 rsdp));
 
 	/* Differentiate between RSDT and XSDT root tables */
-
+	/* ACPI 2.0은 1.0과 구분된다.
+	 * 버전이 2.0 이상이고 xsdt(64bits) 주소가 있으면 위쪽 실행
+	 */
 	if (rsdp->revision > 1 && rsdp->xsdt_physical_address
 			&& !acpi_rsdt_forced) {
 		/*
@@ -637,12 +649,15 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 		 * XSDT if the revision is > 1 and the XSDT pointer is present, as per
 		 * the ACPI specification.
 		 */
+		/* 주소를 xsdt로 사용한다. 주소 크기는 8bytes! */
 		address = (acpi_physical_address) rsdp->xsdt_physical_address;
 		table_entry_size = sizeof(u64);
+		/* rsdt 정보도 보존한다.  */
 		rsdt_address = (acpi_physical_address)
 					rsdp->rsdt_physical_address;
 	} else {
 		/* Root table is an RSDT (32-bit physical addresses) */
+		/* 엔트리는 4바이트, rsdp 사용  */
 
 		address = (acpi_physical_address) rsdp->rsdt_physical_address;
 		table_entry_size = sizeof(u32);
@@ -652,8 +667,10 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	 * It is not possible to map more than one entry in some environments,
 	 * so unmap the RSDP here before mapping other tables
 	 */
+	/* 찾았으니 필요없다. unmap  */
 	acpi_os_unmap_memory(rsdp, sizeof(struct acpi_table_rsdp));
 
+	/* 2.0 이상이라도 xsdt에 문제가 있다면 다시 rsdt를 사용한다 */
 	if (table_entry_size == sizeof(u64)) {
 		if (acpi_tb_check_xsdt(address) == AE_NULL_ENTRY) {
 			/* XSDT has NULL entry, RSDT is used */
@@ -664,12 +681,12 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 		}
 	}
 	/* Map the RSDT/XSDT table header to get the full table length */
-
+	/* 얻어온 RSDT/XSDT 테이블 헤더를 위한 메모리 할당  */
 	table = acpi_os_map_memory(address, sizeof(struct acpi_table_header));
 	if (!table) {
 		return_ACPI_STATUS(AE_NO_MEMORY);
 	}
-
+	/* XSDT 출력  */
 	acpi_tb_print_table_header(address, table);
 
 	/* Get the length of the full table, verify length and map entire table */
@@ -677,19 +694,20 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	length = table->length;
 	acpi_os_unmap_memory(table, sizeof(struct acpi_table_header));
 
+	/* 크기가 헤더 크기보다 작으면 에러  */
 	if (length < sizeof(struct acpi_table_header)) {
 		ACPI_ERROR((AE_INFO, "Invalid length 0x%X in RSDT/XSDT",
 			    length));
 		return_ACPI_STATUS(AE_INVALID_TABLE_LENGTH);
 	}
-
+	/* 크기를 알았으니 length만큼 메모리를 할당한다.  */
 	table = acpi_os_map_memory(address, length);
 	if (!table) {
 		return_ACPI_STATUS(AE_NO_MEMORY);
 	}
 
 	/* Validate the root table checksum */
-
+	/* XSDT/RSDT의 체크섬 확인  */
 	status = acpi_tb_verify_checksum(table, length);
 	if (ACPI_FAILURE(status)) {
 		acpi_os_unmap_memory(table, length);
@@ -697,7 +715,7 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	}
 
 	/* Calculate the number of tables described in the root table */
-
+	/* 헤더를 제외한 테이블의 엔트리의 갯수  */
 	table_count = (u32)((table->length - sizeof(struct acpi_table_header)) /
 			    table_entry_size);
 	/*
@@ -705,14 +723,18 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	 * and FACS, which are not actually present in the RSDT/XSDT - they
 	 * come from the FADT
 	 */
+	/* 테이블 엔트리들의 시작주소를 가리킨다  */
 	table_entry =
 	    ACPI_CAST_PTR(u8, table) + sizeof(struct acpi_table_header);
+	/* 앞쪽의 DSDT와 FACS를 위한 두개는 예약해놓는다.  */
 	acpi_gbl_root_table_list.current_table_count = 2;
 
 	/*
 	 * Initialize the root table array from the RSDT/XSDT
 	 */
+	/* 엔트리 갯수만큼 돈다  */
 	for (i = 0; i < table_count; i++) {
+	/* 이 if문은 max 값이 넘었을 때의 예외처리  */
 		if (acpi_gbl_root_table_list.current_table_count >=
 		    acpi_gbl_root_table_list.max_table_count) {
 
@@ -731,11 +753,13 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 		}
 
 		/* Get the table physical address (32-bit for RSDT, 64-bit for XSDT) */
-
+		/* 테이블 리스트에 각각의 테이블 엔트리의 물리주소를 넣는다.
+		 * 엔트리 두개는 비워놓고 2부터 시작
+		 */
 		acpi_gbl_root_table_list.tables[acpi_gbl_root_table_list.
 						current_table_count].address =
 		    acpi_tb_get_root_table_entry(table_entry, table_entry_size);
-
+		/* 다음 테이블 엔트리를 가리킨다.  */
 		table_entry += table_entry_size;
 		acpi_gbl_root_table_list.current_table_count++;
 	}
@@ -751,11 +775,12 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	 * the header of each table
 	 */
 	for (i = 2; i < acpi_gbl_root_table_list.current_table_count; i++) {
+	/* acpi_gbl_root_table_list 에 acpi 정보를 install 한다.  */
 		acpi_tb_install_table(acpi_gbl_root_table_list.tables[i].
 				      address, NULL, i);
 
 		/* Special case for FADT - get the DSDT and FACS */
-
+	/* 시그니쳐가 "FACP"(FADT)면 특별한 처리를 한다.   */
 		if (ACPI_COMPARE_NAME
 		    (&acpi_gbl_root_table_list.tables[i].signature,
 		     ACPI_SIG_FADT)) {
