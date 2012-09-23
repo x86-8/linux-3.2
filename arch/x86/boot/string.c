@@ -86,28 +86,36 @@ static unsigned int simple_guess_base(const char *cp)
  * @endp: A pointer to the end of the parsed string will be placed here
  * @base: The number base to use
  */
-/* 숫자로된 아스키 문자열을 long long 형태의 숫자로 바꾼다. */
+/* n진수(base) 숫자로된 아스키 문자열을 long long 형태의 숫자로 리턴한다. */
 unsigned long long simple_strtoull(const char *cp, char **endp, unsigned int base)
 {
-	unsigned long long result = 0; // 부호없는 64비트 정수
+	/* 부호없는 64비트 정수 */
+	unsigned long long result = 0;
 
+	/* 진수에 대한 언급이 없으면 추측한다. */
 	if (!base)
-		base = simple_guess_base(cp);  // 요청없을때
+		base = simple_guess_base(cp);
 
-	if (base == 16 && cp[0] == '0' && TOLOWER(cp[1]) == 'x') // 16진수 확인
+	/* 0x가 붙은 16진수인지 확인 */
+	if (base ==16 && cp[0] == '0' && TOLOWER(cp[1]) == 'x')
 		cp += 2;
 
+	/* 16진수 숫자면 계속 */
 	while (isxdigit(*cp)) {
 		unsigned int value;
 
-		value = isdigit(*cp) ? *cp - '0' : TOLOWER(*cp) - 'a' + 10; // 0-9면 -'0' a-f면 -'a'
-		if (value >= base) // 진수보다 값이 크면 중단
+		/* 0-9면 -'0' a-f면 -'a' */
+		value = isdigit(*cp) ? *cp - '0' : TOLOWER(*cp) - 'a' + 10;
+		/* 진수보다 값이 크면 중단 */
+		if (value >= base)
 			break;
-		result = result * base + value; // 기수로 한자리 올린다.
+		/* 기수로 한자리 올린다. */
+		result = result * base + value;
 		cp++;
 	}
-	if (endp) // null인지? 
-		*endp = (char *)cp; // 끝난지점
+	/* endp가 null이면 endp=끝난지점 */
+	if (endp)
+		*endp = (char *)cp;
 
 	return result;
 }

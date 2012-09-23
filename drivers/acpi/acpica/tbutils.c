@@ -445,7 +445,7 @@ struct acpi_table_header *acpi_tb_copy_dsdt(u32 table_index)
  *              table array.
  *
  ******************************************************************************/
-
+/* ACPI 테이블의 정보들을 커널의 전역변수에 넣는다.(install) */
 void
 acpi_tb_install_table(acpi_physical_address address,
 		      char *signature, u32 table_index)
@@ -511,9 +511,9 @@ acpi_tb_install_table(acpi_physical_address address,
 	}
 
 	/* Initialize the table entry */
-	/* 엔트리의 물리 주소  */
+	/* 엔트리의 물리 주소 */
 	acpi_gbl_root_table_list.tables[table_index].address = address;
-	/* 매핑한 블럭의 크기 */
+	/* 매핑된(phys->virt) 블럭의 크기 */
 	acpi_gbl_root_table_list.tables[table_index].length =
 	    table_to_install->length;
 	acpi_gbl_root_table_list.tables[table_index].flags = flags;
@@ -552,7 +552,7 @@ acpi_tb_install_table(acpi_physical_address address,
  *              64-bit platforms.
  *
  ******************************************************************************/
-
+/* 엔트리 물리주소를 반환한다. */
 static acpi_physical_address
 acpi_tb_get_root_table_entry(u8 *table_entry, u32 table_entry_size)
 {
@@ -608,7 +608,11 @@ acpi_tb_get_root_table_entry(u8 *table_entry, u32 table_entry_size)
  *              memory location of the ACPI Global Lock.
  *
  ******************************************************************************/
-
+/**
+ * RSDT/XSDT 정보를 파싱한다.
+ * 버전을 확인(1.0 or >=2.0) 테이블 헤더를 출력하고
+ * 커널 구조체에 엔트리 정보들을 넣어준다.
+ */
 acpi_status __init
 acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 {
@@ -734,12 +738,11 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	 */
 	/* 엔트리 갯수만큼 돈다  */
 	for (i = 0; i < table_count; i++) {
-	/* 이 if문은 max 값이 넘었을 때의 예외처리  */
 		if (acpi_gbl_root_table_list.current_table_count >=
 		    acpi_gbl_root_table_list.max_table_count) {
-
+			/* 이 if문은 max 값이 넘었을 때의 예외처리  */
 			/* There is no more room in the root table array, attempt resize */
-
+			/* root table을 증가시켜(메모리 할당후 복사) 본다. */
 			status = acpi_tb_resize_root_table_list();
 			if (ACPI_FAILURE(status)) {
 				ACPI_WARNING((AE_INFO,
@@ -753,8 +756,9 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 		}
 
 		/* Get the table physical address (32-bit for RSDT, 64-bit for XSDT) */
-		/* 테이블 리스트에 각각의 테이블 엔트리의 물리주소를 넣는다.
-		 * 엔트리 두개는 비워놓고 2부터 시작
+		/**
+		 * 테이블 리스트에 각각의 테이블 엔트리의 물리주소를 넣는다.
+		 * 엔트리 두개는 비워놓고 2부터 시작된다.
 		 */
 		acpi_gbl_root_table_list.tables[acpi_gbl_root_table_list.
 						current_table_count].address =
@@ -775,12 +779,12 @@ acpi_tb_parse_root_table(acpi_physical_address rsdp_address)
 	 * the header of each table
 	 */
 	for (i = 2; i < acpi_gbl_root_table_list.current_table_count; i++) {
-	/* acpi_gbl_root_table_list 에 acpi 정보를 install 한다.  */
+		/* acpi 정보를 커널 구조체(acpi_gbl_root_table_list)에 install 한다.  */
 		acpi_tb_install_table(acpi_gbl_root_table_list.tables[i].
 				      address, NULL, i);
 
 		/* Special case for FADT - get the DSDT and FACS */
-	/* 시그니쳐가 "FACP"(FADT)면 특별한 처리를 한다.   */
+		/* 시그니쳐가 "FACP"(FADT)면 특별한 처리를 한다.   */
 		if (ACPI_COMPARE_NAME
 		    (&acpi_gbl_root_table_list.tables[i].signature,
 		     ACPI_SIG_FADT)) {

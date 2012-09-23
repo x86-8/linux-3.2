@@ -78,7 +78,6 @@
  * Otherwise, we have to move one byte at a time.
  */
 #ifdef ACPI_BIG_ENDIAN
-/* ACPI 테이블 안의 숫자값들은 little endian을 따른다. 때문에 다른 엔디안을 사용하면 변환한다.  */
 /*
  * Macros for big-endian machines
  */
@@ -88,7 +87,7 @@
 			  /* Big Endian      <==        Little Endian */
 			  /*  Hi...Lo                     Lo...Hi     */
 /* 16-bit source, 16/32/64 destination */
-
+/* ACPI 테이블 안의 숫자값들은 little endian을 따른다. 때문에 다른 엔디안을 사용하면 변환한다.  */
 #define ACPI_MOVE_16_TO_16(d, s)        {((  u8 *)(void *)(d))[0] = ((u8 *)(void *)(s))[1];\
 					   ((  u8 *)(void *)(d))[1] = ((u8 *)(void *)(s))[0];}
 

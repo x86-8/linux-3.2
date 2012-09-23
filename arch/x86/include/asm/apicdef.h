@@ -142,6 +142,7 @@
 #define		APIC_EILVT_MSG_EXT	0x7
 #define		APIC_EILVT_MASKED	(1 << 16)
 
+/* fixmap의 FIX_APIC_BASE 페이지 시작주소 */
 #define APIC_BASE (fix_to_virt(FIX_APIC_BASE))
 #define APIC_BASE_MSR	0x800
 #define X2APIC_ENABLE	(1UL << 10)

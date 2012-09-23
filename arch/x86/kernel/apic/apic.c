@@ -1713,6 +1713,7 @@ void __init register_lapic_address(unsigned long address)
 
 	/* x2apic 모드가 지원되지 않는 경우 */
 	if (!x2apic_mode) {
+		/* APIC fixmap 페이지를 address로 매핑 */
 		set_fixmap_nocache(FIX_APIC_BASE, address);
 		apic_printk(APIC_VERBOSE, "mapped APIC to %16lx (%16lx)\n",
 			    APIC_BASE, mp_lapic_addr);

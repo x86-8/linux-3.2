@@ -328,9 +328,9 @@ static void __init check_multiple_madt(void)
 {
 	struct acpi_table_header *table = NULL;
 	acpi_size tbl_size;
-	/* 엔트리를 검색하면서 MADT를 verify 한다.  */
+	/* 엔트리를 검색하면서 MADT를 verify 한다. 처음 2개는 검색하지 않는다.(instance) */
 	acpi_get_table_with_size(ACPI_SIG_MADT, 2, &table, &tbl_size);
-	/* 성공했으면 table에 결과값이 있다. MADT를 찾았다는 것이다.   */
+	/* 성공했으면 MADT를 찾은 것이다. table에 결과값이 있다. */
 	if (table) {
 		printk(KERN_WARNING PREFIX
 		       "BIOS bug: multiple APIC/MADT found,"

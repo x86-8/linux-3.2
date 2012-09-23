@@ -221,7 +221,7 @@ void set_pte_vaddr_pud(pud_t *pud_page, unsigned long vaddr, pte_t new_pte)
 	/* TLB를 비운다. */
 	__flush_tlb_one(vaddr);
 }
-/* 가상주소의 pte에 해당하는 엔트리를 pteval로 세팅 */
+/* 가상주소의 해당 pte 엔트리를 pteval로 세팅 */
 void set_pte_vaddr(unsigned long vaddr, pte_t pteval)
 {
 	pgd_t *pgd;

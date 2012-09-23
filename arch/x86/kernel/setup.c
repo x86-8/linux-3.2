@@ -948,7 +948,7 @@ void __init setup_arch(char **cmdline_p)
 	if (efi_enabled)
 		/* EFI runtime 서비스를 사용가능하게 한다. */
 		efi_init();
-
+	/* 0xF0000 메모리 영역을 검색해서 dmi가 위치한 곳을 찾는다. */
 	dmi_scan_machine();
 
 	/*

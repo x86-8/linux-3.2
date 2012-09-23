@@ -104,7 +104,9 @@ acpi_status acpi_allocate_root_table(u32 initial_table_count)
  *              initial_table_array, and the table will be dynamically allocated.
  *
  ******************************************************************************/
-
+/**
+ * ACPI 정보를 얻기 위해 RSDP를 얻은 후에 RSDP를 따라서 테이블,엔트리들을 파싱한다.
+ */
 acpi_status __init
 acpi_initialize_tables(struct acpi_table_desc * initial_table_array,
 		       u32 initial_table_count, u8 allow_resize)
@@ -404,6 +406,7 @@ ACPI_EXPORT_SYMBOL(acpi_unload_table_id)
  * DESCRIPTION: Finds and verifies an ACPI table.
  *
  ******************************************************************************/
+/* ACPI 테이블에서 signature와 동일한 테이블을 검색한다. */
 acpi_status
 acpi_get_table_with_size(char *signature,
 	       u32 instance, struct acpi_table_header **out_table,
@@ -414,7 +417,7 @@ acpi_get_table_with_size(char *signature,
 	acpi_status status;
 
 	/* Parameter validation */
-
+	/* 시그니쳐나 출력용 테이블이 없으면 잘못된것이다. */
 	if (!signature || !out_table) {
 		return (AE_BAD_PARAMETER);
 	}
@@ -423,13 +426,13 @@ acpi_get_table_with_size(char *signature,
 	/* 테이블 엔트리를 돌면서  */
 	for (i = 0, j = 0; i < acpi_gbl_root_table_list.current_table_count;
 	     i++) {
-		/* signature가 다르면 continue == 같은 signature만 검사  */
+		/* 같은 signature만 검사한다. signature가 다르면 continue */
 		if (!ACPI_COMPARE_NAME
 		    (&(acpi_gbl_root_table_list.tables[i].signature),
 		     signature)) {
 			continue;
 		}
-		/* instance 만큼 뛰어넘는다. 여기서는 2개  */
+		/* instance 만큼 뛰어넘는다. */
 		if (++j < instance) {
 			continue;
 		}

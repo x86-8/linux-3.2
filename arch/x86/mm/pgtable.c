@@ -427,7 +427,7 @@ void __init reserve_top_address(unsigned long reserve)
 }
 
 int fixmaps_set;
-
+/* idx에 해당하는 fixmap을 pte 물리주소로 세팅 */
 void __native_set_fixmap(enum fixed_addresses idx, pte_t pte)
 {
 	/* 인자로 받은 fix 페이지 값을 가상주소로 바꾼다. */
@@ -441,7 +441,7 @@ void __native_set_fixmap(enum fixed_addresses idx, pte_t pte)
 	set_pte_vaddr(address, pte);
 	fixmaps_set++;
 }
-
+/* fixmap idx 엔트리를 phys 물리주소로 매핑 */
 void native_set_fixmap(enum fixed_addresses idx, phys_addr_t phys,
 		       pgprot_t flags)
 {

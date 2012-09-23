@@ -868,7 +868,7 @@ static int __init early_acpi_parse_madt_lapic_addr_ovr(void)
 	 * Note that the LAPIC address is obtained from the MADT (32-bit value)
 	 * and (optionally) overriden by a LAPIC_ADDR_OVR entry (64-bit value).
 	 */
-	/* Override하고 나서 갯수를 얻어온다 */
+	/* 64비트로 Override된다면 갯수를 얻어온다 */
 	count =
 	    acpi_table_parse_madt(ACPI_MADT_TYPE_LOCAL_APIC_OVERRIDE,
 				  acpi_parse_lapic_addr_ovr, 0);
@@ -879,7 +879,7 @@ static int __init early_acpi_parse_madt_lapic_addr_ovr(void)
 		return count;
 	}
 
-	/* acpi_lapic_addr를 등록(MADT 엔트리의 주소 정보로 갱신되었기 때문) */
+	/* acpi_lapic_addr를 fixmap에 매핑 */
 	register_lapic_address(acpi_lapic_addr);
 
 	return count;
@@ -1213,12 +1213,12 @@ static inline int acpi_parse_madt_ioapic_entries(void)
 	return -1;
 }
 #endif	/* !CONFIG_X86_IO_APIC */
-
+/* MADT에서 lapic 정보를 얻는다. */
 static void __init early_acpi_process_madt(void)
 {
 #ifdef CONFIG_X86_LOCAL_APIC
 	int error;
-
+	/* lapci 주소는 acpi_parse_madt에서 대입된다. */
 	if (!acpi_table_parse(ACPI_SIG_MADT, acpi_parse_madt)) {
 
 		/*
@@ -1503,8 +1503,9 @@ static struct dmi_system_id __initdata acpi_dmi_table_late[] = {
 void __init acpi_boot_table_init(void)
 {
 
-	/* 특정 DMI 장치들을 확인 & 콜백 함수 호출
-	 * 특정 장치들(blacklist)의 예외처리
+	/**
+	 * DMI 정보를 확인 & 콜백 함수 호출
+	 * 특정 장치들(blacklist)의 예외처리 - dmi_disable_acpi()
 	 */
 	dmi_check_system(acpi_dmi_table);
 
@@ -1517,7 +1518,7 @@ void __init acpi_boot_table_init(void)
 	/*
 	 * Initialize the ACPI boot-time table parser.
 	 */
-	/* acpi table 초기화가 실패하면 disable 한다. */
+	/* acpi table 초기화가 실패하면 disable_acpi() */
 	if (acpi_table_init()) {
 		disable_acpi();
 		return;

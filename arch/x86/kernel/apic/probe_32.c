@@ -248,11 +248,14 @@ generic_mps_oem_check(struct mpc_table *mpc, char *oem, char *productid)
 	}
 	return 0;
 }
-
+/**
+ * 리눅스의 apic_driver 리스트에 등록되어 있는 모든 acpi_madt_oem_check 함수를 실행한다.
+ * 인자로 넘어온 oem 정보가 oem_check가 필요한 apic 드라이버들에게 check된다.
+ */
 int __init default_acpi_madt_oem_check(char *oem_id, char *oem_table_id)
 {
 	struct apic **drv;
-
+	/* apic_driver 매크로로 선언된 apic 드라이버들을 검색 */
 	for (drv = __apicdrivers; drv < __apicdrivers_end; drv++) {
 		/* MADT_OEM_CHECK 함수가 없는 경우 skip */
 		if (!(*drv)->acpi_madt_oem_check)

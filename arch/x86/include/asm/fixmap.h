@@ -196,6 +196,7 @@ void native_set_fixmap(enum fixed_addresses idx,
 		       phys_addr_t phys, pgprot_t flags);
 
 #ifndef CONFIG_PARAVIRT
+/* fixmap 인덱스 -> phys 물리주소로 매핑 */
 static inline void __set_fixmap(enum fixed_addresses idx,
 				phys_addr_t phys, pgprot_t flags)
 {
@@ -209,6 +210,7 @@ static inline void __set_fixmap(enum fixed_addresses idx,
 /*
  * Some hardware wants to get fixmapped without caching.
  */
+/* 캐시 안쓰는 fix mapping */
 #define set_fixmap_nocache(idx, phys)			\
 	__set_fixmap(idx, phys, PAGE_KERNEL_NOCACHE)
 

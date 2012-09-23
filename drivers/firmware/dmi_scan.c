@@ -437,6 +437,7 @@ static int __init dmi_present(const char __iomem *p)
 	return 1;
 }
 
+/* DMI 정보가 위치한 곳을 얻는다. */
 void __init dmi_scan_machine(void)
 {
 	char __iomem *p, *q;
@@ -543,8 +544,9 @@ static bool dmi_is_end_of_table(const struct dmi_system_id *dmi)
  *	returns non zero or we hit the end. Callback function is called for
  *	each successful match. Returns the number of matches.
  */
-/* dmi 체크후 일치하면 콜백 함수 호출
- * 일치하는 갯수를 리턴
+/**
+ * dmi 체크후 일치하면 콜백 함수 호출
+ * 일치하는 갯수를 리턴한다.
  */
 int dmi_check_system(const struct dmi_system_id *list)
 {
@@ -679,6 +681,7 @@ EXPORT_SYMBOL(dmi_find_device);
  *	On return, year, month and day are guaranteed to be in the
  *	range of [0,9999], [0,12] and [0,31] respectively.
  */
+/* dmi 필드에서 날짜 정보를 얻는다. */
 bool dmi_get_date(int field, int *yearp, int *monthp, int *dayp)
 {
 	int year = 0, month = 0, day = 0;
@@ -697,11 +700,13 @@ bool dmi_get_date(int field, int *yearp, int *monthp, int *dayp)
 	 * from the end.  Keep the behavior in the spirit of no
 	 * surprises.
 	 */
+	/* 년도가 가장 끝에 있기 때문에 년도 위치 탐색 */
 	y = strrchr(s, '/');
 	if (!y)
 		goto out;
 
 	y++;
+	/* 스트링을 숫자로 변환 */
 	year = simple_strtoul(y, &e, 10);
 	if (y != e && year < 100) {	/* 2-digit year */
 		year += 1900;

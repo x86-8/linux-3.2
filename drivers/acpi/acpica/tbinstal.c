@@ -81,7 +81,7 @@ acpi_status acpi_tb_verify_table(struct acpi_table_desc *table_desc)
 	}
 
 	/* FACS is the odd table, has no standard ACPI header and no checksum */
-
+	/* FACS라면 체크섬까지 확인 */
 	if (!ACPI_COMPARE_NAME(&table_desc->signature, ACPI_SIG_FACS)) {
 
 		/* Always calculate checksum, ignore bad checksum if requested */
@@ -272,7 +272,7 @@ acpi_tb_add_table(struct acpi_table_desc *table_desc, u32 *table_index)
  * DESCRIPTION: Expand the size of global table array
  *
  ******************************************************************************/
-
+/* acpi table의 크기를 늘린다. */
 acpi_status acpi_tb_resize_root_table_list(void)
 {
 	struct acpi_table_desc *tables;
@@ -280,7 +280,7 @@ acpi_status acpi_tb_resize_root_table_list(void)
 	ACPI_FUNCTION_TRACE(tb_resize_root_table_list);
 
 	/* allow_resize flag is a parameter to acpi_initialize_tables */
-
+	/* RESIZE 플래그가 꺼져있다면 에러 */
 	if (!(acpi_gbl_root_table_list.flags & ACPI_ROOT_ALLOW_RESIZE)) {
 		ACPI_ERROR((AE_INFO,
 			    "Resize of Root Table Array is not allowed"));
@@ -288,7 +288,7 @@ acpi_status acpi_tb_resize_root_table_list(void)
 	}
 
 	/* Increase the Table Array size */
-
+	/* 최대크기+크기증가분 만큼 메모리 할당 */
 	tables = ACPI_ALLOCATE_ZEROED(((acpi_size) acpi_gbl_root_table_list.
 				       max_table_count +
 				       ACPI_ROOT_TABLE_SIZE_INCREMENT) *
@@ -300,7 +300,7 @@ acpi_status acpi_tb_resize_root_table_list(void)
 	}
 
 	/* Copy and free the previous table array */
-
+	/* 기존 자료를 새로 얻어온 곳으로 복사 */
 	if (acpi_gbl_root_table_list.tables) {
 		ACPI_MEMCPY(tables, acpi_gbl_root_table_list.tables,
 			    (acpi_size) acpi_gbl_root_table_list.
@@ -310,7 +310,7 @@ acpi_status acpi_tb_resize_root_table_list(void)
 			ACPI_FREE(acpi_gbl_root_table_list.tables);
 		}
 	}
-
+	/* max 크기등, 플래그, 메모리 위치 정보 갱신 */
 	acpi_gbl_root_table_list.tables = tables;
 	acpi_gbl_root_table_list.max_table_count +=
 	    ACPI_ROOT_TABLE_SIZE_INCREMENT;

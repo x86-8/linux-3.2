@@ -76,28 +76,29 @@ static struct acpi_blacklist_item acpi_blacklist[] __initdata = {
 };
 
 #if	CONFIG_ACPI_BLACKLIST_YEAR
-/* 이 옵션이 년도값으로 설정되어 있으면
- * block하지 않는다.
+/**
+ * 이 옵션에 년도값으로 설정되어 있으면 해당년도 이후의 BIOS인 경우 blacklist 에서 제외된다.
+ * 리턴값이 1이면 blacklist를 유지, 0이면 blacklist 해제
  */
 static int __init blacklist_by_year(void)
 {
 	int year;
 
 	/* Doesn't exist? Likely an old system */
-	/* ACPI를 지원하지 않는 경우 */
+	/* DMI에서 년도 정보를 얻을수 없는경우 blacklist 유지 */
 	if (!dmi_get_date(DMI_BIOS_DATE, &year, NULL, NULL)) {
 		printk(KERN_ERR PREFIX "no DMI BIOS year, "
 			"acpi=force is required to enable ACPI\n" );
 		return 1;
 	}
 	/* 0? Likely a buggy new BIOS */
-	/* 역시 BIOS가 제대로 동작하지 않음 - ACPI 사용가능 */
+	/* BIOS 년도 정보가 이상하지만 new BIOS로 간주한다. - ACPI 사용가능 */
 	if (year == 0) {
 		printk(KERN_ERR PREFIX "DMI BIOS year==0, "
 			"assuming ACPI-capable machine\n" );
 		return 0;
 	}
-	/* 세팅한 년도를 지나면 blacklist되지 않는다. */
+	/* blacklist year보다 과거인 경우에만 blacklist 한다. */
 	if (year < CONFIG_ACPI_BLACKLIST_YEAR) {
 		printk(KERN_ERR PREFIX "BIOS age (%d) fails cutoff (%d), "
 		       "acpi=force is required to enable ACPI\n",
@@ -175,7 +176,7 @@ int __init acpi_blacklisted(void)
 			i++;
 		}
 	}
-
+	/* 옵션이 켜있으면 년도로 blacklist 한다. (해당년도가 지나면 만료됨) */
 	blacklisted += blacklist_by_year();
 
 	dmi_check_system(acpi_osi_dmi_table);
