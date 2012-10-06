@@ -25,7 +25,7 @@
 #include <asm/uv/uv.h>
 
 int acpi_numa __initdata;
-/* pxm 정보와 node를 매핑(초기화) */
+/* pxm 정보와 node를 매핑, 매핑되어 있지 않으면 node값 할당 */
 static __init int setup_node(int pxm)
 {
 	return acpi_map_pxm_to_node(pxm);
@@ -185,7 +185,7 @@ acpi_numa_memory_affinity_init(struct acpi_srat_mem_affinity *ma)
 }
 
 void __init acpi_numa_arch_fixup(void) {}
-
+/* acpi를 통해 node 정보를 가져오고 관련 자료구조를 초기화한다. */
 int __init x86_acpi_numa_init(void)
 {
 	int ret;

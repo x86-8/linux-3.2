@@ -98,6 +98,7 @@
 typedef struct { DECLARE_BITMAP(bits, MAX_NUMNODES); } nodemask_t;
 extern nodemask_t _unused_nodemask_arg_;
 
+/* 해당 비트를 1로 set 한다. */
 #define node_set(node, dst) __node_set((node), &(dst))
 static inline void __node_set(int node, volatile nodemask_t *dstp)
 {
@@ -262,7 +263,7 @@ static inline void init_nodemask_of_node(nodemask_t *mask, int node)
 	}								\
 	m;								\
 })
-
+/* 세팅되지 않은 노드(첫번째 0비트)의 위치를 반환한다. */
 #define first_unset_node(mask) __first_unset_node(&(mask))
 static inline int __first_unset_node(const nodemask_t *maskp)
 {

@@ -147,6 +147,7 @@ extern void bitmap_copy_le(void *dst, const unsigned long *src, int nbits);
 extern int bitmap_ord_to_pos(const unsigned long *bitmap, int n, int bits);
 
 #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) % BITS_PER_LONG))
+/* nbits가 long bit 수로 나누어 떨어지면 11111..b 아니면 nbits만큼 mask  */
 #define BITMAP_LAST_WORD_MASK(nbits)					\
 (									\
 	((nbits) % BITS_PER_LONG) ?					\
@@ -278,7 +279,9 @@ static inline int bitmap_full(const unsigned long *src, int nbits)
 
 static inline int bitmap_weight(const unsigned long *src, int nbits)
 {
+	/* 변수 한개로 처리할수 있으면 처리 */
 	if (small_const_nbits(nbits))
+		/* long보다 적을때를 위해 mask해서 비트수 구함 */
 		return hweight_long(*src & BITMAP_LAST_WORD_MASK(nbits));
 	return __bitmap_weight(src, nbits);
 }

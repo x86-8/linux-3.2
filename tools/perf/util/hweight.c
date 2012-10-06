@@ -6,7 +6,7 @@
  *
  * The Hamming Weight of a number is the total number of bits set in it.
  */
-
+/* 해밍 웨이트는 1의 비트수를 구하는 알고리즘이다. */
 unsigned int hweight32(unsigned int w)
 {
 	unsigned int res = w - ((w >> 1) & 0x55555555);

@@ -199,6 +199,7 @@ static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_f
 	u64 final_start, final_end;
 	u64 free_size;
 	struct memblock_region *r;
+	/* 예약된 영역을 subtract 하면서 쪼개질수 있기 때문에 공간을 넉넉하게 잡는것 같다. */
 	count = (memblock.reserved.cnt + memblock.memory.cnt) * 2;
 	/* memblock의 뒤쪽에서 count만큼의 공간을 찾는다. */
 	range = find_range_array(count);
@@ -211,10 +212,10 @@ static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_f
 		/* Page 단위로 사용하기 위해 Page 단위로 정렬 */
 		final_start = PFN_UP(r->base);
 		final_end = PFN_DOWN(r->base + r->size);
-		/* 올림, 내림 했을때 이상이 생기면 패스 */
+		/* 올림, 내림 했을때 이상이 있으면 패스 */
 		if (final_start >= final_end)
 			continue;
-		/* 인자로 들어온 영역을 넘어버리면 패스 */
+		/* 인자로 들어온 영역을 밖이면 패스 */
 		if (final_start >= limit || final_end <= addr)
 			continue;
 
@@ -229,6 +230,7 @@ static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_f
 	if (!get_free)
 		goto sort_and_count_them;
 	for_each_memblock(reserved, r) {
+		/* 영역을 뺄때는 반대로 시작지점을 내리고 끝을 올린다. */
 		final_start = PFN_DOWN(r->base);
 		final_end = PFN_UP(r->base + r->size);
 		if (final_start >= final_end)

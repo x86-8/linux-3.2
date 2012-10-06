@@ -67,59 +67,67 @@ EXPORT_SYMBOL(find_next_bit);
  * Linus' asm-alpha/bitops.h.
  */
 /**
- * addr은 주소, size는 검사할 비트 크기, offset는 비트 시작 주소
- * 이 함수는 첫번째 0을 찾는다.
+ * 이 함수는 0인 비트를 찾는다.
+ * ffz등과 다른 점은 어떤 연속된 비트 배열도 offset으로 반복해서 사용할 수 있다는 점이다.
+ * addr는 시작 주소, size는 검사할 비트 크기, offset는 검사할 시작 비트 오프셋이다.
+ * result는 비트 번호가 결과값이다.
  */
 unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
 				 unsigned long offset)
 {
 	/* offset */
-	/* 시작값 비트(offset) 세팅 */
-	/* result는 결과값(비트 번호다.) */
+	/* long 단위의 offset(시작지점) */
 	const unsigned long *p = addr + BITOP_WORD(offset);
+	/* result = long 으로 쪼개지는 offset */
 	unsigned long result = offset & ~(BITS_PER_LONG-1);
 	unsigned long tmp;
 
-	/* 시작 비트가 비트수보다 크면 비트 크기를 리턴 */
+	/* 시작 비트가 비트수보다 크면 최대값+1을 리턴 */
 	if (offset >= size)
 		return size;
+	/* 시작 오프셋만큼 비트수를 뺀다. */
 	size -= result;
 	offset %= BITS_PER_LONG;
-	/* offset값이 있으면 세팅한다. */
+	/* 시작 offset값이 있으면 */
 	if (offset) {
 		/* 값을 읽어와서 */
 		tmp = *(p++);
-		/* 시작위치까지는 1로 채움 */
+		/* 시작위치까지 1로 채움 */
 		tmp |= ~0UL >> (BITS_PER_LONG - offset);
-		/* size가 더 작으면 first */
+		/* */
 		if (size < BITS_PER_LONG)
 			goto found_first;
-		/* 0xffff가 아니면 middle */
+		/* 0이 하나라도 있으면 */
 		if (~tmp)
 			goto found_middle;
-		/* 0xffff(0인 비트가 없으면)면 다음 검색 */
+		/* 0 비트 없이 모두 1로 차있다면 다음 검색 */
 		size -= BITS_PER_LONG;
 		result += BITS_PER_LONG;
 	}
-	/* 0이 있을때까지 전진한다.  */
+	/* 0 bit가 나올때까지 전진한다.  */
 	while (size & ~(BITS_PER_LONG-1)) {
 		/* 0이 포함되어 있다면 middle로 간다. */
 		if (~(tmp = *(p++)))
 			goto found_middle;
-		/* 다음 값으로 long비트만큼 증가 */
+		/* 다음 값으로 long만큼 비트 수 증감 */
 		result += BITS_PER_LONG;
 		size -= BITS_PER_LONG;
 	}
+	/* 남은 비트수가 없다면 현재 long 단위의 결과값 리턴 */
 	if (!size)
 		return result;
 	tmp = *p;
 
 found_first:
+	/* 잘못된 결과값을 넘기지 않기 위해
+	 * 크기를 넘는 부분은 모두 1로 처리한다
+	 */
 	tmp |= ~0UL << size;
-	/* 0인 비트가 없으면 찾을 크기를 리턴(+size) */
+	/* 끝까지 0 비트가 없으면 size 만큼 리턴 */
 	if (tmp == ~0UL)	/* Are any bits zero? */
 		return result + size;	/* Nope. */
 found_middle:
+	/* 0 비트를 검출해서 리턴한다. 0번비트부터 상위비트로 진행된다. */
 	return result + ffz(tmp);
 }
 EXPORT_SYMBOL(find_next_zero_bit);

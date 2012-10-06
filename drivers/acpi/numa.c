@@ -37,6 +37,7 @@
 #define _COMPONENT	ACPI_NUMA
 ACPI_MODULE_NAME("numa");
 
+/* 해당 노드를 찾았음을(1) 표시한다. */
 static nodemask_t nodes_found_map = NODE_MASK_NONE;
 
 /* maps to convert between proximity domain and logical node ID */
@@ -61,26 +62,30 @@ int node_to_pxm(int node)
 
 void __acpi_map_pxm_to_node(int pxm, int node)
 {
-	/* 초기화가 안된 값 혹은 들어갈 값이 더 작으면  대입해도 된다. */
+	/* 초기화가 안된 값 혹은 들어갈 값이 더 작으면 대입해도 된다. */
 	if (pxm_to_node_map[pxm] == NUMA_NO_NODE || node < pxm_to_node_map[pxm])
 		pxm_to_node_map[pxm] = node;
 	if (node_to_pxm_map[node] == PXM_INVAL || pxm < node_to_pxm_map[node])
 		node_to_pxm_map[node] = pxm;
 }
-
+/**
+ *  해당 pxm->node로 매핑되어 있다면 변환한 노드값을 반환하고
+ * 매핑되지 않았아면 pxm을 bitmap으로 이루어진 node_map으로 매핑한다.
+ */
 int acpi_map_pxm_to_node(int pxm)
 {
+	/* pxm -> node로 매핑되어 있는 값을 가져온다. */
 	int node = pxm_to_node_map[pxm];
 	/* 매핑 테이블에서 찾은 노드가 없는 경우 */
 	if (node < 0) {
 		/* 최대 노드 개수를 초과하면 초기화 */
 		if (nodes_weight(nodes_found_map) >= MAX_NUMNODES)
 			return NUMA_NO_NODE;
-		/* 비어 있는 노드를 찾는다  */
+		/* 비어 있는 노드를 찾는다. */
 		node = first_unset_node(nodes_found_map);
 		/* pxm과 node 테이블을 매칭  */
 		__acpi_map_pxm_to_node(pxm, node);
-		/* nodes_found_map에 node를 설정 */
+		/* nodes_found_map에 해당 node가 사용되었다고 표시한다.(1) */
 		node_set(node, nodes_found_map);
 	}
 

@@ -132,7 +132,7 @@ void __init setup_node_to_cpumask_map(void)
 	pr_debug("Node to cpumask map for %d nodes\n", nr_node_ids);
 }
 
-/* NUMA 메모리 정보 추가 */
+/* NUMA의 메모리 범위, node id 정보 추가 */
 static int __init numa_add_memblk_to(int nid, u64 start, u64 end,
 				     struct numa_meminfo *mi)
 {
@@ -185,6 +185,7 @@ void __init numa_remove_memblk_from(int idx, struct numa_meminfo *mi)
  * RETURNS:
  * 0 on success, -errno on failure.
  */
+/* numa_meminfo에 해당 range와 node id 정보 추가 */
 int __init numa_add_memblk(int nid, u64 start, u64 end)
 {
 	return numa_add_memblk_to(nid, start, end, &numa_meminfo);

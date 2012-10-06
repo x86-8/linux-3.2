@@ -345,7 +345,9 @@ static int test_bit(int nr, const volatile unsigned long *addr);
  *
  * Undefined if no bit exists, so code should check against 0 first.
  */
-/* 비트 스캔. bsf는 최하위(우측)부터 검색 */
+/* 비트 스캔. bsf는 최하위(0번)부터 상위로 1인 비트를 검색한다.
+ * word값이 0이면 정의되지 않은 결과값을 리턴할수 있다.
+ */
 static inline unsigned long __ffs(unsigned long word)
 {
 	asm("bsf %1,%0"
@@ -360,7 +362,7 @@ static inline unsigned long __ffs(unsigned long word)
  *
  * Undefined if no zero exists, so code should check against ~0UL first.
  */
-
+/* 0을 검사하기 위해 input을 비트 반전(~word) 한다. */
 static inline unsigned long ffz(unsigned long word)
 {
 	asm("bsf %1,%0"

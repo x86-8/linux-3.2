@@ -97,16 +97,20 @@ void subtract_range(struct range *range, int az, u64 start, u64 end)
 		if (start > range[j].start && end < range[j].end) {
 			/* Find the new spare: */
 			for (i = 0; i < az; i++) {
-				if (range[i].end == 0) /* end가 0인 쓸모없는 블럭을 찾는다. */
+				/* end가 0인 쓸모없는 블럭을 찾는다. */
+				if (range[i].end == 0)
 					break;
 			}
-			if (i < az) { /* 새로 넣을 i블럭을 뺀 영역의 뒤쪽 블럭으로 세팅 */
+			/* 새로 넣을 i블럭을 뺀 영역의 뒤쪽 블럭으로 세팅 */
+			if (i < az) {
 				range[i].end = range[j].end;
 				range[i].start = end;
 			} else {
-				printk(KERN_ERR "run of slot in ranges\n"); /* 슬롯 꽉참 */
+				/* 슬롯 꽉참 */
+				printk(KERN_ERR "run of slot in ranges\n");
 			}
-			range[j].end = start; /* 앞쪽블럭 재조정 */
+			/* 앞쪽블럭 재조정 */
+			range[j].end = start;
 			continue;
 		}
 	}
