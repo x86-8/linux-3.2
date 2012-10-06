@@ -82,4 +82,4 @@ Study history (날짜:인원:내용)
 73. 2012/09/08:06:*init/main.c* - early_reserve_e820_mpc_new | 리뷰
 74. 2012/09/15:05:*init/main.c* - acpi_table_init | 리뷰 종료
 75. 2012/09/22:07:*init/main.c* - initmem_init
-76. 2012/10/06::*init/main.c* - 
+76. 2012/10/06:05:*init/main.c* - x86_init.paging.pagetable_setup_start

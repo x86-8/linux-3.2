@@ -660,16 +660,17 @@ void __init x86_numa_init(void)
 	if (!numa_off) {
 	/* 성공값은 0, 성공하면 바로 리턴한다.  */
 #ifdef CONFIG_X86_NUMAQ
-	/* IBM  */
+		/* IBM  */
 		if (!numa_init(numaq_numa_init))
 			return;
 #endif
 #ifdef CONFIG_ACPI_NUMA
+		/* ACPI를 통한 numa 탐색방법 */
 		if (!numa_init(x86_acpi_numa_init))
 			return;
 #endif
 #ifdef CONFIG_AMD_NUMA
-	/* 옛날 amd opteron 탐색방법  */
+		/* 옛날 amd opteron 탐색방법  */
 		if (!numa_init(amd_numa_init))
 			return;
 #endif

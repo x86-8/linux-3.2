@@ -6,20 +6,24 @@
 #include <linux/sort.h>
 
 #include <linux/range.h>
-
+/* start~end 영역을 range에 추가한다.
+ * az는 현재 번호, nr_range는 최대 갯수
+ */
 int add_range(struct range *range, int az, int nr_range, u64 start, u64 end)
 {
 	if (start >= end)
 		return nr_range;
 
 	/* Out of slots: */
-	if (nr_range >= az)	/* 최대 개수를 넘으면 무시 */
+	/* 최대 개수를 넘으면 무시 */
+	if (nr_range >= az)
 		return nr_range;
 
 	range[nr_range].start = start;
 	range[nr_range].end = end;
 
-	nr_range++;		/* range 갯수 증가 */
+	/* range 갯수 증가 */
+	nr_range++;
 
 	return nr_range;
 }
@@ -125,9 +129,11 @@ int clean_sort_range(struct range *range, int az)
 	int i, j, k = az - 1, nr_range = az;
 	/* k=최대값-1 */
 	for (i = 0; i < k; i++) {
-		if (range[i].end) /* end에 값이 있으면 패스 */
+		/* end에 값이 있으면 패스 */
+		if (range[i].end)
 			continue;
-		/* 이 루프는 비어있는 엔트리에서만 실행한다.
+		/**
+		 * 이 루프는 비어있는 엔트리에서만 실행한다.
 		 * 비어있는 엔트리를 마지막 엔트리와 swap한다.
 		 */
 		for (j = k; j > i; j--) {

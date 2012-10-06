@@ -80,7 +80,7 @@ u64 __init memblock_x86_find_in_range_size(u64 start, u64 *sizep, u64 align)
 
 	return MEMBLOCK_ERROR;
 }
-
+/* memblock에서  */
 static __init struct range *find_range_array(int count)
 {
 	u64 end, size, mem;
@@ -187,7 +187,10 @@ int __init get_free_all_memory_range(struct range **rangep, int nodeid)
 #endif
 	return __get_free_all_memory_range(rangep, nodeid, 0, end_pfn);
 }
-
+/**
+ * memblock 구조체(memroy, reserved)에서 range(addr~limit)에 속하는 크기를 구한다.
+ * get_free가 참이면 free한 공간만을 구한다.
+ */
 static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_free)
 {
 	int i, count;
@@ -196,30 +199,33 @@ static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_f
 	u64 final_start, final_end;
 	u64 free_size;
 	struct memblock_region *r;
-
 	count = (memblock.reserved.cnt + memblock.memory.cnt) * 2;
-
+	/* memblock의 뒤쪽에서 count만큼의 공간을 찾는다. */
 	range = find_range_array(count);
 	nr_range = 0;
 
 	addr = PFN_UP(addr);
 	limit = PFN_DOWN(limit);
-	/* memblock의 두가지 종류중 memory 블럭을 탐색  */
+	/* memblock중 memory에 해당하는 블럭을 탐색  */
 	for_each_memblock(memory, r) {
+		/* Page 단위로 사용하기 위해 Page 단위로 정렬 */
 		final_start = PFN_UP(r->base);
 		final_end = PFN_DOWN(r->base + r->size);
+		/* 올림, 내림 했을때 이상이 생기면 패스 */
 		if (final_start >= final_end)
 			continue;
+		/* 인자로 들어온 영역을 넘어버리면 패스 */
 		if (final_start >= limit || final_end <= addr)
 			continue;
 
 		nr_range = add_range(range, count, nr_range, final_start, final_end);
 	}
+	/* 인자값으로 들어온 영역에 속하지 않으면 뺀다. */
 	subtract_range(range, count, 0, addr);
 	subtract_range(range, count, limit, -1ULL);
 
 	/* Subtract memblock.reserved.region in range ? */
-	/* get_free 비트가 켜있으면 할당된 크기를 구한다.  */
+	/* get_free 비트가 켜있으면 예약된 공간을 빼서 사용가능한 부분만 남긴다. */
 	if (!get_free)
 		goto sort_and_count_them;
 	for_each_memblock(reserved, r) {
@@ -234,20 +240,22 @@ static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_f
 	}
 
 sort_and_count_them:
+	/* 빈 range 삭제와 정렬. nr_range는 갯수 */
 	nr_range = clean_sort_range(range, count);
 
 	free_size = 0;
+	/* 크기를 구한다. */
 	for (i = 0; i < nr_range; i++)
 		free_size += range[i].end - range[i].start;
 
 	return free_size << PAGE_SHIFT;
 }
-
+/* 해당 range중 free한 memblock 공간을 구한다. */
 u64 __init memblock_x86_free_memory_in_range(u64 addr, u64 limit)
 {
 	return __memblock_x86_memory_in_range(addr, limit, true);
 }
-
+/* memblock에서 해당 range에 속하는 크기를 구한다. */
 u64 __init memblock_x86_memory_in_range(u64 addr, u64 limit)
 {
 	return __memblock_x86_memory_in_range(addr, limit, false);

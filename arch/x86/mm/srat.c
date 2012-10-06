@@ -36,7 +36,7 @@ static __init void bad_srat(void)
 	printk(KERN_ERR "SRAT: SRAT not used.\n");
 	acpi_numa = -1;
 }
-
+/* acpi numa를 사용할수 없는지 검사 */
 static __init inline int srat_disabled(void)
 {
 	return acpi_numa < 0;
@@ -100,6 +100,7 @@ acpi_numa_processor_affinity_init(struct acpi_srat_cpu_affinity *pa)
 
 	if (srat_disabled())
 		return;
+	/* 헤더 크기가 일치하지 않으면 에러출력, disable, 리턴 */
 	if (pa->header.length != sizeof(struct acpi_srat_cpu_affinity)) {
 		bad_srat();
 		return;

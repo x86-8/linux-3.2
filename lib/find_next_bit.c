@@ -66,7 +66,8 @@ EXPORT_SYMBOL(find_next_bit);
  * This implementation of find_{first,next}_zero_bit was stolen from
  * Linus' asm-alpha/bitops.h.
  */
-/* addr은 주소, size는 검사할 비트 크기, offset는 비트 시작 주소
+/**
+ * addr은 주소, size는 검사할 비트 크기, offset는 비트 시작 주소
  * 이 함수는 첫번째 0을 찾는다.
  */
 unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
@@ -79,7 +80,7 @@ unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
 	unsigned long result = offset & ~(BITS_PER_LONG-1);
 	unsigned long tmp;
 
-	/* 시작 비트가 비ㅅ트수보다 크면 비트 크기를 리턴 */
+	/* 시작 비트가 비트수보다 크면 비트 크기를 리턴 */
 	if (offset >= size)
 		return size;
 	size -= result;
@@ -93,10 +94,10 @@ unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
 		/* size가 더 작으면 first */
 		if (size < BITS_PER_LONG)
 			goto found_first;
-		/* ffff가 아니면 middle */
+		/* 0xffff가 아니면 middle */
 		if (~tmp)
 			goto found_middle;
-		/* ffff(0인 비트가 없으면)면 다음 검색 */
+		/* 0xffff(0인 비트가 없으면)면 다음 검색 */
 		size -= BITS_PER_LONG;
 		result += BITS_PER_LONG;
 	}

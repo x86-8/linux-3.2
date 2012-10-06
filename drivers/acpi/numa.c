@@ -291,11 +291,11 @@ int __init acpi_numa_init(void)
 	 */
 
 	/* SRAT: Static Resource Affinity Table */
-	/* SRAT은 processor 와 그에 딸려있는 꼬봉 memory에 대한 정보를 가지고 있다.
-	 * NR_CPU 나 nr_cpus의 정보보다 더욱 정확하기에 numa system에서는 이것을 쓴다고 lwn에 써있다.
+	/* SRAT은 processor 와 그에 부수적인 하위 memory에 대한 정보를 가지고 있다.
+	 * NR_CPU, nr_cpus의 정보보다 더욱 정확하기에 numa system에서는 이것을 사용한다. (lwn)
  	 */
 	if (!acpi_table_parse(ACPI_SIG_SRAT, acpi_parse_srat)) {
-		/* SRAT에는 세가지 구조체가 있다. X2apic, processor, memory 친화도 정보가 있다.  */
+		/* SRAT에는 세가지 구조체가 있다. x2apic, processor, memory 친화도 정보가 있다.  */
 		acpi_table_parse_srat(ACPI_SRAT_TYPE_X2APIC_CPU_AFFINITY,
 				acpi_parse_x2apic_affinity, 0);
 		acpi_table_parse_srat(ACPI_SRAT_TYPE_CPU_AFFINITY,
@@ -314,7 +314,8 @@ int __init acpi_numa_init(void)
 	acpi_numa_arch_fixup();
 
 	if (cnt <= 0)
-		return cnt ?: -ENOENT; /* ?:는 gcc 확장문법 */
+		/* ?:는 gcc 확장문법 */
+		return cnt ?: -ENOENT;
 	return 0;
 }
 

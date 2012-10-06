@@ -1203,7 +1203,7 @@ void __init memblock_x86_fill(void)
 	/* memblock 출력 */
 	memblock_dump_all();
 }
-/* 0~16M 영역을 ISA DMA 영역으로 예약한다. */
+/* 0~16M(ISA DMA) 영역중 예약된 크기를 구한다. */
 void __init memblock_find_dma_reserve(void)
 {
 #ifdef CONFIG_X86_64
@@ -1214,7 +1214,9 @@ void __init memblock_find_dma_reserve(void)
 	 * need to use memblock to get free size in [0, MAX_DMA_PFN]
 	 * at first, and assume boot_mem will not take below MAX_DMA_PFN
 	 */
+	/* 0~16M중 memory에 등록된 크기 */
 	mem_size_pfn = memblock_x86_memory_in_range(0, MAX_DMA_PFN << PAGE_SHIFT) >> PAGE_SHIFT;
+	/* 0~16M중 free한 크기 */
 	free_size_pfn = memblock_x86_free_memory_in_range(0, MAX_DMA_PFN << PAGE_SHIFT) >> PAGE_SHIFT;
 	set_dma_reserve(mem_size_pfn - free_size_pfn);
 #endif

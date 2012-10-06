@@ -134,8 +134,10 @@ static phys_addr_t __init_memblock memblock_find_base(phys_addr_t size,
 			continue;
 		if ((memblockbase + memblocksize) <= start) /* start보다 작으면 안된다 */
 			break;
-		bottom = max(memblockbase, start); /* 둘중에 큰 start값 */
-		top = min(memblockbase + memblocksize, end); /* 둘중 작은 end 값 (한계값 이하) */
+		/* 둘중에 큰 start값 */
+		bottom = max(memblockbase, start);
+		/* 둘중 작은 end 값 (한계값 이하) */
+		top = min(memblockbase + memblocksize, end);
 		if (bottom >= top)
 			continue;
 		/* botoom과 top은 memblock의 보통 start end값이 온다. */
