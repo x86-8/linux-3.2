@@ -132,6 +132,7 @@ void __init setup_node_to_cpumask_map(void)
 	pr_debug("Node to cpumask map for %d nodes\n", nr_node_ids);
 }
 
+/* NUMA 메모리 정보 추가 */
 static int __init numa_add_memblk_to(int nid, u64 start, u64 end,
 				     struct numa_meminfo *mi)
 {
@@ -348,6 +349,9 @@ int __init numa_cleanup_meminfo(struct numa_meminfo *mi)
 /*
  * Set nodes, which have memory in @mi, in *@nodemask.
  */
+/* NUMA Memory 정보가 들어 있는(사용가능한) 경우, nodemask에 추가.
+   nodemask에 빠져 있는(CPU Affinity에서 얻어왔기 때문에) node를,
+   Memory Affinity정보로 추가할수 있을 거라고 보임 */
 static void __init numa_nodemask_from_meminfo(nodemask_t *nodemask,
 					      const struct numa_meminfo *mi)
 {
@@ -365,10 +369,11 @@ static void __init numa_nodemask_from_meminfo(nodemask_t *nodemask,
  * The current table is freed.  The next numa_set_distance() call will
  * create a new one.
  */
+/* distance를 0으로 초기화, 기존에 있으면 0으로 초기화  */
 void __init numa_reset_distance(void)
 {
 	size_t size = numa_distance_cnt * numa_distance_cnt * sizeof(numa_distance[0]);
-
+	/* distance count가 있으면 memblock에서 해제(reversed에서 free)한다.  */
 	/* numa_distance could be 1LU marking allocation failure, test cnt */
 	if (numa_distance_cnt)
 		memblock_x86_free_range(__pa(numa_distance),
@@ -385,14 +390,17 @@ static int __init numa_alloc_distance(void)
 	u64 phys;
 
 	/* size the new table and allocate it */
+	/* numa_nodes_parsed에는 이미 분석이 끝난 node 정보들이 들어 있음 */
 	nodes_parsed = numa_nodes_parsed;
 	numa_nodemask_from_meminfo(&nodes_parsed, &numa_meminfo);
 
+	/* 마지막 node id가 cnt로 됨 */
 	for_each_node_mask(i, nodes_parsed)
 		cnt = i;
 	cnt++;
 	size = cnt * cnt * sizeof(numa_distance[0]);
 
+	/* size크기 만큼 할당가능한 메모리 주소를 얻어옮 */
 	phys = memblock_find_in_range(0, PFN_PHYS(max_pfn_mapped),
 				      size, PAGE_SIZE);
 	if (phys == MEMBLOCK_ERROR) {
@@ -401,12 +409,17 @@ static int __init numa_alloc_distance(void)
 		numa_distance = (void *)1LU;
 		return -ENOMEM;
 	}
+	/* size 크기 만큼 등록 */
 	memblock_x86_reserve_range(phys, phys + size, "NUMA DIST");
 
+	/* numa_distance 재설정 */
 	numa_distance = __va(phys);
 	numa_distance_cnt = cnt;
 
 	/* fill with the default distances */
+	/* 기본 distance 설정. 
+	같은 node일경우 Local Distance(10)를,
+	아닌 경우 RemoteDistance(20) 저장 */
 	for (i = 0; i < cnt; i++)
 		for (j = 0; j < cnt; j++)
 			numa_distance[i * cnt + j] = i == j ?
@@ -434,11 +447,14 @@ static int __init numa_alloc_distance(void)
  * table creation or @distance doesn't make sense, the call is ignored.
  * This is to allow simplification of specific NUMA config implementations.
  */
+/* from(NODE id) 에서 to(NODE id)까지의 거리를 distance테이블에 저장 */
 void __init numa_set_distance(int from, int to, int distance)
 {
+	/* numa_distance가 없는데, 할당이 불가능한 경우 */
 	if (!numa_distance && numa_alloc_distance() < 0)
 		return;
 
+	/* from, to가 distance 테이블의 갯수를 벗어나는 경우 */
 	if (from >= numa_distance_cnt || to >= numa_distance_cnt) {
 		printk_once(KERN_DEBUG "NUMA: Debug: distance out of bound, from=%d to=%d distance=%d\n",
 			    from, to, distance);
@@ -451,7 +467,7 @@ void __init numa_set_distance(int from, int to, int distance)
 			     from, to, distance);
 		return;
 	}
-
+	/* 거리 세팅  */
 	numa_distance[from * numa_distance_cnt + to] = distance;
 }
 
@@ -577,7 +593,7 @@ static int __init numa_init(int (*init_func)(void))
 
 	for (i = 0; i < MAX_LOCAL_APIC; i++)
 		set_apicid_to_node(i, NUMA_NO_NODE);
-
+	/* 자료구조를 0으로 초기화한다.  */
 	nodes_clear(numa_nodes_parsed);
 	nodes_clear(node_possible_map);
 	nodes_clear(node_online_map);
@@ -642,7 +658,9 @@ static int __init dummy_numa_init(void)
 void __init x86_numa_init(void)
 {
 	if (!numa_off) {
+	/* 성공값은 0, 성공하면 바로 리턴한다.  */
 #ifdef CONFIG_X86_NUMAQ
+	/* IBM  */
 		if (!numa_init(numaq_numa_init))
 			return;
 #endif
@@ -651,11 +669,12 @@ void __init x86_numa_init(void)
 			return;
 #endif
 #ifdef CONFIG_AMD_NUMA
+	/* 옛날 amd opteron 탐색방법  */
 		if (!numa_init(amd_numa_init))
 			return;
 #endif
 	}
-
+	/* 찾지 못했을때 출력 & 초기화  */
 	numa_init(dummy_numa_init);
 }
 

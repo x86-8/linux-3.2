@@ -1203,7 +1203,7 @@ void __init memblock_x86_fill(void)
 	/* memblock 출력 */
 	memblock_dump_all();
 }
-
+/* 0~16M 영역을 ISA DMA 영역으로 예약한다. */
 void __init memblock_find_dma_reserve(void)
 {
 #ifdef CONFIG_X86_64

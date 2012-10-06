@@ -61,6 +61,7 @@ int node_to_pxm(int node)
 
 void __acpi_map_pxm_to_node(int pxm, int node)
 {
+	/* 초기화가 안된 값 혹은 들어갈 값이 더 작으면  대입해도 된다. */
 	if (pxm_to_node_map[pxm] == NUMA_NO_NODE || node < pxm_to_node_map[pxm])
 		pxm_to_node_map[pxm] = node;
 	if (node_to_pxm_map[node] == PXM_INVAL || pxm < node_to_pxm_map[node])
@@ -70,18 +71,22 @@ void __acpi_map_pxm_to_node(int pxm, int node)
 int acpi_map_pxm_to_node(int pxm)
 {
 	int node = pxm_to_node_map[pxm];
-
+	/* 매핑 테이블에서 찾은 노드가 없는 경우 */
 	if (node < 0) {
+		/* 최대 노드 개수를 초과하면 초기화 */
 		if (nodes_weight(nodes_found_map) >= MAX_NUMNODES)
 			return NUMA_NO_NODE;
+		/* 비어 있는 노드를 찾는다  */
 		node = first_unset_node(nodes_found_map);
+		/* pxm과 node 테이블을 매칭  */
 		__acpi_map_pxm_to_node(pxm, node);
+		/* nodes_found_map에 node를 설정 */
 		node_set(node, nodes_found_map);
 	}
 
 	return node;
 }
-
+/* ACPI 디버깅이 켜있으면 SRAT 관련 정보를 출력한다.  */
 static void __init
 acpi_table_print_srat_entry(struct acpi_subtable_header *header)
 {
@@ -199,6 +204,7 @@ acpi_numa_x2apic_affinity_init(struct acpi_srat_x2apic_cpu_affinity *pa)
 }
 
 
+/* ACPI로 부터 얻어온(SRAT) x2apic affinity 정보 파싱 */
 static int __init
 acpi_parse_x2apic_affinity(struct acpi_subtable_header *header,
 			   const unsigned long end)
@@ -217,6 +223,7 @@ acpi_parse_x2apic_affinity(struct acpi_subtable_header *header,
 	return 0;
 }
 
+/* ACPI로 부터 얻어온(SRAT) cpu affinity 정보 파싱 */
 static int __init
 acpi_parse_processor_affinity(struct acpi_subtable_header *header,
 			      const unsigned long end)
@@ -235,6 +242,7 @@ acpi_parse_processor_affinity(struct acpi_subtable_header *header,
 	return 0;
 }
 
+/* ACPI로 부터 얻어온(SRAT) 메모리 affinity 정보 파싱 */
 static int __init
 acpi_parse_memory_affinity(struct acpi_subtable_header * header,
 			   const unsigned long end)
@@ -283,23 +291,30 @@ int __init acpi_numa_init(void)
 	 */
 
 	/* SRAT: Static Resource Affinity Table */
+	/* SRAT은 processor 와 그에 딸려있는 꼬봉 memory에 대한 정보를 가지고 있다.
+	 * NR_CPU 나 nr_cpus의 정보보다 더욱 정확하기에 numa system에서는 이것을 쓴다고 lwn에 써있다.
+ 	 */
 	if (!acpi_table_parse(ACPI_SIG_SRAT, acpi_parse_srat)) {
+		/* SRAT에는 세가지 구조체가 있다. X2apic, processor, memory 친화도 정보가 있다.  */
 		acpi_table_parse_srat(ACPI_SRAT_TYPE_X2APIC_CPU_AFFINITY,
-				     acpi_parse_x2apic_affinity, 0);
+				acpi_parse_x2apic_affinity, 0);
 		acpi_table_parse_srat(ACPI_SRAT_TYPE_CPU_AFFINITY,
-				     acpi_parse_processor_affinity, 0);
+				acpi_parse_processor_affinity, 0);
+		/* cnt는 Memory Affinity 정보 갯수 */
 		cnt = acpi_table_parse_srat(ACPI_SRAT_TYPE_MEMORY_AFFINITY,
 					    acpi_parse_memory_affinity,
 					    NR_NODE_MEMBLKS);
 	}
 
 	/* SLIT: System Locality Information Table */
+	/* SLIT정보를 얻어와서 node간의 distance 테이블 생성 */
 	acpi_table_parse(ACPI_SIG_SLIT, acpi_parse_slit);
 
+	/* 비어 있음 */
 	acpi_numa_arch_fixup();
 
 	if (cnt <= 0)
-		return cnt ?: -ENOENT;
+		return cnt ?: -ENOENT; /* ?:는 gcc 확장문법 */
 	return 0;
 }
 

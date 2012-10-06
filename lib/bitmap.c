@@ -256,7 +256,7 @@ int __bitmap_subset(const unsigned long *bitmap1,
 	return 1;
 }
 EXPORT_SYMBOL(__bitmap_subset);
-
+/* 비트 갯수를 구한다. */
 int __bitmap_weight(const unsigned long *bitmap, int bits)
 {
 	int k, w = 0, lim = bits/BITS_PER_LONG;

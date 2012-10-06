@@ -44,7 +44,7 @@ static __inline__ int get_count_order(unsigned int count)
 		order++;
 	return order;
 }
-
+/* long의 비트 갯수를 구한다. (long이 32면 32, 64면 64) */
 static inline unsigned long hweight_long(unsigned long w)
 {
 	return sizeof(w) == 4 ? hweight32(w) : hweight64(w);

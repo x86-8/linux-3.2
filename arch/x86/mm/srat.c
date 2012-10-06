@@ -25,7 +25,7 @@
 #include <asm/uv/uv.h>
 
 int acpi_numa __initdata;
-
+/* pxm 정보와 node를 매핑(초기화) */
 static __init int setup_node(int pxm)
 {
 	return acpi_map_pxm_to_node(pxm);
@@ -47,6 +47,7 @@ void __init acpi_numa_slit_init(struct acpi_table_slit *slit)
 {
 	int i, j;
 
+	/* NODE 마다 distance 를 얻어와서 저장 */
 	for (i = 0; i < slit->locality_count; i++)
 		for (j = 0; j < slit->locality_count; j++)
 			numa_set_distance(pxm_to_node(i), pxm_to_node(j),
@@ -82,7 +83,9 @@ acpi_numa_x2apic_affinity_init(struct acpi_srat_x2apic_cpu_affinity *pa)
 		return;
 	}
 	set_apicid_to_node(apic_id, node);
+	/* 파싱이 완료된(APIC로부터 찾아낸) node 설정 */
 	node_set(node, numa_nodes_parsed);
+	/* numa 완료 상태 설정 (-1일 경우 실패) */
 	acpi_numa = 1;
 	printk(KERN_INFO "SRAT: PXM %u -> APIC 0x%04x -> Node %u\n",
 	       pxm, apic_id, node);
@@ -104,6 +107,7 @@ acpi_numa_processor_affinity_init(struct acpi_srat_cpu_affinity *pa)
 	if ((pa->flags & ACPI_SRAT_CPU_ENABLED) == 0)
 		return;
 	pxm = pa->proximity_domain_lo;
+	/* ACPI로 부터 얻어온 pxm으로부터 node를 얻어온다 */
 	node = setup_node(pxm);
 	if (node < 0) {
 		printk(KERN_ERR "SRAT: Too many proximity domains %x\n", pxm);
@@ -111,6 +115,7 @@ acpi_numa_processor_affinity_init(struct acpi_srat_cpu_affinity *pa)
 		return;
 	}
 
+	/* ACPI로 부터 얻어온 apic id 설정 */
 	if (get_uv_system_type() >= UV_X2APIC)
 		apic_id = (pa->apic_id << 8) | pa->local_sapic_eid;
 	else
@@ -121,6 +126,7 @@ acpi_numa_processor_affinity_init(struct acpi_srat_cpu_affinity *pa)
 		return;
 	}
 
+	/* node에 apic id 설정 */
 	set_apicid_to_node(apic_id, node);
 	node_set(node, numa_nodes_parsed);
 	acpi_numa = 1;
@@ -147,14 +153,19 @@ acpi_numa_memory_affinity_init(struct acpi_srat_mem_affinity *ma)
 		bad_srat();
 		return;
 	}
+	/* Memory Affinity (SRAT) 정보를 사용하지 않음 */
 	if ((ma->flags & ACPI_SRAT_MEM_ENABLED) == 0)
 		return;
 
+	/* Memory Hot Pluggable 이사용되지만, CONFIG 에 설정되어 있지 않은 경우 */
 	if ((ma->flags & ACPI_SRAT_MEM_HOT_PLUGGABLE) && !save_add_info())
 		return;
+
+	/* ACPI(SRAT)로 얻어온 Memory Affinity 정보를 설정 */
 	start = ma->base_address;
 	end = start + ma->length;
 	pxm = ma->proximity_domain;
+	/* pxm 으로 node id를 가져옮 */
 	node = setup_node(pxm);
 	if (node < 0) {
 		printk(KERN_ERR "SRAT: Too many proximity domains.\n");
@@ -162,6 +173,7 @@ acpi_numa_memory_affinity_init(struct acpi_srat_mem_affinity *ma)
 		return;
 	}
 
+	/* node에 memory block을 추가 */
 	if (numa_add_memblk(node, start, end) < 0) {
 		bad_srat();
 		return;

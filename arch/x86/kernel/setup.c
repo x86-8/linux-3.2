@@ -1132,7 +1132,9 @@ void __init setup_arch(char **cmdline_p)
 	/* acpi 관련 세팅을 마저 한다. */
 	early_acpi_boot_init();
 
+	/* numa memory 초기화 */
 	initmem_init();
+	/* dma중 예약돈 크기를 구한다.  */
 	memblock_find_dma_reserve();
 
 

@@ -116,6 +116,7 @@ static inline void __nodes_setall(nodemask_t *dstp, int nbits)
 	bitmap_fill(dstp->bits, nbits);
 }
 
+/* 각 노드 구조를 0으로 초기화  */
 #define nodes_clear(dst) __nodes_clear(&(dst), MAX_NUMNODES)
 static inline void __nodes_clear(nodemask_t *dstp, int nbits)
 {

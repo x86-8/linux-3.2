@@ -152,10 +152,13 @@ extern int bitmap_ord_to_pos(const unsigned long *bitmap, int n, int bits);
 	((nbits) % BITS_PER_LONG) ?					\
 		(1UL<<((nbits) % BITS_PER_LONG))-1 : ~0UL		\
 )
-
+/* 비트수가 n이하이면서 상수이면 참이다. */
 #define small_const_nbits(nbits) \
 	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG)
-
+/**
+ * long 한개의 변수에 들어가면 바로 초기화
+ * 아니면 memset으로 초기화한다.
+ */
 static inline void bitmap_zero(unsigned long *dst, int nbits)
 {
 	if (small_const_nbits(nbits))

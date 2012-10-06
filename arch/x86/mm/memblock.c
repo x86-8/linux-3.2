@@ -204,7 +204,7 @@ static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_f
 
 	addr = PFN_UP(addr);
 	limit = PFN_DOWN(limit);
-
+	/* memblock의 두가지 종류중 memory 블럭을 탐색  */
 	for_each_memblock(memory, r) {
 		final_start = PFN_UP(r->base);
 		final_end = PFN_DOWN(r->base + r->size);
@@ -219,6 +219,7 @@ static u64 __init __memblock_x86_memory_in_range(u64 addr, u64 limit, bool get_f
 	subtract_range(range, count, limit, -1ULL);
 
 	/* Subtract memblock.reserved.region in range ? */
+	/* get_free 비트가 켜있으면 할당된 크기를 구한다.  */
 	if (!get_free)
 		goto sort_and_count_them;
 	for_each_memblock(reserved, r) {
