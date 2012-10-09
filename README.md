@@ -77,9 +77,9 @@ Study history (날짜:인원:내용)
 68. 2012/08/04:07:*init/main.c* - setup_arch - acpi_boot_table_init
 69. 2012/08/11:07:*init/main.c* - setup_arch - acpi_boot_table_init
 70. 2012/08/18:05:*init/main.c* - boot_init_stack_canary | 리뷰
-71. 2012/08/25:07:*init/main.c* - early_cpu_init | 리뷰, 회식
-72. 2012/09/01:07:*init/main.c* - copy_edd | 리뷰
-73. 2012/09/08:06:*init/main.c* - early_reserve_e820_mpc_new | 리뷰
-74. 2012/09/15:05:*init/main.c* - acpi_table_init | 리뷰 종료
-75. 2012/09/22:07:*init/main.c* - initmem_init
-76. 2012/10/06:05:*init/main.c* - x86_init.paging.pagetable_setup_start
+71. 2012/08/25:07:*init/main.c* - setup_arch - early_cpu_init | 리뷰, 회식
+72. 2012/09/01:07:*init/main.c* - setup_arch - copy_edd | 리뷰
+73. 2012/09/08:06:*init/main.c* - setup_arch - early_reserve_e820_mpc_new | 리뷰
+74. 2012/09/15:05:*init/main.c* - setup_arch - acpi_table_init | 리뷰 종료
+75. 2012/09/22:07:*init/main.c* - setup_arch - initmem_init
+76. 2012/10/06:05:*init/main.c* - setup_arch - x86_init.paging.pagetable_setup_start
