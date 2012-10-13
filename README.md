@@ -83,3 +83,4 @@ Study history (날짜:인원:내용)
 74. 2012/09/15:05:*init/main.c* - setup_arch - acpi_table_init | 리뷰 종료
 75. 2012/09/22:07:*init/main.c* - setup_arch - initmem_init
 76. 2012/10/06:05:*init/main.c* - setup_arch - x86_init.paging.pagetable_setup_start
+77. 2012/10/13:04:*init/main.c* - setup_arch - 	numa_emulation | 승환님 탈퇴 T_T

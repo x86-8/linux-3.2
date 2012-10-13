@@ -664,13 +664,12 @@ void __init paging_init(void)
 
 	memset(max_zone_pfns, 0, sizeof(max_zone_pfns));
 #ifdef CONFIG_ZONE_DMA
-	max_zone_pfns[ZONE_DMA] = MAX_DMA_PFN;
+	max_zone_pfns[ZONE_DMA] = MAX_DMA_PFN; // ZONE_DMA = 0, MAX_DMA_PFN = 2^12
 #endif
-	max_zone_pfns[ZONE_DMA32] = MAX_DMA32_PFN;
-	max_zone_pfns[ZONE_NORMAL] = max_pfn;
+	max_zone_pfns[ZONE_DMA32] = MAX_DMA32_PFN; // ZONE_DMA32 = 1, MAX_DMA32_PFN =  2^20
+	max_zone_pfns[ZONE_NORMAL] = max_pfn; // ZONE_NORMAL = 2, max_pfn = e820_end_of_ram_pfn();
 
-	sparse_memory_present_with_active_regions(MAX_NUMNODES);
-	sparse_init();
+	sparse_memory_present_with_active_regions(MAX_NUMNODES); // MAX_NUMNODES = 2^6_init();
 
 	/*
 	 * clear the default setting with node 0

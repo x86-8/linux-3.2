@@ -1132,19 +1132,19 @@ void __init setup_arch(char **cmdline_p)
 	/* acpi 관련 세팅을 마저 한다. */
 	early_acpi_boot_init();
 
-	/* numa memory 관련 정보 수집 및 초기화 */
-	initmem_init();
-	/* dma중 예약된 크기를 구한다.  */
-	memblock_find_dma_reserve();
+	initmem_init();	// numa memory 관련 정보 수집 및 초기화
+
+	memblock_find_dma_reserve(); // dma중 예약된 크기를 구한다.
 
 
 #ifdef CONFIG_KVM_CLOCK
-	kvmclock_init();
+	
+	kvmclock_init(); // 우린 상관없음. why? paravirtual 안하니깐. :)
 #endif
 
-	x86_init.paging.pagetable_setup_start(swapper_pg_dir);
+	x86_init.paging.pagetable_setup_start(swapper_pg_dir); // 64bit는 없다?
 	paging_init();
-	x86_init.paging.pagetable_setup_done(swapper_pg_dir);
+	x86_init.paging.pagetable_setup_done(swapper_pg_dir); // 64bit는 없다?
 
 	if (boot_cpu_data.cpuid_level >= 0) {
 		/* A CPU has %cr4 if and only if it has CPUID */
@@ -1160,7 +1160,7 @@ void __init setup_arch(char **cmdline_p)
 
 	tboot_probe();
 
-#ifdef CONFIG_X86_64
+#ifdef CONFIG_X86_46
 	map_vsyscall();
 #endif
 

@@ -315,7 +315,7 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 		goto no_emu;
 
 	memset(&ei, 0, sizeof(ei));
-	pi = *numa_meminfo;
+	pi = *numa;
 
 	for (i = 0; i < MAX_NUMNODES; i++)
 		emu_nid_to_phys[i] = NUMA_NO_NODE;

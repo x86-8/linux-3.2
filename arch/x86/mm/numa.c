@@ -164,6 +164,8 @@ static int __init numa_add_memblk_to(int nid, u64 start, u64 end,
  * @idx: Index of memblk to remove
  * @mi: numa_meminfo to remove memblk from
  *
+ * 안보고 패스!
+ * 
  * Remove @idx'th numa_memblk from @mi by shifting @mi->blk[] and
  * decrementing @mi->nr_blks.
  */
@@ -263,6 +265,10 @@ static void __init setup_node_data(int nid, u64 start, u64 end)
  * Sanitize @mi by merging and removing unncessary memblks.  Also check for
  * conflicts and clear unused memblks.
  *
+ * 1. Trim all
+ * 2. Merge / Overlapping
+ * 3. Clear
+ * 
  * RETURNS:
  * 0 on success, -errno on failure.
  */
@@ -605,9 +611,12 @@ static int __init numa_init(int (*init_func)(void))
 	ret = init_func();
 	if (ret < 0)
 		return ret;
+	/* Snitize */
 	ret = numa_cleanup_meminfo(&numa_meminfo);
+
+	/* clean up 실패시 */
 	if (ret < 0)
-		return ret;
+		return ret; 
 
 	numa_emulation(&numa_meminfo, numa_distance_cnt);
 

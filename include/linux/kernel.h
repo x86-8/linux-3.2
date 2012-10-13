@@ -535,7 +535,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
 /*
  * min()/max()/clamp() macros that also do
  * strict type-checking.. See the
- * "unnecessary" pointer comparison.
+ * "unnecessary" pointer comparison. 포인터 따위는 비교하지 않는다.
  */
 #define min(x, y) ({				\
 	typeof(x) _min1 = (x);			\

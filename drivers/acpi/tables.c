@@ -303,12 +303,12 @@ int __init acpi_table_parse(char *id, acpi_table_handler handler)
 
 	if (!handler)
 		return -EINVAL;
-	/* 원하는 id의 테이블을 찾아서 &table에 넣는다.  */
+	/u* 원하는 id의 테이블을 찾아서 &table에 넣는다.  */
 	if (strncmp(id, ACPI_SIG_MADT, 4) == 0)
 	/* MADT면 apic_instance만큼 넘긴다  */
 		acpi_get_table_with_size(id, acpi_apic_instance, &table, &tbl_size);
 	else
-		acpi_get_table_with_size(id, 0, &table, &tbl_size);
+	s	acpi_get_table_with_size(id, 0, &table, &tbl_size);
 
 	/* 인자로 받아온 핸들러를 실행 */
 	if (table) {
