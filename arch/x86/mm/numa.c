@@ -165,7 +165,7 @@ static int __init numa_add_memblk_to(int nid, u64 start, u64 end,
  * @mi: numa_meminfo to remove memblk from
  *
  * 안보고 패스!
- * 
+ *
  * Remove @idx'th numa_memblk from @mi by shifting @mi->blk[] and
  * decrementing @mi->nr_blks.
  */
@@ -268,9 +268,16 @@ static void __init setup_node_data(int nid, u64 start, u64 end)
  * 1. Trim all
  * 2. Merge / Overlapping
  * 3. Clear
- * 
+ *
  * RETURNS:
  * 0 on success, -errno on failure.
+ */
+/**
+ * NUMA 메모리 정보에서 메모리를 깨끗하게 만듦.
+ *
+ * 1. trim => start와 end가 반대거나 같은 경우로, 필요가 없음.
+ * 2. merge => 메모리 정보가 겹쳐있거나 연이어 있으면 통합.
+ * 3. clear => 비어 있으니 제거.
  */
 int __init numa_cleanup_meminfo(struct numa_meminfo *mi)
 {
@@ -325,6 +332,7 @@ int __init numa_cleanup_meminfo(struct numa_meminfo *mi)
 				continue;
 			start = min(bi->start, bj->start);
 			end = max(bi->end, bj->end);
+			/* 다시 검색을 시도하여, start와 end block에 포함되는지 검사  */
 			for (k = 0; k < mi->nr_blks; k++) {
 				struct numa_memblk *bk = &mi->blk[k];
 
@@ -333,11 +341,14 @@ int __init numa_cleanup_meminfo(struct numa_meminfo *mi)
 				if (start < bk->end && end > bk->start)
 					break;
 			}
+			/* k가 nr_blks보다 작다는 것은 bk가 start,end사이에 포함된다는 것이므로,
+			 * continue를 통해 새로운 bj로 다시 검사  */
 			if (k < mi->nr_blks)
 				continue;
 			printk(KERN_INFO "NUMA: Node %d [%Lx,%Lx) + [%Lx,%Lx) -> [%Lx,%Lx)\n",
 			       bi->nid, bi->start, bi->end, bj->start, bj->end,
 			       start, end);
+			/* k가 nr_blks보다 크므로 start와 end가 유일하니, 통합한다  */
 			bi->start = start;
 			bi->end = end;
 			numa_remove_memblk_from(j--, mi);
@@ -424,7 +435,7 @@ static int __init numa_alloc_distance(void)
 	numa_distance_cnt = cnt;
 
 	/* fill with the default distances */
-	/* 기본 distance 설정. 
+	/* 기본 distance 설정.
 	같은 node일경우 Local Distance(10)를,
 	아닌 경우 RemoteDistance(20) 저장 */
 	for (i = 0; i < cnt; i++)
@@ -608,16 +619,22 @@ static int __init numa_init(int (*init_func)(void))
 	remove_all_active_ranges();
 	numa_reset_distance();
 
+	/* NUMA 정보를 얻어오는 핸들러 함수 실행 */
 	ret = init_func();
 	if (ret < 0)
 		return ret;
-	/* Snitize */
+	/* Sanitize - NUMA 메모리 정보중 겹쳐진것을 통합하고,
+	 * 쓸데없는 것을 제거. */
 	ret = numa_cleanup_meminfo(&numa_meminfo);
 
 	/* clean up 실패시 */
 	if (ret < 0)
-		return ret; 
+		return ret;
 
+	/* CONFIG 정보는 비활성화되어 있지만, 커널 파라미터로 NODE 크기를 받아들여,
+	 * NUMA Node를 가상으로 생성. 실제 Physical Node가 있어도 여분의
+	 * 메모리를 가지고 (가상의)NODE를 더 만들수 있는 것으로 보임.
+	 */
 	numa_emulation(&numa_meminfo, numa_distance_cnt);
 
 	ret = numa_register_memblks(&numa_meminfo);

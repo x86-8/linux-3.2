@@ -311,12 +311,14 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	int max_emu_nid, dfl_phys_nid;
 	int i, j, ret;
 
+	/* Emulation 커널 파라미터 정보가 없으면  */
 	if (!emu_cmdline)
 		goto no_emu;
 
 	memset(&ei, 0, sizeof(ei));
 	pi = *numa;
 
+	/* 모든 가상 NUMA 초기화 */
 	for (i = 0; i < MAX_NUMNODES; i++)
 		emu_nid_to_phys[i] = NUMA_NO_NODE;
 
@@ -325,14 +327,17 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	 * the fixed node size.  Otherwise, if it is just a single number N,
 	 * split the system RAM into N fake nodes.
 	 */
+	/* M 또는 G가 들어 있으면 해당크기로 NODE를 나누고, 그게 아니면 갯수로 NODE를 생성 */
 	if (strchr(emu_cmdline, 'M') || strchr(emu_cmdline, 'G')) {
 		u64 size;
 
+		/* NODE를 만들 byte 크기 계산 */
 		size = memparse(emu_cmdline, &emu_cmdline);
 		ret = split_nodes_size_interleave(&ei, &pi, 0, max_addr, size);
 	} else {
 		unsigned long n;
 
+		/* NODE를 만들 byte 크기 계산 */
 		n = simple_strtoul(emu_cmdline, NULL, 0);
 		ret = split_nodes_interleave(&ei, &pi, 0, max_addr, n);
 	}

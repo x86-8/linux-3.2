@@ -62,7 +62,8 @@ EXPORT_SYMBOL(simple_strtoull);
  * @endp: A pointer to the end of the parsed string will be placed here
  * @base: The number base to use
  */
-/* ASCII 스트링(cp~endp)을 unsigned long 으로 리턴 */
+/* ASCII 스트링(cp~endp)을 unsigned long 으로 리턴.
+ * base가 0인경우 ascii값으로 기수법을 추정 */
 unsigned long simple_strtoul(const char *cp, char **endp, unsigned int base)
 {
 	return simple_strtoull(cp, endp, base);
