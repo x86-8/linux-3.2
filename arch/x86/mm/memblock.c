@@ -311,6 +311,8 @@ u64 __init memblock_x86_find_in_range_node(int nid, u64 start, u64 end, u64 size
  * Finds an active region in the address range from start_pfn to last_pfn and
  * returns its range in ei_startpfn and ei_endpfn for the memblock entry.
  */
+/* ei에서 start_pfn과 last_pfn중에서 사용가능한 영역을 찾아,
+ * ei_startpfn과 ei_endpfn에 저장 */
 static int __init memblock_x86_find_active_region(const struct memblock_region *ei,
 				  unsigned long start_pfn,
 				  unsigned long last_pfn,
@@ -340,6 +342,7 @@ static int __init memblock_x86_find_active_region(const struct memblock_region *
 }
 
 /* Walk the memblock.memory map and register active regions within a node */
+/* node에 사용가능한 memblock 영역을 등록 */
 void __init memblock_x86_register_active_regions(int nid, unsigned long start_pfn,
 					 unsigned long last_pfn)
 {

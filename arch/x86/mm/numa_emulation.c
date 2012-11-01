@@ -345,6 +345,7 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	if (ret < 0)
 		goto no_emu;
 
+  /* NUMA 메모리 정보 정리 */
 	if (numa_cleanup_meminfo(&ei) < 0) {
 		pr_warning("NUMA: Warning: constructed meminfo invalid, disabling emulation\n");
 		goto no_emu;
@@ -354,6 +355,7 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	if (numa_dist_cnt) {
 		u64 phys;
 
+    /* phys_size만큼의 크기를 찾아, 크기만큼 예약 */
 		phys = memblock_find_in_range(0, PFN_PHYS(max_pfn_mapped),
 					      phys_size, PAGE_SIZE);
 		if (phys == MEMBLOCK_ERROR) {
@@ -363,6 +365,7 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 		memblock_x86_reserve_range(phys, phys + phys_size, "TMP NUMA DIST");
 		phys_dist = __va(phys);
 
+    /* 물리적인 거리 테이블 복사 */
 		for (i = 0; i < numa_dist_cnt; i++)
 			for (j = 0; j < numa_dist_cnt; j++)
 				phys_dist[i * numa_dist_cnt + j] =
@@ -373,6 +376,7 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	 * Determine the max emulated nid and the default phys nid to use
 	 * for unmapped nodes.
 	 */
+  /* Default NUMA Node로 쓸 id와 최대 NUMA Node id를 찾음 */
 	max_emu_nid = 0;
 	dfl_phys_nid = NUMA_NO_NODE;
 	for (i = 0; i < ARRAY_SIZE(emu_nid_to_phys); i++) {
@@ -382,12 +386,14 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 				dfl_phys_nid = emu_nid_to_phys[i];
 		}
 	}
+  /* 없는 경우는 물리적인 NODE가 없다는 의미 */
 	if (dfl_phys_nid == NUMA_NO_NODE) {
 		pr_warning("NUMA: Warning: can't determine default physical node, disabling emulation\n");
 		goto no_emu;
 	}
 
 	/* commit */
+  /* 메모리를 크기로 나눈 NODE 정보를 반영 */
 	*numa_meminfo = ei;
 
 	/*
@@ -395,6 +401,8 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	 * reverse-mapping phys_nid.  The maps should always exist but fall
 	 * back to zero just in case.
 	 */
+  /* 단순 매칭. apicid_to_node에는 x2apic id로 physical nid정보를 저장하는데,
+   * physical nid를 emulation nid(index)로 apicid 테이블에 바꿔치기 한다 */
 	for (i = 0; i < ARRAY_SIZE(__apicid_to_node); i++) {
 		if (__apicid_to_node[i] == NUMA_NO_NODE)
 			continue;
@@ -405,11 +413,14 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	}
 
 	/* make sure all emulated nodes are mapped to a physical node */
+  /* emulation id가 존재하지 않으면, Defualt Physical Node id로 매핑 */
 	for (i = 0; i < ARRAY_SIZE(emu_nid_to_phys); i++)
 		if (emu_nid_to_phys[i] == NUMA_NO_NODE)
 			emu_nid_to_phys[i] = dfl_phys_nid;
 
 	/* transform distance table */
+  /* 기존에 Physical Distance의 정보를 제거하고, Emulation Node를 바탕으로
+   * Physical Distance(임시 저장했던)를 참고하여, 거리정보 재 생성. */
 	numa_reset_distance();
 	for (i = 0; i < max_emu_nid + 1; i++) {
 		for (j = 0; j < max_emu_nid + 1; j++) {
@@ -428,12 +439,14 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 	}
 
 	/* free the copied physical distance table */
+  /* 기존에 복사했던 physical distance 정보 제거 */
 	if (phys_dist)
 		memblock_x86_free_range(__pa(phys_dist), __pa(phys_dist) + phys_size);
 	return;
 
 no_emu:
 	/* No emulation.  Build identity emu_nid_to_phys[] for numa_add_cpu() */
+  /* emulation을 하지 않기 때문에 emu_nid_to_phys를 기본 index로 채움 */
 	for (i = 0; i < ARRAY_SIZE(emu_nid_to_phys); i++)
 		emu_nid_to_phys[i] = i;
 }

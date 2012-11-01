@@ -82,6 +82,7 @@ acpi_numa_x2apic_affinity_init(struct acpi_srat_x2apic_cpu_affinity *pa)
 		printk(KERN_INFO "SRAT: PXM %u -> APIC 0x%04x -> Node %u skipped apicid that is too big\n", pxm, apic_id, node);
 		return;
 	}
+  /* ACPI ID와 node id를 1대1 매핑. numa_emulation시에 사용 */
 	set_apicid_to_node(apic_id, node);
 	/* 파싱이 완료된(APIC로부터 찾아낸) node 설정 */
 	node_set(node, numa_nodes_parsed);

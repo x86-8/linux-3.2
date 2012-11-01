@@ -369,7 +369,7 @@ int __init numa_cleanup_meminfo(struct numa_meminfo *mi)
  */
 /* NUMA Memory 정보가 들어 있는(사용가능한) 경우, nodemask에 추가.
    nodemask에 빠져 있는(CPU Affinity에서 얻어왔기 때문에) node를,
-   Memory Affinity정보로 추가할수 있을 거라고 보임 */
+   Memory Affinity정보로 추가(보완)할수 있을 거라고 보임 */
 static void __init numa_nodemask_from_meminfo(nodemask_t *nodemask,
 					      const struct numa_meminfo *mi)
 {
@@ -501,16 +501,21 @@ EXPORT_SYMBOL(__node_distance);
  * Sanity check to catch more bad NUMA configurations (they are amazingly
  * common).  Make sure the nodes cover all memory.
  */
+/* NUMA설정이 정상적인지 확인. Sanityze가 정상적이었다면 메모리 설정
+ * 역시 문제 없어야 함 */
 static bool __init numa_meminfo_cover_memory(const struct numa_meminfo *mi)
 {
 	u64 numaram, e820ram;
 	int i;
 
+  /* NUMA가 사용할 수 있는 램의 전체 크기에서 쓸 수 없는(부재) 페이지
+   * 크기 만큼을 제거 */
 	numaram = 0;
 	for (i = 0; i < mi->nr_blks; i++) {
 		u64 s = mi->blk[i].start >> PAGE_SHIFT;
 		u64 e = mi->blk[i].end >> PAGE_SHIFT;
 		numaram += e - s;
+    /* 메모리 설정을 가지고, nid의 쓸 수 없는 페이지 크기만큼을 뺌 */
 		numaram -= __absent_pages_in_range(mi->blk[i].nid, s, e);
 		if ((s64)numaram < 0)
 			numaram = 0;
@@ -519,6 +524,9 @@ static bool __init numa_meminfo_cover_memory(const struct numa_meminfo *mi)
 	e820ram = max_pfn - (memblock_x86_hole_size(0,
 					PFN_PHYS(max_pfn)) >> PAGE_SHIFT);
 	/* We seem to lose 3 pages somewhere. Allow 1M of slack. */
+  /* NUMA에서는 모든 NODE가 e820 메모리를 커버한다고 간주하기 때문에
+   * e820 메모리에서 NUMA의 설정된 메모리의 차이(쓸수없는 페이지
+   * 영역)가 1M을 넘어서면 에러라고 판단하는듯? */
 	if ((s64)(e820ram - numaram) >= (1 << (20 - PAGE_SHIFT))) {
 		printk(KERN_ERR "NUMA: nodes only cover %LuMB of your %LuMB e820 RAM. Not used.\n",
 		       (numaram << PAGE_SHIFT) >> 20,
@@ -534,17 +542,20 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
 	int i, nid;
 
 	/* Account for nodes with cpus and no memory */
+  /* 사용가능한 node 정보(node_possible_map)를 meminfo(mi)로 보완 */
 	node_possible_map = numa_nodes_parsed;
 	numa_nodemask_from_meminfo(&node_possible_map, mi);
 	if (WARN_ON(nodes_empty(node_possible_map)))
 		return -EINVAL;
 
+  /* mi-blk[i]에 해당되는 사용가능한 memblock영역을 nid에 등록 */
 	for (i = 0; i < mi->nr_blks; i++)
 		memblock_x86_register_active_regions(mi->blk[i].nid,
 					mi->blk[i].start >> PAGE_SHIFT,
 					mi->blk[i].end >> PAGE_SHIFT);
 
 	/* for out of order entries */
+  /* node map정렬 */
 	sort_node_map();
 
 	/*
@@ -560,6 +571,7 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
 		return -EINVAL;
 	}
 #endif
+  /* NUMA (메모리)설정이 정상적인지 확인 */
 	if (!numa_meminfo_cover_memory(mi))
 		return -EINVAL;
 

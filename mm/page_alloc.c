@@ -4084,6 +4084,8 @@ static unsigned long __meminit zone_spanned_pages_in_node(int nid,
  * Return the number of holes in a range on a node. If nid is MAX_NUMNODES,
  * then all holes in the requested range will be accounted for.
  */
+/* node 메모리 영역안에서, 영역과 차이나는 경우에 비어있는
+ * 영역(hole)들을 전부 셈한다 */
 unsigned long __meminit __absent_pages_in_range(int nid,
 				unsigned long range_start_pfn,
 				unsigned long range_end_pfn)
@@ -4100,6 +4102,8 @@ unsigned long __meminit __absent_pages_in_range(int nid,
 	prev_end_pfn = min(early_node_map[i].start_pfn, range_end_pfn);
 
 	/* Account for ranges before physical memory on this node */
+  /* 주어진 영역의 시작보다 node 메모리 영역 뒤에 있는 경우,
+   쓸 수 없는 페이지로 계산 */
 	if (early_node_map[i].start_pfn > range_start_pfn)
 		hole_pages = prev_end_pfn - range_start_pfn;
 
@@ -4107,6 +4111,7 @@ unsigned long __meminit __absent_pages_in_range(int nid,
 	for (; i != -1; i = next_active_region_index_in_nid(i, nid)) {
 
 		/* No need to continue if prev_end_pfn is outside the zone */
+    /* 해당 영역을 벗어나면, 나감 */
 		if (prev_end_pfn >= range_end_pfn)
 			break;
 
@@ -4117,12 +4122,17 @@ unsigned long __meminit __absent_pages_in_range(int nid,
 		/* Update the hole size cound and move on */
 		if (start_pfn > range_start_pfn) {
 			BUG_ON(prev_end_pfn > start_pfn);
+      /* perv_end_pfn은 처음 i의 경우 start_pfn과 같아서 0으로
+       합산되지만, 그 다음의 i의 경우, prev_end_pfn이 항상 이전 i의
+       end_pfn을 가리키기 때문에, 이전 i와 i간의 빈페이지를 의미 */
 			hole_pages += start_pfn - prev_end_pfn;
 		}
 		prev_end_pfn = early_node_map[i].end_pfn;
 	}
 
 	/* Account for ranges past physical memory on this node */
+  /* node의 사용가능한 메모리보다 영역이 더 크다면, 마지막 남은 영역도
+   빈페이지로 계산*/
 	if (range_end_pfn > prev_end_pfn)
 		hole_pages += range_end_pfn -
 				max(range_start_pfn, prev_end_pfn);
@@ -4465,6 +4475,7 @@ static inline void setup_nr_node_ids(void)
  * the memory is not freed by the bootmem allocator. If possible
  * the range being registered will be merged with existing ranges.
  */
+/* nid에 사용가능한 영역 추가 -  */
 void __init add_active_range(unsigned int nid, unsigned long start_pfn,
 						unsigned long end_pfn)
 {
@@ -4484,11 +4495,14 @@ void __init add_active_range(unsigned int nid, unsigned long start_pfn,
 			continue;
 
 		/* Skip if an existing region covers this new one */
+    /* 이미 있는 node의 메모리 영역이 새로운 것보다 크면 */
 		if (start_pfn >= early_node_map[i].start_pfn &&
 				end_pfn <= early_node_map[i].end_pfn)
 			return;
 
 		/* Merge forward if suitable */
+    /* 이미 있는 node의 메모리 영역에 새로운 영역이 뒤 쪽으로 겹친 경우,
+       끝을 갱신 */
 		if (start_pfn <= early_node_map[i].end_pfn &&
 				end_pfn > early_node_map[i].end_pfn) {
 			early_node_map[i].end_pfn = end_pfn;
@@ -4496,6 +4510,8 @@ void __init add_active_range(unsigned int nid, unsigned long start_pfn,
 		}
 
 		/* Merge backward if suitable */
+    /* 이미 있는 node의 메모리 영역에 새로운 영역이 앞 쪽으로 겹친 경우,
+       시작을 갱신 */
 		if (start_pfn < early_node_map[i].start_pfn &&
 				end_pfn >= early_node_map[i].start_pfn) {
 			early_node_map[i].start_pfn = start_pfn;
@@ -4504,12 +4520,15 @@ void __init add_active_range(unsigned int nid, unsigned long start_pfn,
 	}
 
 	/* Check that early_node_map is large enough */
+  /* 사용가능한 nodemap이 허용량보다 큰 경우, 중단.  max_node 갯수 가
+   * 32이상인 경우, node * 50개가 가능하며, 기본은 256개 */
 	if (i >= MAX_ACTIVE_REGIONS) {
 		printk(KERN_CRIT "More than %d memory regions, truncating\n",
 							MAX_ACTIVE_REGIONS);
 		return;
 	}
 
+  /* 찾지 못한 경우, 마지막 node 맵에 추가 */
 	early_node_map[i].nid = nid;
 	early_node_map[i].start_pfn = start_pfn;
 	early_node_map[i].end_pfn = end_pfn;
@@ -4610,6 +4629,8 @@ static int __init cmp_node_active_region(const void *a, const void *b)
 }
 
 /* sort the node_map by start_pfn */
+/* node(memory)map의 시작위치를 비교(cmp_node_active_regino()사용)하여
+ * 정렬 */
 void __init sort_node_map(void)
 {
 	sort(early_node_map, (size_t)nr_nodemap_entries,
