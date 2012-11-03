@@ -86,3 +86,4 @@ Study history (날짜:인원:내용)
 77. 2012/10/13:04:*init/main.c* - setup_arch - 	numa_emulation | 승환님 탈퇴 T_T
 78. 2012/10/20:02:*init/main.c* - setup_arch - 	스터디 중단 및 임시 회의
 79. 2012/10/27:05:*init/main.c* - setup_arch - 	numa_emulation | NUMA 토론
+79. 2012/11/03:05:*init/main.c* - setup_arch - 	numa_register_memblks | 고속 진행

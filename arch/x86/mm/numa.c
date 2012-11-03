@@ -542,7 +542,9 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
 	int i, nid;
 
 	/* Account for nodes with cpus and no memory */
-  /* 사용가능한 node 정보(node_possible_map)를 meminfo(mi)로 보완 */
+        /* 사용가능한 node 정보(node_possible_map)를 meminfo(mi)로 보완
+         * CPU들만 가지고 있는 노드들을 계산해 준다. 
+         */
 	node_possible_map = numa_nodes_parsed;
 	numa_nodemask_from_meminfo(&node_possible_map, mi);
 	if (WARN_ON(nodes_empty(node_possible_map)))
@@ -561,6 +563,10 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
 	/*
 	 * If sections array is gonna be used for pfn -> nid mapping, check
 	 * whether its granularity is fine enough.
+         * 페이지 프레임 플래그의 두 부분중 한 부분은 nid를 나타낸다.
+         * 만약 이를 사용하지 않으면 섹션을 사용해 맵핑해줘야 한다.
+         * 노드는 PAGES_PER_SECTION 보다 작게 정렬되어 있어야 한다.
+         * FIXME: 말이 이상하니 고쳐주세요.
 	 */
 #ifdef NODE_NOT_IN_PAGE_FLAGS
 	pfn_align = node_map_pfn_alignment();
