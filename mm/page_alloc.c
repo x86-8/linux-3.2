@@ -3955,6 +3955,7 @@ void __init work_with_active_regions(int nid, work_fn_t work_fn, void *data)
  * add_active_ranges() contain no holes and may be freed, this
  * function may be used instead of calling memory_present() manually.
  */
+/* nid 에 node_map 에 등록되어 있는 memory영역(사용가능한)을 등록 */
 void __init sparse_memory_present_with_active_regions(int nid)
 {
 	int i;

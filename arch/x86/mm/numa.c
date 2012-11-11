@@ -607,6 +607,9 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
  * as the number of CPUs is not known yet. We round robin the existing
  * nodes.
  */
+/* 몇몇 mainboard에서는 cpu 하나에만 memmory가 연결되게 만들어졌기 때문에,
+ * 이걸 방지하기 위해 cpu와 node를 round robin방식(순차적으로 node를 할당)
+ * 으로 연결한다 */
 static void __init numa_init_array(void)
 {
 	int rr, i;
@@ -659,11 +662,15 @@ static int __init numa_init(int (*init_func)(void))
 	if (ret < 0)
 		return ret;
 
+	/* cpu로부터 node id를 가져와서 활성화 되어 있지않은 노드는 
+	 * 제거한다 */
 	for (i = 0; i < nr_cpu_ids; i++) {
+		/* cpu index로 nid로 가져온다 */
 		int nid = early_cpu_to_node(i);
 
 		if (nid == NUMA_NO_NODE)
 			continue;
+		/* node의 상태 확인 */
 		if (!node_online(nid))
 			numa_clear_node(i);
 	}

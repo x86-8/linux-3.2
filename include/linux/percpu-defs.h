@@ -24,6 +24,8 @@
  * @ptr.  This is to be used in percpu accessors to verify that the
  * input parameter is a percpu pointer.
  */
+/* ptr변수가 정상적인 void __percpu * 타입인지 확인. 
+ * 타입이 다르면 에러날 것이므로 */
 #define __verify_pcpu_ptr(ptr)	do {					\
 	const void __percpu *__vpp_verify = (typeof(ptr))NULL;		\
 	(void)__vpp_verify;						\

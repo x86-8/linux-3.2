@@ -71,13 +71,14 @@ static struct mem_section noinline __init_refok *sparse_index_alloc(int nid)
 	} else
 		section = alloc_bootmem_node(NODE_DATA(nid), array_size);
 
+	/* section 할당이 끝났다면 초기화 */
 	if (section)
 		memset(section, 0, array_size);
 
 	return section;
 }
 
-static int __meminit sparse_index_init(unsigned long section_nr, int nid)
+tatic int __meminit sparse_index_init(unsigned long section_nr, int nid)
 {
 	static DEFINE_SPINLOCK(index_init_lock);
 	unsigned long root = SECTION_NR_TO_ROOT(section_nr);
@@ -87,6 +88,7 @@ static int __meminit sparse_index_init(unsigned long section_nr, int nid)
 	if (mem_section[root])
 		return -EEXIST;
 
+	/* nid에 해당하는 메모리 할당 */
 	section = sparse_index_alloc(nid);
 	if (!section)
 		return -ENOMEM;
@@ -94,6 +96,7 @@ static int __meminit sparse_index_init(unsigned long section_nr, int nid)
 	 * This lock keeps two different sections from
 	 * reallocating for the same index
 	 */
+	/* 재할당 방지 */
 	spin_lock(&index_init_lock);
 
 	if (mem_section[root]) {
@@ -101,6 +104,7 @@ static int __meminit sparse_index_init(unsigned long section_nr, int nid)
 		goto out;
 	}
 
+	/* root가 설정이 안되어 있기 때문에 section 설정 */
 	mem_section[root] = section;
 out:
 	spin_unlock(&index_init_lock);
@@ -141,8 +145,11 @@ int __section_nr(struct mem_section* ms)
  * node.  This keeps us from having to use another data structure.  The
  * node information is cleared just before we store the real mem_map.
  */
+/* section_mem_map에 section NUMA node정보 저장하기 때문에,
+ * nid값이 mem_map->section_mem_map에 저장할 필요가 있음. */
 static inline unsigned long sparse_encode_early_nid(int nid)
 {
+	/* nid << 2 */
 	return (nid << SECTION_NID_SHIFT);
 }
 
@@ -181,20 +188,30 @@ void __meminit mminit_validate_memmodel_limits(unsigned long *start_pfn,
 }
 
 /* Record a memory area against a node. */
+/* nid에 start~end 영역의 pfn에 해당하는 영역을 등록 */
 void __init memory_present(int nid, unsigned long start, unsigned long end)
 {
 	unsigned long pfn;
 
 	start &= PAGE_SECTION_MASK;
+	/* 메모리 영역이 정상적인지(물리메모리 최대 허용량에 있는지) 
+	 * 확인 */
 	mminit_validate_memmodel_limits(&start, &end);
+	/* pfn은 32kb만큼 증가 */
 	for (pfn = start; pfn < end; pfn += PAGES_PER_SECTION) {
+		/* pfn에서 section 번호 획득. section = pfn >> 15 */
 		unsigned long section = pfn_to_section_nr(pfn);
 		struct mem_section *ms;
 
+		/* SPARSEMEM_EXTREAM 인 경우에만 동작 */
 		sparse_index_init(section, nid);
+		/* NODE_NOT_IN_PAGE_FLAGS(NUMA가 아니거나,
+		 * node 매핑을 지원을 하지 못하는 경우)
+		 * 인 경우에만 동작 */
 		set_section_nid(section, nid);
 
 		ms = __nr_to_section(section);
+		/* mem_section 정보가 없으면 갱신 */
 		if (!ms->section_mem_map)
 			ms->section_mem_map = sparse_encode_early_nid(nid) |
 							SECTION_MARKED_PRESENT;

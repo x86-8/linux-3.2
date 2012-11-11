@@ -1160,7 +1160,7 @@ void __init setup_arch(char **cmdline_p)
 
 	tboot_probe();
 
-#ifdef CONFIG_X86_46
+#ifdef CONFIG_X86_64
 	map_vsyscall();
 #endif
 

@@ -66,6 +66,7 @@ stack_frame(struct task_struct *task, struct pt_regs *regs)
 
 	if (task == current) {
 		/* Grab bp right from our regs */
+		/* bp 를 추출하는 이유 : 스택 프래임을 추적할수있다.*/
 		get_bp(bp);
 		return bp;
 	}
