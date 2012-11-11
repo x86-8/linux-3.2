@@ -563,13 +563,15 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
 	/*
 	 * If sections array is gonna be used for pfn -> nid mapping, check
 	 * whether its granularity is fine enough.
-         * 페이지 프레임 플래그의 두 부분중 한 부분은 nid를 나타낸다.
-         * 만약 이를 사용하지 않으면 섹션을 사용해 맵핑해줘야 한다.
-         * 노드는 PAGES_PER_SECTION 보다 작게 정렬되어 있어야 한다.
-         * FIXME: 말이 이상하니 고쳐주세요.
+   */
+  /* 페이지 프레임 플래그에는, section 번호가 들어가서 nid를 통해
+   * node로 매핑을 하게 된다. 만약, 페이지 프레임 플래그에 section
+   * 번호가 들어갈 수 없거나, NUMA가 아니어서 매핑할 수 없는 경우,
+   * section array를 이용해, 매핑을 해주게 된다.
 	 */
 #ifdef NODE_NOT_IN_PAGE_FLAGS
 	pfn_align = node_map_pfn_alignment();
+  /* pfn_align는 nid 매핑시에 사용되므로, PAGES_PER_SECTION보다 작아서는 안된다 */
 	if (pfn_align && pfn_align < PAGES_PER_SECTION) {
 		printk(KERN_WARNING "Node alignment %LuMB < min %LuMB, rejecting NUMA config\n",
 		       PFN_PHYS(pfn_align) >> 20,
