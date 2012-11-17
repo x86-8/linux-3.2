@@ -32,11 +32,15 @@ unsigned long max_low_pfn;
 unsigned long min_low_pfn;
 unsigned long max_pfn;
 
+/** 
+ * memblock에 특정 크기만큼 할당
+ * @return 할당한 가상주소
+ */
 static void * __init __alloc_memory_core_early(int nid, u64 size, u64 align,
 					u64 goal, u64 limit)
 {
-	void *ptr;
-	u64 addr;
+	void *ptr;              /**< 가상주소 */
+	u64 addr;               /**< 물리주소 */
 	/* limit는 현재 메모리의 한계 */
 	if (limit > memblock.current_limit)
 		limit = memblock.current_limit;

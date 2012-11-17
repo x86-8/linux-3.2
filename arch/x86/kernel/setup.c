@@ -1158,7 +1158,7 @@ void __init setup_arch(char **cmdline_p)
 			KERNEL_PGD_PTRS);
 #endif
 
-	tboot_probe();
+	tboot_probe();          /**< 우린 패스. 바쁘니깐. */
 
 #ifdef CONFIG_X86_64
 	map_vsyscall();
