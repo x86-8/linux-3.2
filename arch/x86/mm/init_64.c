@@ -677,6 +677,7 @@ void __init paging_init(void)
 	 *	 numa support is not compiled in, and later node_set_state
 	 *	 will not set it back.
 	 */
+  /* FIXME: N_NORMAL_MEMORY는 기본으로 0으로 설정된 상태인데??? */
 	node_clear_state(0, N_NORMAL_MEMORY);
 
 	free_area_init_nodes(max_zone_pfns);

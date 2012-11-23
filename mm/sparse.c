@@ -60,6 +60,7 @@ static inline void set_section_nid(unsigned long section_nr, int nid)
 static struct mem_section noinline __init_refok *sparse_index_alloc(int nid)
 {
 	struct mem_section *section = NULL;
+  /* array_size 만큼을 얻는다. 정확히는 page size가 된다. */
 	unsigned long array_size = SECTIONS_PER_ROOT *
 				   sizeof(struct mem_section);
 
@@ -69,6 +70,7 @@ static struct mem_section noinline __init_refok *sparse_index_alloc(int nid)
 		else
 			section = kmalloc(array_size, GFP_KERNEL);
 	} else
+    /* bootmem이 아니라 nobootmem을 호출(bootmem은 nid를 사용하지 못한다) */
 		section = alloc_bootmem_node(NODE_DATA(nid), array_size);
 
 	/* section 할당이 끝났다면 초기화 */
@@ -77,10 +79,12 @@ static struct mem_section noinline __init_refok *sparse_index_alloc(int nid)
 
 	return section;
 }
-
+/* section 번호를 받아, 해당 section을 할당하고, nid에 section_nr을 등록 */
 static int __meminit sparse_index_init(unsigned long section_nr, int nid)
 {
 	static DEFINE_SPINLOCK(index_init_lock);
+  /* section_nr을 사용하여 root를 찾는다. root는 실제로 page단위가
+   * 되며, sparse의 할당은 page 단위가 된다. */
 	unsigned long root = SECTION_NR_TO_ROOT(section_nr);
 	struct mem_section *section;
 	int ret = 0;
@@ -159,7 +163,7 @@ static inline int sparse_early_nid(struct mem_section *section)
 }
 
 /* Validate the physical addressing limitations of the model */
-/* 물리적인 메모리의 최대 허용량 체크 */
+/* pfn 최대 허용량 체크 */
 void __meminit mminit_validate_memmodel_limits(unsigned long *start_pfn,
 						unsigned long *end_pfn)
 {
@@ -194,8 +198,9 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
 	unsigned long pfn;
 
 	start &= PAGE_SECTION_MASK;
-	/* 메모리 영역이 정상적인지(물리메모리 최대 허용량에 있는지) 
-	 * 확인 */
+	/* 메모리 영역(pfn)이 정상적인지 확인, 최대 크기를 벗어날 경우,
+   * 재조정.
+   */
 	mminit_validate_memmodel_limits(&start, &end);
 	/* pfn은 32kb만큼 증가 */
 	for (pfn = start; pfn < end; pfn += PAGES_PER_SECTION) {
@@ -203,11 +208,11 @@ void __init memory_present(int nid, unsigned long start, unsigned long end)
 		unsigned long section = pfn_to_section_nr(pfn);
 		struct mem_section *ms;
 
-		/* SPARSEMEM_EXTREAM 인 경우에만 동작 */
+		/* SPARSEMEM_EXTREAM 인 경우에만 동작 - SPARSEMEM_EXTREME 은
+     * 동적으로 할당되기 때문 */
 		sparse_index_init(section, nid);
-		/* NODE_NOT_IN_PAGE_FLAGS(NUMA가 아니거나,
-		 * node 매핑을 지원을 하지 못하는 경우)
-		 * 인 경우에만 동작 */
+		/* NODE_NOT_IN_PAGE_FLAGS(NUMA가 아니거나, node 매핑을 지원을 하지
+		 * 못하는 경우) 인 경우에만 동작 */
 		set_section_nid(section, nid);
 
 		ms = __nr_to_section(section);

@@ -788,6 +788,7 @@ static void object_no_scan(unsigned long ptr)
  * Log an early kmemleak_* call to the early_log buffer. These calls will be
  * processed later once kmemleak is fully initialized.
  */
+/* 아직 활성화 되어 있지 않을때, 로그를 모아서 한번에 출력하는 함수. */
 static void __init log_early(int op_type, const void *ptr, size_t size,
 			     int min_count)
 {
@@ -864,10 +865,14 @@ void __ref kmemleak_alloc(const void *ptr, size_t size, int min_count,
 			  gfp_t gfp)
 {
 	pr_debug("%s(0x%p, %zu, %d)\n", __func__, ptr, size, min_count);
-
+  
+  /* kmemleak_init이 호출되면, kmemleak_enabled가 1이되고,
+   * kmemleak_early_log가 0이 됨. */
 	if (atomic_read(&kmemleak_enabled) && ptr && !IS_ERR(ptr))
 		create_object((unsigned long)ptr, size, min_count, gfp);
 	else if (atomic_read(&kmemleak_early_log))
+       /* log_early로 로그를 남긴다. log_early는 kmemleak이 활성화될때
+        * 한번에 로그로 쓰여진다. */
 		log_early(KMEMLEAK_ALLOC, ptr, size, min_count);
 }
 EXPORT_SYMBOL_GPL(kmemleak_alloc);
@@ -1662,6 +1667,8 @@ early_param("kmemleak", kmemleak_boot_config);
 /*
  * Kmemleak initialization.
  */
+/* kmemleak_init 초기화 - kmemleak_enabled와 kmemleak_early_log가
+ * setup_arch 부분에서 참조되어 쓰이기 때문에, 참고로 주석달았음. */
 void __init kmemleak_init(void)
 {
 	int i;

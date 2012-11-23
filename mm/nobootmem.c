@@ -34,6 +34,7 @@ unsigned long max_pfn;
 
 /** 
  * memblock에 특정 크기만큼 할당
+ *
  * @return 할당한 가상주소
  */
 static void * __init __alloc_memory_core_early(int nid, u64 size, u64 align,
@@ -57,6 +58,10 @@ static void * __init __alloc_memory_core_early(int nid, u64 size, u64 align,
 	 * The min_count is set to 0 so that bootmem allocated blocks
 	 * are never reported as leaks.
 	 */
+  /* memory leak이 발생하는 경우를 리포팅.
+   *
+   *  FIXME: min_count(3번째 인자)가 0이면, 리포팅을 하지 않고,
+   * -1이면, 무시인데, 이 경우에 굳이 쓰이는지 알수 없음. */
 	kmemleak_alloc(ptr, size, 0, 0);
 	return ptr;
 }
