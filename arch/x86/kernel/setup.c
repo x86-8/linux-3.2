@@ -1142,9 +1142,9 @@ void __init setup_arch(char **cmdline_p)
 	kvmclock_init(); // 우린 상관없음. why? paravirtual 안하니깐. :)
 #endif
 
-	x86_init.paging.pagetable_setup_start(swapper_pg_dir); // 64bit는 없다?
+	x86_init.paging.pagetable_setup_start(swapper_pg_dir); /**< 64bit는 없다? */
 	paging_init();
-	x86_init.paging.pagetable_setup_done(swapper_pg_dir); // 64bit는 없다?
+	x86_init.paging.pagetable_setup_done(swapper_pg_dir); /**< 64bit는 없다? */
 
 	if (boot_cpu_data.cpuid_level >= 0) {
 		/* A CPU has %cr4 if and only if it has CPUID */
@@ -1158,31 +1158,41 @@ void __init setup_arch(char **cmdline_p)
 			KERNEL_PGD_PTRS);
 #endif
 
-	tboot_probe();          /**< 우린 패스. 바쁘니깐. */
+	tboot_probe();          /// Intel TXT(Trusted Execution Technology) 검사
 
 #ifdef CONFIG_X86_64
-	map_vsyscall();
+	map_vsyscall();         /// fixmap에 vsyscall, vDSO 관련 페이지를 설정 한다.
 #endif
+        generic_apic_probe();   ///  Empty.
 
-	generic_apic_probe();
-
-	early_quirks();
+	early_quirks();         /// Empty.
 
 	/*
 	 * Read APIC and some other early information from ACPI tables.
 	 */
 	acpi_boot_init();
-	sfi_init();
+	sfi_init();             /// Simple Firmware Interface
+
+        /**
+         * Device Tree Binary 
+         * http://omappedia.org/wiki/Device_Tree
+         * 아.. 스펙 너무한거아닌가... 
+         */
 	x86_dtb_init();
 
-	/*
+	/**
 	 * get boot-time SMP configuration:
 	 */
 	if (smp_found_config)
 		get_smp_config();
-
+        /**
+         * CPU가 제한되어 있는 상태를 보여주고, HOTPLUG가능한 수도 보여준다.
+         */
 	prefill_possible_map();
 
+        /**
+         * Fake Numa Node는 numa_init_array에서 초기화해서 를 만들.... 다음에...
+         */
 	init_cpu_to_node();
 
 	init_apic_mappings();

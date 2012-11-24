@@ -1568,22 +1568,22 @@ int __init acpi_boot_init(void)
 	if (acpi_disabled)
 		return 1;
 
-	acpi_table_parse(ACPI_SIG_BOOT, acpi_parse_sbf);
+	acpi_table_parse(ACPI_SIG_BOOT, acpi_parse_sbf); /**< Simple Boot Flag */
 
 	/*
 	 * set sci_int and PM timer address
 	 */
-	acpi_table_parse(ACPI_SIG_FADT, acpi_parse_fadt);
+	acpi_table_parse(ACPI_SIG_FADT, acpi_parse_fadt); /**< Fixed ACPI Description Table */
 
 	/*
 	 * Process the Multiple APIC Description Table (MADT), if present
 	 */
 	acpi_process_madt();
 
-	acpi_table_parse(ACPI_SIG_HPET, acpi_parse_hpet);
+	acpi_table_parse(ACPI_SIG_HPET, acpi_parse_hpet); /**< High Precision Event Timer */
 
 	if (!acpi_noirq)
-		x86_init.pci.init = pci_acpi_init;
+		x86_init.pci.init = pci_acpi_init; /**< Set PCI Subsystem Init Function */
 
 	return 0;
 }

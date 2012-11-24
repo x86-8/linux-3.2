@@ -483,6 +483,10 @@ static int __init sfi_sysfs_init(void)
 
 void __init sfi_init(void)
 {
+        /**
+         * ACPI를 사용하면 SFI를 사용하지 말아야 한다.
+         * ACPI는 지나치게 복잡하다.
+         */
 	if (!acpi_disabled)
 		disable_sfi();
 
@@ -491,6 +495,9 @@ void __init sfi_init(void)
 
 	pr_info("Simple Firmware Interface v0.81 http://simplefirmware.org\n");
 
+        /**
+         * 이런거 분석안함.. SFI랑 놀지 않음.
+         */
 	if (sfi_find_syst() || sfi_parse_syst() || sfi_platform_init())
 		disable_sfi();
 
