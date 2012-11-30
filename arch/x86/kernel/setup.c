@@ -1163,9 +1163,12 @@ void __init setup_arch(char **cmdline_p)
 #ifdef CONFIG_X86_64
 	map_vsyscall();         /// fixmap에 vsyscall, vDSO 관련 페이지를 설정 한다.
 #endif
-        generic_apic_probe();   ///  Empty.
+  generic_apic_probe();   ///  Empty. 32bit에서만 동작
 
-	early_quirks();         /// Empty.
+  /* CONFIG_PCI 활성화시, 처리. pci장치 중, 알려진 quirk(성능/버그
+   *  이슈) 해결을 위해 추가.
+   */
+	early_quirks();
 
 	/*
 	 * Read APIC and some other early information from ACPI tables.
@@ -1173,11 +1176,14 @@ void __init setup_arch(char **cmdline_p)
 	acpi_boot_init();
 	sfi_init();             /// Simple Firmware Interface
 
-        /**
-         * Device Tree Binary 
-         * http://omappedia.org/wiki/Device_Tree
-         * 아.. 스펙 너무한거아닌가... 
-         */
+  /**
+   * Device Tree Blob(또는 Binary), Flat Device Tree 등 많은 이름으로
+   * 불린다. 머신의 Device들의 H/W 연관 관계(bus, 레지스터 등)가 선언된
+   * 바이너리 파일로, 부팅시 한번에 커널에 적재한다는 개념. 특징상,
+   * 임베디드/모바일에서 많이 쓰이는 것으로 보인다.
+   * 
+   * http://omappedia.org/wiki/Device_Tree 아.. 스펙 너무한거아닌가...
+   */
 	x86_dtb_init();
 
 	/**
@@ -1185,14 +1191,11 @@ void __init setup_arch(char **cmdline_p)
 	 */
 	if (smp_found_config)
 		get_smp_config();
-        /**
-         * CPU가 제한되어 있는 상태를 보여주고, HOTPLUG가능한 수도 보여준다.
-         */
+  
+  /* CPU가 제한되어 있는 상태를 보여주고, HOTPLUG가능한 수도 보여준다 */
 	prefill_possible_map();
 
-        /**
-         * Fake Numa Node는 numa_init_array에서 초기화해서 를 만들.... 다음에...
-         */
+  /*Fake Numa Node는 numa_init_array에서 초기화해서 를 만들.... 다음에... */
 	init_cpu_to_node();
 
 	init_apic_mappings();

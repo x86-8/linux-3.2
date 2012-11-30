@@ -56,8 +56,8 @@ void write_pci_config_16(u8 bus, u8 slot, u8 func, u8 offset, u16 val)
 int early_pci_allowed(void)
 {
 	/*!
-	 *  NOEARLY가 꺼져있으면 TRUE다.
-	 * 즉, EARLY면 참을 리턴한다.
+	 *  NOEARLY가 꺼져있으면 TRUE다. 즉, EARLY면 참을 리턴한다.
+	 * noearly는 pcibios_setup에서 환경 인자가 주어진 경우, 설정.
 	 */
 	return (pci_probe & (PCI_PROBE_CONF1|PCI_PROBE_NOEARLY)) ==
 			PCI_PROBE_CONF1;

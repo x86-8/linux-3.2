@@ -1175,6 +1175,9 @@ early_param("possible_cpus", _setup_possible_cpus);
  * We do this because additional CPUs waste a lot of memory.
  * -AK
  */
+/* 최대 사용 가능한(possible) CPU의 map을 구성한다. 함수가 길다시피,
+ * 비활성화 cpu도 고려를 하고 있고, hot plug cpu 역시 고려하고 있다
+ */
 __init void prefill_possible_map(void)
 {
 	int i, possible;

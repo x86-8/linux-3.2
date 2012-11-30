@@ -58,6 +58,14 @@ EXPORT_SYMBOL(tboot);
 
 static u8 tboot_uuid[16] __initdata = TBOOT_UUID;
 
+/**
+ * tboot : trusted boot. kernel/VMM module을 가지고, 부팅시 TXT를
+ * 지원하여, kernel/VMM 모듈을 검증.
+ *
+ * TXT : Trusted eXecution Technology. 플랫폼 레벨에서 신뢰성 있는
+ * 영역을 제공하기 위한 기능(동작시, 컴퓨터 환경 측정과 검증 기능 제공
+ * 및 종료시 데이터 보호 등)
+ */
 void __init tboot_probe(void)
 {
 	/* Look for valid page-aligned address for shared page. */

@@ -483,10 +483,14 @@ static int __init sfi_sysfs_init(void)
 
 void __init sfi_init(void)
 {
-        /**
-         * ACPI를 사용하면 SFI를 사용하지 말아야 한다.
-         * ACPI는 지나치게 복잡하다.
-         */
+  /**
+   * ACPI를 사용하면 SFI를 사용하지 말아야 한다. ACPI는 지나치게
+   * 복잡하며, 많은 기능을 제공한다. SFI(Simple Firmware Interface) 는
+   * 반대로 그런 기능이 별로 필요없는 플랫폼을 제공하기 위해
+   * 만들어졌으며, ACPI와 SFI 모두 지원할 수 있는 플랫폼이라면, ACPI를
+   * 사용할 것을 권고하고 있다(SFI가 더 진보되거나, ACPI를 대체할 목적으로
+   * 만들어진것이 아니다).
+   */
 	if (!acpi_disabled)
 		disable_sfi();
 
@@ -495,9 +499,7 @@ void __init sfi_init(void)
 
 	pr_info("Simple Firmware Interface v0.81 http://simplefirmware.org\n");
 
-        /**
-         * 이런거 분석안함.. SFI랑 놀지 않음.
-         */
+  /* 이런거 분석안함.. SFI랑 놀지 않음 */
 	if (sfi_find_syst() || sfi_parse_syst() || sfi_platform_init())
 		disable_sfi();
 

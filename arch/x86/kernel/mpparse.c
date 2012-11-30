@@ -508,6 +508,7 @@ static int __init check_physptr(struct mpf_intel *mpf, unsigned int early)
  */
 void __init default_get_smp_config(unsigned int early)
 {
+  /* mpf_found는 smp_scan_config() 에서 얻은 값 */
 	struct mpf_intel *mpf = mpf_found;
 
 	if (!mpf)
@@ -520,6 +521,12 @@ void __init default_get_smp_config(unsigned int early)
 	 * MPS doesn't support hyperthreading, aka only have
 	 * thread 0 apic id in MPS table
 	 */
+  /* ACPI는 논리, 물리 프로세서 둘 다 (정보를) 가져올수 있지만, MPS는
+   * 논리(hyperthreading) 프로세서를 지원하지 못한다. 그 이유는 몇몇
+   * OS 에서 하이퍼스레딩을 제대로 지원(활성화)하지 못해서, 가상
+   * 프로세서 정보를 물리 프로세서 정보와 같이 취급하는 것을 방지하기
+   * 위해서 라고...(대신에 모든 프로세서 정보는 ACPI tables를
+   * 읽어야함)*/
 	if (acpi_lapic && acpi_ioapic)
 		return;
 

@@ -274,6 +274,8 @@ static int __init check_dev_quirk(int num, int slot, int func)
 	return 0;
 }
 
+/* pci장치 중, 알려진 quirk(성능/버그 이슈) 해결을 위해 추가된
+ * 제조사의 특수 구현이 있으면, 처리 */
 void __init early_quirks(void)
 {
 	int slot, func;
