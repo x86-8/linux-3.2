@@ -3840,7 +3840,7 @@ static struct resource *ioapic_resources;
 static struct resource * __init ioapic_setup_resources(int nr_ioapics)
 {
 	unsigned long n;
-	struct resource *res;
+	struct resource *res;    /// Tree like....
 	char *mem;
 	int i;
 

@@ -1685,12 +1685,14 @@ void __init init_apic_mappings(void)
 		 * acpi_register_lapic_address()
 		 */
 		if (!acpi_lapic && !smp_found_config)
-			register_lapic_address(apic_phys);
+			register_lapic_address(apic_phys); ///Local APIC가 없으면 기본값으로 설정
 	}
 
 	/*
 	 * Fetch the APIC ID of the BSP in case we have a
 	 * default configuration (or the MP table is broken).
+	 * HELPME: 어.. 잘은 모르겠지만,  현재 apicid값 으로 설정한다..
+	 * 어떠한 경우에?! 기본 설정값이 있거나, MP 테이블이 깨진경우?!
 	 */
 	new_apicid = read_apic_id();
 	if (boot_cpu_physical_apicid != new_apicid) {

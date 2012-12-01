@@ -493,7 +493,7 @@ int __node_distance(int from, int to)
 {
 	if (from >= numa_distance_cnt || to >= numa_distance_cnt)
 		return from == to ? LOCAL_DISTANCE : REMOTE_DISTANCE;
-	return numa_distance[from * numa_distance_cnt + to];
+	return numa_distance[from * numa_distance_cnt + to];    /// MADT에서 파싱된 누마거리정보가 들어있어요.
 }
 EXPORT_SYMBOL(__node_distance);
 
@@ -764,6 +764,7 @@ static __init int find_near_online_node(int node)
  * for the fake NUMA cases.
  *
  * Called before the per_cpu areas are setup.
+ * CPU와 NODE의 거리를 가깝게 위치하도록 재 계산한다.
  */
 void __init init_cpu_to_node(void)
 {

@@ -1195,9 +1195,10 @@ void __init setup_arch(char **cmdline_p)
   /* CPU가 제한되어 있는 상태를 보여주고, HOTPLUG가능한 수도 보여준다 */
 	prefill_possible_map();
 
-  /*Fake Numa Node는 numa_init_array에서 초기화해서 를 만들.... 다음에... */
+  /* CPU, NODE 재 계산 */
 	init_cpu_to_node();
 
+  /* HELPME: fixmap에 필요한 내용들을 맵핑한다. */
 	init_apic_mappings();
 	ioapic_and_gsi_init();
 

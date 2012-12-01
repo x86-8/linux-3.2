@@ -1226,6 +1226,12 @@ static void __init early_acpi_process_madt(void)
 		 */
 		error = early_acpi_parse_madt_lapic_addr_ovr();
 		if (!error) {
+                        /**
+                         * TODO:
+                         * 이곳에는 어떻게 들어 올 수 있는거지?
+                         * 싱글코어이고 CONFIG_X86_LOCAL_APIC가 설정 되어 있을때?
+                         * 왜 엔트리 카운트가 없을까?
+                         */
 			acpi_lapic = 1;
 			smp_found_config = 1;
 		}
@@ -1260,7 +1266,7 @@ static void __init acpi_process_madt(void)
 			 */
 			error = acpi_parse_madt_ioapic_entries();
 			if (!error) {
-				acpi_set_irq_model_ioapic();
+				acpi_set_irq_model_iocsuapic();
 
 				smp_found_config = 1;
 			}

@@ -369,7 +369,7 @@ void __init numa_emulation(struct numa_meminfo *numa_meminfo, int numa_dist_cnt)
 		for (i = 0; i < numa_dist_cnt; i++)
 			for (j = 0; j < numa_dist_cnt; j++)
 				phys_dist[i * numa_dist_cnt + j] =
-					node_distance(i, j);
+o					node_distance(i, j);
 	}
 
 	/*
