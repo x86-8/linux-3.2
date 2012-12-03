@@ -91,5 +91,5 @@ Study history (날짜:인원:내용)
 81. 2012/11/10:04:*init/main.c* - setup_arch - 	paging_init | initmem_init 탈출~
 82. 2012/11/17:03:*init/main.c* - setup_arch - 	paging_init
 83. 2012/11/24:04:*init/main.c* - setup_arch - 	init_cpu_to_node | fake_numa_node 토론 중 시간종료
-84. 2012/12/01:00:*init/main.c* - setup_arch - ioapic_and_gsi_init | Gogo
+84. 2012/12/01:04:*init/main.c* - setup_arch - ioapic_and_gsi_init | Gogo
 
