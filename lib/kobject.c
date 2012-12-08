@@ -267,6 +267,9 @@ EXPORT_SYMBOL(kobject_set_name);
  * to kobject_put(), not by a call to kfree directly to ensure that all of
  * the memory is cleaned up properly.
  */
+/** 
+ * kobject 초기화, 자세한 분석은 setup_arch() 이후에.
+ */
 void kobject_init(struct kobject *kobj, struct kobj_type *ktype)
 {
 	char *err_str;

@@ -165,6 +165,9 @@ static inline long kvm_hypercall4(unsigned int nr, unsigned long p1,
 	return ret;
 }
 
+/**
+ * 참조: Documentation/virtual/kvm/cpuid.txt
+ */
 static inline int kvm_para_available(void)
 {
 	unsigned int eax, ebx, ecx, edx;

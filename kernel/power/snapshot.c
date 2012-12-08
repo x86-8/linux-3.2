@@ -611,6 +611,8 @@ static LIST_HEAD(nosave_regions);
  *	register_nosave_region - register a range of page frames the contents
  *	of which should not be saved during the suspend (to be used in the early
  *	initialization code)
+ *	suspend 모드일 동안 저장되지 말아야할 영역의 페이지 프레임들을 등록한다.
+ *	이른 초기화 코드에서 사용되어진다. 꼭 해달라. 진짜?
  */
 
 void __init

@@ -648,6 +648,9 @@ static struct resource standard_io_resources[] = {
 		.flags = IORESOURCE_BUSY | IORESOURCE_IO }
 };
 
+/** 
+ * standard_io_resources와 
+ */
 void __init reserve_standard_io_resources(void)
 {
 	int i;
@@ -1200,14 +1203,14 @@ void __init setup_arch(char **cmdline_p)
 
   /* HELPME: fixmap에 필요한 내용들을 맵핑한다. */
 	init_apic_mappings();
-	ioapic_and_gsi_init();
+	ioapic_and_gsi_init();    ///  Global System Interrupts
 
-	kvm_guest_init();
+	kvm_guest_init();    /// KVM 에서 작동하는지 시그니쳐 체크
 
 	e820_reserve_resources();
-	e820_mark_nosave_regions(max_low_pfn);
+	e820_mark_nosave_regions(max_low_pfn);    /// 절전모드 복구시 필요없는 페이지 프레임들을 e820_nosave에 등록
 
-	x86_init.resources.reserve_resources();
+	x86_init.resources.reserve_resources();    /// ioport_resource에 standard_io_resources를 등록한다.
 
 	e820_setup_gap();
 
@@ -1219,13 +1222,13 @@ void __init setup_arch(char **cmdline_p)
 	conswitchp = &dummy_con;
 #endif
 #endif
-	x86_init.oem.banner();
+	x86_init.oem.banner();    /// None
 
-	x86_init.timers.wallclock_init();
+	x86_init.timers.wallclock_init();    /// Nonen
 
-	x86_platform.wallclock_init();
+	x86_platform.wallclock_init();    /// None
 
-	mcheck_init();
+	mcheck_init();    /// cpu 서멀 지원되는지 체크한다.
 
 	arch_init_ideal_nops();
 }

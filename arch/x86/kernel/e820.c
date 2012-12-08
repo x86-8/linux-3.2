@@ -28,10 +28,14 @@
  * The e820 map is the map that gets modified e.g. with command line parameters
  * and that is also registered with modifications in the kernel resource tree
  * with the iomem_resource as parent.
+ * e820 맵은 커맨드라인 파라미터로부터 수정되어 저장된 내용이며,
+ * iomem_resource 자식놈으로써 커널 리소스 트리에 수정되어 저장된다.
  *
  * The e820_saved is directly saved after the BIOS-provided memory map is
  * copied. It doesn't get modified afterwards. It's registered for the
  * /sys/firmware/memmap interface.
+ * e820_saved는 바이오스에서 제공되어진 상태 그대로 복사되고 이후에 수정되어지지 않는다.
+ * 이것은 /sys/firmware/memmap 에서 확인할 수 있다.
  *
  * That memory map is not modified and is used as base for kexec. The kexec'd
  * kernel should get the same memory map as the firmware provides. Then the
@@ -663,6 +667,7 @@ static void __init update_e820_saved(void)
 #define MAX_GAP_END 0x100000000ull
 /*
  * Search for a gap in the e820 memory space from start_addr to end_addr.
+ * e820 엔트리를 거꾸로 순회하며 각 엔트리 사이의 제일 큰 갭을 찾는다.
  */
 __init int e820_search_gap(unsigned long *gapstart, unsigned long *gapsize,
 		unsigned long start_addr, unsigned long long end_addr)
@@ -671,7 +676,7 @@ __init int e820_search_gap(unsigned long *gapstart, unsigned long *gapsize,
 	int i = e820.nr_map;
 	int found = 0;
 
-	last = (end_addr && end_addr < MAX_GAP_END) ? end_addr : MAX_GAP_END;
+	last = (end_addr && end_addr < MAX_GAP_END) ? end_addr : MAX_GAP_END;    // 둘중 최소값
 
 	while (--i >= 0) {
 		unsigned long long start = e820.map[i].addr;
@@ -704,6 +709,7 @@ __init int e820_search_gap(unsigned long *gapstart, unsigned long *gapsize,
  * memory space.  We pass this space to PCI to assign MMIO resources
  * for hotplug or unconfigured devices in.
  * Hopefully the BIOS let enough space left.
+ * e820 엔트리들 사이의 가장 큰 갭을 찾아서 갭 시작주소를 pci_mem_start에 저장.
  */
 __init void e820_setup_gap(void)
 {
@@ -761,6 +767,9 @@ void __init parse_e820_ext(struct setup_data *sdata)
  *
  * This function requires the e820 map to be sorted and without any
  * overlapping entries and assumes the first e820 area to be RAM.
+ *
+ * 이 함수는 e820맵이 새니타이즈되어있고, 첫번째 엔트리의 타입이 E820_RAM 타입인것으로 가정한다.
+ * 절전 모드를 대비해 저장이 필요없는 영역과 저장이 필요한 영역을 구분해 저장한다.
  */
 void __init e820_mark_nosave_regions(unsigned long limit_pfn)
 {
@@ -1023,6 +1032,10 @@ static inline const char *e820_type_to_string(int e820_type)
 
 /*
  * Mark e820 reserved areas as busy for the resource manager.
+ * 바이오스에서 받아놓은 e820 맵을 kobject로 만들어 등록한다.
+ * 부팅후 /sys/firmware/memmap 에서 확인 할 수 있다.
+ * iomem_resource 에 e820 엔트리들을 등록해 준다.
+ * e820 리소스를 등록해준다. PCI Base Address Resource를 찾아보라.
  */
 static struct resource __initdata *e820_res;
 void __init e820_reserve_resources(void)

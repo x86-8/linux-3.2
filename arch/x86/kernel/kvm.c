@@ -596,6 +596,7 @@ void __init kvm_guest_init(void)
 	if (!kvm_para_available())
 		return;
 
+        /// KVM 분석 하는거 아니라서 아래쪽 무시.
 	paravirt_ops_setup();
 	register_reboot_notifier(&kvm_pv_reboot_nb);
 	for (i = 0; i < KVM_TASK_SLEEP_HASHSIZE; i++)

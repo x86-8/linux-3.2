@@ -20,7 +20,9 @@
 
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
-
+/** 
+ * @param list 초기화할 리스트
+ */
 static inline void INIT_LIST_HEAD(struct list_head *list)
 {
 	list->next = list;
