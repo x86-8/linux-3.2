@@ -203,6 +203,8 @@ void __init arch_init_ideal_nops(void)
 		 * specific Intel CPUs actually perform better with
 		 * the "k8_nops" than with the SDM-recommended NOPs.
 		 */
+    /* 몇몇 (변종) intel cpu에서는 SDM(Software Developer
+     * Manual) NOPS 방식 보다 AMD의 k8_nops가 더 낫다 */
 		if (boot_cpu_data.x86 == 6 &&
 		    boot_cpu_data.x86_model >= 0x0f &&
 		    boot_cpu_data.x86_model != 0x1c &&
@@ -211,8 +213,10 @@ void __init arch_init_ideal_nops(void)
 		    boot_cpu_data.x86_model < 0x30) {
 			ideal_nops = k8_nops;
 		} else if (boot_cpu_has(X86_FEATURE_NOPL)) {
+         /* HELPME: p6_nops는 어떤 것인지 확실치 않음(펜티엄6?) */
 			   ideal_nops = p6_nops;
 		} else {
+         /* 나머지 X86_64는 전부 k8_nops 사용 */
 #ifdef CONFIG_X86_64
 			ideal_nops = k8_nops;
 #else
@@ -221,6 +225,8 @@ void __init arch_init_ideal_nops(void)
 		}
 
 	default:
+    /* 기본적으로 k8_nops를 가지고, k8, k7, intel 순으로 체크해서
+     * nops를 맞춘다 */
 #ifdef CONFIG_X86_64
 		ideal_nops = k8_nops;
 #else

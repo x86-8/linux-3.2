@@ -1228,8 +1228,11 @@ void __init setup_arch(char **cmdline_p)
 
 	x86_platform.wallclock_init();    /// None
 
-	mcheck_init();    /// cpu 서멀 지원되는지 체크한다.
+  /* cpu 온도 체크가 지원되는지 확인후, Thermal
+   * LVT값 저장 */
+	mcheck_init();    
 
+  /* CPU 타입에 따라 사용할 NOPS를 설정 */
 	arch_init_ideal_nops();
 }
 

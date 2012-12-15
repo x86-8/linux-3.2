@@ -407,6 +407,7 @@ asmlinkage void smp_thermal_interrupt(struct pt_regs *regs)
 }
 
 /* Thermal monitoring depends on APIC, ACPI and clock modulation */
+/* Thermal 상태 체크는 APIC와 ACPI, ACC에 의존적 */
 static int intel_thermal_supported(struct cpuinfo_x86 *c)
 {
 	if (!cpu_has_apic)
@@ -420,10 +421,13 @@ void __init mcheck_intel_therm_init(void)
 {
 	/*
 	 * This function is only called on boot CPU. Save the init thermal
-	 * LVT value on BSP and use that value to restore APs' thermal LVT
+	 * LVT value on BSP and use that value to restore APs' thermal LVT;
 	 * entry BIOS programmed later
 	 */
+  /* Thermal LVT(Local Vector Table)값을 Boot CPU에 저장하고 나중에
+   * AP들이 해당 Thermal LVT를 사용한다 */
 	if (intel_thermal_supported(&boot_cpu_data))
+    /* Thermal LVT값: 0x330 */
 		lvtthmr_init = apic_read(APIC_LVTTHMR);
 }
 

@@ -91,7 +91,8 @@
 #define		GET_APIC_DEST_FIELD(x)	(((x) >> 24) & 0xFF)
 #define		SET_APIC_DEST_FIELD(x)	((x) << 24)
 #define	APIC_LVTT	0x320
-#define	APIC_LVTTHMR	0x330
+/* HELPME: LVT table에 대해서 찾아볼 것 */
+#define	APIC_LVTTHMR	0x330 
 #define	APIC_LVTPC	0x340
 #define	APIC_LVT0	0x350
 #define		APIC_LVT_TIMER_BASE_MASK	(0x3 << 18)
